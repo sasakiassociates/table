@@ -120,3 +120,4 @@ _ReSharper*/
 *.nuget.targets
 # MSBuild Binary and Structured Log
 *.binlog
+/FirebaseSharp/FirebaseSharp/firebase_table-key.json
