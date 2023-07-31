@@ -1,8 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Firebase;
-using Firebase.Auth;
-using Firebase.Auth.Providers;
 using Newtonsoft.Json;
 using Sasaki.FirebaseSharp;
 using System;
@@ -16,18 +13,28 @@ namespace Sasaki.FirebaseSharp
 {
     public class HTTPRequests
     {
-        private static readonly string url = "https://magpietable-default-rtdb.firebaseio.com/.json";
-        private static HttpClient client = new()
-        {
-            BaseAddress = new Uri(url) 
-        };
+        //private static string url = "https://magpietable-default-rtdb.firebaseio.com/.json";
+        //private static readonly HttpClient client = new();
+        private static HttpClient client = new();
 
-        public static async Task Main()
+        public HTTPRequests(string url_)
         {
-            await GetAsync(client);
+            client = new()
+            {
+                BaseAddress = new Uri(url_)
+            };
+            
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(
+                               new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        static async Task GetAsync(HttpClient client)
+        public static void Main()
+        {
+            
+        }
+
+        public async Task GetAsync()
         {
             using HttpResponseMessage response = await client.GetAsync("https://magpietable-default-rtdb.firebaseio.com/.json");
 
@@ -36,6 +43,17 @@ namespace Sasaki.FirebaseSharp
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
             Console.WriteLine(jsonResponse.ToString());
+        }
+
+        public async Task PostAsync(string values_)
+        {
+            var content = new FormUrlEncodedContent(values_);
+
+            var response = await client.PostAsync("https://magpietable-default-rtdb.firebaseio.com/.json", content);
+
+            var responseString = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine(responseString);
         }
     }
 }
