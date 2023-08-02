@@ -121,3 +121,4 @@ _ReSharper*/
 # MSBuild Binary and Structured Log
 *.binlog
 /FirebaseSharp/FirebaseSharp/firebase_table-key.json
+src/tb-detection/key/firebase_table-key.json
