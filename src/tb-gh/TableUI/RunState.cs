@@ -1,10 +1,10 @@
 ﻿namespace TableUI
 {
-    enum RequestState
+    enum RunState
     {
         Off,
         Idle,
-        Requesting,
+        Running,
         Done,
         Error
     }

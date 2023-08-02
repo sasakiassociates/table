@@ -1,27 +1,28 @@
 ﻿using System;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-
-using Grasshopper.GUI.Script;
+using System.Net;
+using System.Drawing;
 using Grasshopper.Kernel;
+using Rhino;
 using Rhino.Geometry;
+using Rhino.Render;
 
 namespace TableUI
 {
-    public class HttpGetRequestAsyncComponent : GH_Component
+    public class HttpGetAsync : GH_Component
     {
         private string response_ = "";
         private bool shouldExpire_ = false;
-        private RequestState currentState_ = RequestState.Off;
+        private RunState currentState_ = RunState.Off;
 
+        
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
-        public HttpGetRequestAsyncComponent()
-          : base("MyComponent1", "HTTP Get",
-            "An aynschronous HTTP get request sent to a Firebase realtime database",
-            "Strategist", "TableUI")
+        public HttpGetAsync()
+          : base("Http Get Async", "Http Get",
+              "Runs an Http get request to the given url",
+              "Strategist", "TableUI")
         {
         }
 
@@ -31,11 +32,13 @@ namespace TableUI
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("URL", "U", "URL to the Firebase database",
-                GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Trigger", "T", "Trigger the request",
-                GH_ParamAccess.item, false);
+                               GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Send", "S", "Send the request",
+                               GH_ParamAccess.item, false);
             pManager.AddIntegerParameter("Expire", "E", "The length of time in ms after which the request will fail",
-                GH_ParamAccess.item, 0);
+                               GH_ParamAccess.item, 1000);
+            pManager.AddTextParameter("Authorization", "A", "The authentication ID for the database",
+                               GH_ParamAccess.item, "");
         }
 
         /// <summary>
@@ -44,7 +47,7 @@ namespace TableUI
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Response", "R", "Response from the server",
-                GH_ParamAccess.item);
+                               GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -57,20 +60,20 @@ namespace TableUI
             {
                 switch (currentState_)
                 {
-                    case RequestState.Off:
-                        this.message = "inactive"
-                        DA.SetData(0, "");
-                        currentState_ = RequestState.Idle;
+                    case RunState.Off:
+                        this.Message = "inactive";
+                                DA.SetData(0, "");
+                        currentState_ = RunState.Idle;
                         break;
-                    case RequestState.Error:
-                        this.message = "ERROR"
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, response_);
-                        currentState_ = RequestState.Idle;
+                    case RunState.Error:
+                        this.Message = "ERROR";
+                                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, response_);
+                        currentState_ = RunState.Idle;
                         break;
-                    case RequestState.Done:
-                        this.message = "DONE"
-                        DA.SetData(0, response_);
-                        currentState_ = RequestState.Idle;
+                    case RunState.Done:
+                        this.Message = "done";
+                                DA.SetData(0, response_);
+                        currentState_ = RunState.Idle;
                         break;
                 }
                 DA.SetData(0, response_);
@@ -86,7 +89,7 @@ namespace TableUI
             DA.GetData("Send", ref active);
             if (!active)
             {
-                currentState_ = RequestState.Off;
+                currentState_ = RunState.Off;
                 shouldExpire_ = true;
                 ExpireSolution(true);
                 return;
@@ -96,19 +99,19 @@ namespace TableUI
             DA.GetData("Authorization", ref authToken);
             if (!DA.GetData("Expire", ref timeout)) return;
 
-            if (url == null || url == "")
+            if (url == null || url.Length == 0)
             {
                 response_ = "URL is empty";
-                currentState_ = RequestState.Error;
+                currentState_ = RunState.Error;
                 shouldExpire_ = true;
                 ExpireSolution(true);
                 return;
             }
 
-            currentState_ = RequestState.Requesting;
+            currentState_ = RunState.Running;
             this.Message = "Requesting...";
 
-            AsyncGET(url, authToken, timeout);
+            AsyncGet(url, authToken, timeout);
         }
 
         protected override void ExpireDownStreamObjects()
@@ -119,9 +122,9 @@ namespace TableUI
             }
         }
 
-        private void AsyncGET(string url, string authToken, int timeout)
+        private void AsyncGet(string url, string authToken, int timeout)
         {
-            Task.Run () =>
+            Task.Run(() =>
             {
                 try
                 {
@@ -129,10 +132,10 @@ namespace TableUI
                     request.Method = "GET";
                     request.Timeout = timeout;
 
-                    if (authToken != null && authToken.length > 0)
+                    if (authToken != null && authToken.Length > 0)
                     {
                         System.Net.ServicePointManager.Expect100Continue = true;
-                        System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                        System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                         request.PreAuthenticate = true;
                         request.Headers.Add("Authorization", authToken);
@@ -145,7 +148,7 @@ namespace TableUI
                     var res = request.GetResponse();
                     response_ = new StreamReader(res.GetResponseStream()).ReadToEnd();
 
-                    currentState_ = RequestState.Done;
+                    currentState_ = RunState.Done;
 
                     shouldExpire_ = true;
                     RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });
@@ -153,25 +156,12 @@ namespace TableUI
                 catch (Exception ex)
                 {
                     response_ = ex.Message;
-                    currentState_ = RequestState.Error;
+                    currentState_ = RunState.Error;
 
                     shouldExpire_ = true;
                     RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });
                 }
-            }
-        }
-
-        /// <summary>
-        /// Provides an Icon for the component.
-        /// </summary>
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
-            }
+            });
         }
 
         /// <summary>
@@ -179,7 +169,7 @@ namespace TableUI
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("8A15EB96-1C11-4DBA-8B67-7F9404745493"); }
+            get { return new Guid("FDC49C16-C595-4D9F-B486-D356C4671A47"); }
         }
     }
 }
