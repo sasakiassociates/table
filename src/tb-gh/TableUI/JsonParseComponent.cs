@@ -13,12 +13,12 @@ namespace TableUI
 {
     public class JsonParseComponent : GH_Component
     {
-        private bool _shouldExpire = false;
+        /*private bool _shouldExpire = false;
         private RunState _currentState = RunState.Off;
 
-        List<int> ids = new List<int>();
-        List<Point2d> locations = new List<Point2d>();
-        List<int> rotations = new List<int>();
+        private List<int> ids = new();
+        private List<Point2d> locations = new();
+        private List<int> rotations = new();*/
 
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
@@ -58,7 +58,7 @@ namespace TableUI
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            if (_shouldExpire)
+            /*if (_shouldExpire)
             {
                 switch (_currentState)
                 {
@@ -85,39 +85,89 @@ namespace TableUI
                         _currentState = RunState.Idle;
                         break;
                 }
+                DA.SetDataList(0, ids);
+                DA.SetDataList(1, locations);
+                DA.SetDataList(2, rotations);
+
                 _shouldExpire = false;
                 return;
             }
             
             ids = new List<int>();
             locations = new List<Point2d>();
-            rotations = new List<int>();
+            rotations = new List<int>();*/
 
             string jsonString = null;
             if (!DA.GetData(0, ref jsonString)) return;
 
+            /*if (jsonString == null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No JSON string provided");
+                _currentState = RunState.Error;
+                _shouldExpire = true;
+                ExpireSolution(true);
+                return;
+            }
+
             _currentState = RunState.Running;
-            this.Message = "Running...";
+            this.Message = "Running...";*/
 
             // Parse the JSON
-            ParseJsonAsync(jsonString);
+            ParseJsonAsync(jsonString, DA);
         }
 
         protected override void ExpireDownStreamObjects()
         {
-            if (_shouldExpire)
-            {
+            /*if (_shouldExpire)
+            {*/
                 base.ExpireDownStreamObjects();
-            }
+            //}
         }
 
-        private void ParseJsonAsync(string jsonString)
+        private void ParseJsonAsync(string jsonString, IGH_DataAccess DA)
         {
-            Task.Run(() =>
+            List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
+
+            List<int> ids = new();
+            List<Point2d> locations = new();
+            List<int> rotations = new();
+
+            foreach (var deserialJson in deserialJsonList)
+            {
+                foreach (var kvp in deserialJson)
+                {
+                    string key = kvp.Key;
+                    Marker marker = kvp.Value;
+
+                    int id = marker.id;
+                    ids.Add(id);
+                    rotations.Add(marker.rotation);
+                    if (marker.location != null)
+                    {
+                        locations.Add(new Point2d(marker.location[0], marker.location[1]));
+                    }
+                    else
+                    {
+                        locations.Add(new Point2d(0, 0));
+                    }
+
+                }
+            }
+
+            // Send the output data
+            DA.SetDataList(0, ids);
+            DA.SetDataList(1, locations);
+            DA.SetDataList(2, rotations);
+
+            /*Task.Run(() =>
             {
                 try
                 {
                     List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
+
+                    List<int> ids = new();
+                    List<Point2d> locations = new();
+                    List<int> rotations = new();
 
                     foreach (var deserialJson in deserialJsonList)
                     {
@@ -140,19 +190,19 @@ namespace TableUI
 
                         }
                     }
-                    _currentState = RunState.Done;
+                    *//*_currentState = RunState.Done;
                     _shouldExpire = true;
-                    RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });
+                    RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });*//*
                 }
                 catch (Exception e)
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
                     
-                    _currentState = RunState.Error;
+                   *//* _currentState = RunState.Error;
                     _shouldExpire = true;
-                    RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });
+                    RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });*//*
                 }
-            });
+            });*/
         }
 
         private class Marker
