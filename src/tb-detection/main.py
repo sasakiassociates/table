@@ -13,7 +13,7 @@ def get_dict(dict_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Detect ArUco markers and send data to Firebase")
     
-    parser.add_argument("mode", type=str, choices=["firebase", "udp"], help="The mode to run the program in")
+    parser.add_argument("mode", type=str, choices=["f", "u", "b"], help="The mode to run the program in")
     parser.add_argument("--url", type=str, default="https://magpietable-default-rtdb.firebaseio.com/", help="The path to the Firebase realtime database found in the Realtime Database tab of the Firebase project page")
     parser.add_argument("--key", type=str, default="./key/firebase_table-key.json", help="The path to the local instance of the Firebase key json file found in the Service Accounts tab of the Firebase project page")
     parser.add_argument("--camera", type=int, default=0, help="The camera index to use")
@@ -27,13 +27,7 @@ if __name__ == "__main__":
     predefined_dict = get_dict(args.aruco_dict)
     params = aruco.DetectorParameters()
 
-    if args.mode == "firebase":
-        repository = repository.Repository(args.url, args.key)
-    elif args.mode == "udp":
-        repository = repository_udp.Repository(args.udp_ip, args.udp_port)
-    else:
-        print("Invalid mode")
-        exit(1)
+    repository = repository.Repository(args.url, args.key, args.udp_ip, args.udp_port, args.mode)
 
     camera = camera.Camera(args.camera, aruco_dict_=predefined_dict, params_=params, repository_=repository)
     camera.video_loop()

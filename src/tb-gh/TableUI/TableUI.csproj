@@ -11,6 +11,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <PackageReference Include="firesharp" Version="2.0.4" />
     <PackageReference Include="Grasshopper" Version="7.31.23166.15001" IncludeAssets="compile;build" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Text.Json" Version="7.0.3" />

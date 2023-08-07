@@ -20,4 +20,5 @@ class Repository:
     # TODO make all marker numbers part of the JSON
     # TODO change markers that haven't been updated to is_visible = False
     def update(self, marker_json, marker_id):
+        
         self.add_to_data(marker_id, marker_json)
