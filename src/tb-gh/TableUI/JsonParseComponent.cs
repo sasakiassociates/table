@@ -60,17 +60,14 @@ namespace TableUI
             ParseJsonAsync(jsonString, DA);
         }
 
-        protected override void ExpireDownStreamObjects()
-        {
-            /*if (_shouldExpire)
-            {*/
-                base.ExpireDownStreamObjects();
-            //}
-        }
-
         private void ParseJsonAsync(string jsonString, IGH_DataAccess DA)
         {
-            List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
+            // Parse the JSON
+            JsonParse jsonParse = new();
+
+            JsonParse.ParsedData parsedData = jsonParse.Parse(jsonString);
+            
+            /*List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
 
             List<int> ids = new();
             List<Point2d> locations = new();
@@ -96,12 +93,12 @@ namespace TableUI
                     }
 
                 }
-            }
+            }*/
 
             // Send the output data
-            DA.SetDataList(0, ids);
-            DA.SetDataList(1, locations);
-            DA.SetDataList(2, rotations);
+            DA.SetDataList(0, parsedData.ids);
+            DA.SetDataList(1, parsedData.locations);
+            DA.SetDataList(2, parsedData.rotations);
         }
 
         private class Marker
