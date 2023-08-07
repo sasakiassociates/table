@@ -13,12 +13,6 @@ namespace TableUI
 {
     public class JsonParseComponent : GH_Component
     {
-        /*private bool _shouldExpire = false;
-        private RunState _currentState = RunState.Off;
-
-        private List<int> ids = new();
-        private List<Point2d> locations = new();
-        private List<int> rotations = new();*/
 
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
@@ -58,59 +52,9 @@ namespace TableUI
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            /*if (_shouldExpire)
-            {
-                switch (_currentState)
-                {
-                    case RunState.Off:
-                        this.Message = "inactive";
-                        DA.SetDataList(0, null);
-                        DA.SetDataList(1, null);
-                        DA.SetDataList(2, null);
-                        _currentState = RunState.Idle;
-                        break;
-                    case RunState.Error:
-                        this.Message = "ERROR";
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Error in JSON parsing");
-                        _currentState = RunState.Idle;
-                        break;
-                    case RunState.Done:
-                        this.Message = "done";
-                        
-                        // Send the output data
-                        DA.SetDataList(0, ids);
-                        DA.SetDataList(1, locations);
-                        DA.SetDataList(2, rotations);
-                        
-                        _currentState = RunState.Idle;
-                        break;
-                }
-                DA.SetDataList(0, ids);
-                DA.SetDataList(1, locations);
-                DA.SetDataList(2, rotations);
-
-                _shouldExpire = false;
-                return;
-            }
-            
-            ids = new List<int>();
-            locations = new List<Point2d>();
-            rotations = new List<int>();*/
 
             string jsonString = null;
             if (!DA.GetData(0, ref jsonString)) return;
-
-            /*if (jsonString == null)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No JSON string provided");
-                _currentState = RunState.Error;
-                _shouldExpire = true;
-                ExpireSolution(true);
-                return;
-            }
-
-            _currentState = RunState.Running;
-            this.Message = "Running...";*/
 
             // Parse the JSON
             ParseJsonAsync(jsonString, DA);
@@ -158,51 +102,6 @@ namespace TableUI
             DA.SetDataList(0, ids);
             DA.SetDataList(1, locations);
             DA.SetDataList(2, rotations);
-
-            /*Task.Run(() =>
-            {
-                try
-                {
-                    List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
-
-                    List<int> ids = new();
-                    List<Point2d> locations = new();
-                    List<int> rotations = new();
-
-                    foreach (var deserialJson in deserialJsonList)
-                    {
-                        foreach (var kvp in deserialJson)
-                        {
-                            string key = kvp.Key;
-                            Marker marker = kvp.Value;
-
-                            int id = marker.id;
-                            ids.Add(id);
-                            rotations.Add(marker.rotation);
-                            if (marker.location != null)
-                            {
-                                locations.Add(new Point2d(marker.location[0], marker.location[1]));
-                            }
-                            else
-                            {
-                                locations.Add(new Point2d(0, 0));
-                            }
-
-                        }
-                    }
-                    *//*_currentState = RunState.Done;
-                    _shouldExpire = true;
-                    RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });*//*
-                }
-                catch (Exception e)
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, e.Message);
-                    
-                   *//* _currentState = RunState.Error;
-                    _shouldExpire = true;
-                    RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });*//*
-                }
-            });*/
         }
 
         private class Marker

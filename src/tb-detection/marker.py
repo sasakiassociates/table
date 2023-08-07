@@ -24,7 +24,7 @@ class Marker(ABC):
     def build_json(self):
         marker_data = {
             "id": self.id,
-            "location": self.center,
+            "location": [self.center[0], self.center[1]],
             "rotation": 0,
         }
         return marker_data
