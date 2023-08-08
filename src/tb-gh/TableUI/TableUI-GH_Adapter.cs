@@ -19,6 +19,7 @@ namespace TableUI
               "Asynchronously runs the main TableUI functions to get registered points from an external database",
               "Strategist", "TableUI")
         {
+            BaseWorker = new ForLoopWorker();
         }
 
         /// <summary>
@@ -27,9 +28,9 @@ namespace TableUI
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("URL", "URL", "Link to the database", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Expire", "Ex", "Time in ms to timeout the process", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Expire", "Ex", "Time in ms to timeout the process", GH_ParamAccess.item, 1000);
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-            pManager.AddTextParameter("Authorization", "A", "The authentication ID for the database", GH_ParamAccess.item);
+            pManager.AddTextParameter("Authorization", "A", "The authentication ID for the database", GH_ParamAccess.item, "");
         }
 
         /// <summary>
@@ -48,6 +49,8 @@ namespace TableUI
             private bool _run;
             private string _auth;
 
+            public List<Plane> planes_ = new List<Plane>();
+
             public ForLoopWorker() : base(null) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
@@ -62,18 +65,26 @@ namespace TableUI
             {
                 _main.setup(_url, _expire, _auth);
                 _main.run();
+                ParsedData results = _main.get_results();
+                
+                for (int i = 0; i < results.ids.Count; i++)
+                {
+                    Point3d point = new(results.locations[i][0], results.locations[i][1], results.locations[i][2]);
+                    // TODO add vector rotation
+                    Plane plane = new(point, Vector3d.ZAxis);
+                    planes_.Add(plane);
+                }
+
+                // TODO make a rotated plane out of the parsedData
                 Done();
             }
 
             public override void SetData(IGH_DataAccess DA)
             {
-                DA.SetData(0, _main.get_results());
+                DA.SetData(0, planes_);
             }
             
-            public override WorkerInstance Duplicate()
-            {
-                throw new NotImplementedException();
-            }
+            public override WorkerInstance Duplicate() => new ForLoopWorker();
         }
 
         /// <summary>

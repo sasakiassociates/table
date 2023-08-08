@@ -15,6 +15,7 @@ class Marker(ABC):
             observer.update(self.build_json(), self.id)
     
     def update(self, corners_):
+        self.calculate_rotation(corners_)
         self.calculate_center(corners_)
         self.notify_observers()
     
@@ -29,19 +30,29 @@ class Marker(ABC):
         }
         return marker_data
     
-    # TODO check if this is operational
+    # TODO fix this; currently is only saying the rotation is around 130 degrees
     def calculate_rotation(self, corners_):
-        tl = corners_[0][0] 
-        tr = corners_[0][1]
-        bl = corners_[0][3]
-        br = corners_[0][2]
+        corner1 = corners_[0][0]
+        corner2 = corners_[0][1]
+        corner3 = corners_[0][2]
+        corner4 = corners_[0][3]
+        
+        # gets vector in one direction
+        vector1 = (corner1[0] - corner2[0], corner1[1] - corner2[1])
+        # gets vector in other direction
+        vector2 = (corner3[0] - corner1[0], corner3[1] - corner1[1])
 
-        midpoint1 = (tl + bl) / 2
-        midpoint2 = (tr + br) / 2
+        dot_product = vector1[0] * vector2[0] + vector1[1] * vector2[1]
 
-        self.rotation = np.arctan2(midpoint2[1] - midpoint1[1], midpoint2[0] - midpoint1[0]) * 180 / np.pi
+        magnitude1 = np.sqrt(vector1[0] ** 2 + vector1[1] ** 2)
+        magnitude2 = np.sqrt(vector2[0] ** 2 + vector2[1] ** 2)
+        
+        cosine_angle = dot_product / (magnitude1 * magnitude2)
 
-        return self.rotation
+        angle_radians = np.arccos(cosine_angle)
+
+        print(angle_radians * 180 / np.pi)
+        # return self.rotation
 
 class ModelMarker(Marker):
     def __init__(self, marker_id_):

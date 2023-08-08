@@ -38,7 +38,6 @@ namespace TableUI
                     }
                     else
                     {
-                        // TODO figure out how to form a Rotation object the Rhino geometry kernel (but move that to the Adapter)
                         int[] point = { 0, 0, 0 };
                         locations.Add(point);
                     }
