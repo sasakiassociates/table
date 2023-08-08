@@ -28,6 +28,20 @@ class Marker(ABC):
             "rotation": 0,
         }
         return marker_data
+    
+    # TODO check if this is operational
+    def calculate_rotation(self, corners_):
+        tl = corners_[0][0] 
+        tr = corners_[0][1]
+        bl = corners_[0][3]
+        br = corners_[0][2]
+
+        midpoint1 = (tl + bl) / 2
+        midpoint2 = (tr + br) / 2
+
+        self.rotation = np.arctan2(midpoint2[1] - midpoint1[1], midpoint2[0] - midpoint1[0]) * 180 / np.pi
+
+        return self.rotation
 
 class ModelMarker(Marker):
     def __init__(self, marker_id_):

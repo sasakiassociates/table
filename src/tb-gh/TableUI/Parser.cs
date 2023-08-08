@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Grasshopper.Kernel.Types.Transforms;
+using Newtonsoft.Json;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -8,16 +9,17 @@ using System.Threading.Tasks;
 
 namespace TableUI
 {
-    internal class JsonParse
+    internal class Parser
     {
 
         public ParsedData Parse(string jsonString)
         {
+            // TODO change the format of the JSON to be a list of dictionaries
             List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
 
             List<int> ids = new();
-            List<Point2d> locations = new();
-            List<int> rotations = new();
+            List<int[]> locations = new();
+            List<int[]> rotations = new();
 
             foreach (var deserialJson in deserialJsonList)
             {
@@ -31,11 +33,14 @@ namespace TableUI
                     rotations.Add(marker.rotation);
                     if (marker.location != null)
                     {
-                        locations.Add(new Point2d(marker.location[0], marker.location[1]));
+                        int[] point = { marker.location[0], marker.location[1], 0 };
+                        locations.Add(point);
                     }
                     else
                     {
-                        locations.Add(new Point2d(0, 0));
+                        // TODO figure out how to form a Rotation object the Rhino geometry kernel (but move that to the Adapter)
+                        int[] point = { 0, 0, 0 };
+                        locations.Add(point);
                     }
 
                 }
@@ -53,14 +58,14 @@ namespace TableUI
         {
             public int id { get; set; }
             public int[] location { get; set; }
-            public int rotation { get; set; }
+            public int[] rotation { get; set; }
         }
 
-        public class ParsedData
+/*        public class ParsedData
         {
             public List<int> ids { get; set; }
             public List<Point2d> locations { get; set; }
             public List<int> rotations { get; set; }
-        }
+        }*/
     }
 }

@@ -63,9 +63,9 @@ namespace TableUI
         private void ParseJsonAsync(string jsonString, IGH_DataAccess DA)
         {
             // Parse the JSON
-            JsonParse jsonParse = new();
+            Parser jsonParse = new();
 
-            JsonParse.ParsedData parsedData = jsonParse.Parse(jsonString);
+            Parser.ParsedData parsedData = jsonParse.Parse(jsonString);
             
             /*List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
 
