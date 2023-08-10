@@ -50,8 +50,6 @@ class Marker(ABC):
         cosine_angle = dot_product / (magnitude1 * magnitude2)
 
         angle_radians = np.arccos(cosine_angle)
-
-        print(angle_radians * 180 / np.pi)
         # return self.rotation
 
 class ModelMarker(Marker):

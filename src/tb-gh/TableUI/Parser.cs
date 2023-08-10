@@ -11,60 +11,40 @@ namespace TableUI
 {
     internal class Parser
     {
+        public List<Marker> markers = new();
+        public ParsedData data = new();
 
-        public ParsedData Parse(string jsonString)
+        public void Parse(string jsonString)
         {
-            // TODO change the format of the JSON to be a list of dictionaries
-            List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
 
-            List<int> ids = new();
-            List<int[]> locations = new();
-            List<int[]> rotations = new();
+            List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
 
             foreach (var deserialJson in deserialJsonList)
             {
                 foreach (var kvp in deserialJson)
                 {
-                    string key = kvp.Key;
-                    Marker marker = kvp.Value;
 
-                    int id = marker.id;
-                    ids.Add(id);
-                    rotations.Add(marker.rotation);
-                    if (marker.location != null)
-                    {
-                        int[] point = { marker.location[0], marker.location[1], 0 };
-                        locations.Add(point);
-                    }
-                    else
-                    {
-                        int[] point = { 0, 0, 0 };
-                        locations.Add(point);
-                    }
+                    Marker marker = kvp.Value;
+                    markers.Add(marker);
 
                 }
             }
+        }
 
-            return new ParsedData
+        public ParsedData MakeDataList()
+        {
+            foreach (Marker marker in markers)
             {
-                ids = ids,
-                locations = locations,
-                rotations = rotations
-            };
-        }
+                int id = marker.id;
+                int[] location = marker.location;
+                int rotation = marker.rotation;
 
-        private class Marker
-        {
-            public int id { get; set; }
-            public int[] location { get; set; }
-            public int[] rotation { get; set; }
-        }
+                data.add_id(id);
+                data.add_location(location);
+                data.add_rotation(rotation);
+            }
 
-/*        public class ParsedData
-        {
-            public List<int> ids { get; set; }
-            public List<Point2d> locations { get; set; }
-            public List<int> rotations { get; set; }
-        }*/
+            return data;
+        }
     }
 }

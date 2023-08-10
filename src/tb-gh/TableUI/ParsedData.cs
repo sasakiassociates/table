@@ -8,8 +8,21 @@ namespace TableUI
 {
     internal class ParsedData
     {
-        public List<int> ids { get; set; }
-        public List<int[]> locations { get; set; }
-        public List<int[]> rotations { get; set; }
+        public List<int> ids = new();
+        public List<int[]> locations = new();
+        public List<int> rotations = new();
+
+        public void add_id(int id)
+        {
+            this.ids.Add(id);
+        }
+        public void add_location(int[] location)
+        {
+            this.locations.Add(location);
+        }
+        public void add_rotation(int rotation)
+        {
+            this.rotations.Add(rotation);
+        }
     }
 }

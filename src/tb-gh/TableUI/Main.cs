@@ -13,27 +13,44 @@ namespace TableUI
         private string _auth;
         private int _expire;
 
-        private Repository _repository;
-        private Parser _parser;
+        private Repository repository;
+        private Parser parser = new();
 
-        public ParsedData _parsedData;
+        public ParsedData parsedData;
 
-        public void setup(string url, int expire, string authorization)
+        public void setup(string url, int expire, string authorization, string repoStrategy)
         {
-            _repository = new(url, expire, authorization);
+            repository = new(url, expire, authorization);
+            if (repoStrategy == "HTTP")
+            {
+                repository.set_strategy(new RepoStrategyHttpGet());
+            }
+            else if (repoStrategy == "UDP")
+            {
+                repository.set_strategy(new RepoStrategyUdpReceive());
+            }
+            else
+            {
+                throw new Exception("Invalid repoStrategy");
+            }
         }
 
         public void run()
         {
-            string jsonString = _repository.get();
-
-            _parser = new Parser();
-            _parsedData = _parser.Parse(jsonString);
+            string jsonString = repository.get();
+            if (jsonString != null)
+            {
+                parser.Parse(jsonString);
+                parsedData = parser.MakeDataList();
+            } else
+            {
+                  throw new Exception("No data received");
+            }
         }
 
-        public ParsedData get_results()
+        public ParsedData get_list_results()
         {
-            return _parsedData;
+            return parsedData;
         }
     }
 }

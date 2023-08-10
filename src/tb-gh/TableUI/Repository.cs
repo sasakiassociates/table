@@ -12,52 +12,29 @@ namespace TableUI
 {
     internal class Repository
     {
-        private string _url;
+        private string _target;
         private int _expire;
         private string _auth;
 
-        private string _response;
+        private RepoStrategy repoStrategy;
 
-        public Repository(string url, int expire, string authorization)
+        private string response;
+
+        public Repository(string target, int expire, string authorization)
         {
-            _url = url;
+            _target = target;
             _expire = expire;
             _auth = authorization;
         }
 
+        public void set_strategy(RepoStrategy strategy)
+        {
+            repoStrategy = strategy;
+        }
+
         public string get()
         {
-            try
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(_url);
-                request.Method = "GET";
-                request.Timeout = _expire;
-
-                if (_auth != null && _auth.Length > 0)
-                {
-                    System.Net.ServicePointManager.Expect100Continue = true;
-                    System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-                    request.PreAuthenticate = true;
-                    request.Headers.Add("Authorization", _auth);
-                }
-                else
-                {
-                    request.Credentials = CredentialCache.DefaultCredentials;
-                }
-
-                var res = request.GetResponse();
-                var responseStream = res.GetResponseStream();
-                var reader = new StreamReader(responseStream);
-                _response = reader.ReadToEnd();
-
-                return _response;
-            }
-            catch (Exception ex)
-            {
-                _response = ex.Message;
-                return _response;
-            }
+            return repoStrategy.execute(_target, _expire, _auth);
         }
     }
 }
