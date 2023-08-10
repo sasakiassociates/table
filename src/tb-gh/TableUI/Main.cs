@@ -9,25 +9,22 @@ namespace TableUI
     // This is the main class that will be called from the Grasshopper component
     internal class Main
     {
-        private string _url;
-        private string _auth;
-        private int _expire;
-
         private Repository repository;
         private Parser parser = new();
 
         public ParsedData parsedData;
+        public bool udpIsOpen;
 
         public void setup(string url, int expire, string authorization, string repoStrategy)
         {
             repository = new(url, expire, authorization);
-            if (repoStrategy == "HTTP")
+            if (repoStrategy == "http")
             {
-                repository.set_strategy(new RepoStrategyHttpGet());
+                repository.set_strategy<RepoStrategyHttpGet>();
             }
-            else if (repoStrategy == "UDP")
+            else if (repoStrategy == "udp")
             {
-                repository.set_strategy(new RepoStrategyUdpReceive());
+                repository.set_strategy<RepoStrategyUdpReceive>();
             }
             else
             {
@@ -38,19 +35,26 @@ namespace TableUI
         public void run()
         {
             string jsonString = repository.get();
+            udpIsOpen = true;
             if (jsonString != null)
             {
                 parser.Parse(jsonString);
                 parsedData = parser.MakeDataList();
             } else
             {
-                  throw new Exception("No data received");
+                parsedData = null;
             }
         }
 
         public ParsedData get_list_results()
         {
             return parsedData;
+        }
+
+        public void closeUdp()
+        {
+            repository.close();
+            udpIsOpen = false;
         }
     }
 }

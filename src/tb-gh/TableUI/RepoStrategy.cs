@@ -9,18 +9,40 @@ using System.Threading.Tasks;
 
 namespace TableUI
 {
-    internal abstract class RepoStrategy
+    internal abstract class Strategy
     {
+        public abstract string execute(string target, int timeout = 1000, string auth = "");
+    }
+
+    internal abstract class RepoStrategy<T> : Strategy where T : class
+    {
+        private static T instance;
+        private static readonly object padlock = new object();  
         protected string response;
 
-        public virtual string execute(string target, int timeout = 1000, string auth = "")
+        public static T Instance
+        {
+            get
+            {
+                lock (padlock)
+                {
+                    if (instance == null)
+                    {
+                        instance = (T)Activator.CreateInstance(typeof(T));
+                    }
+                    return instance;
+                }
+            }
+        }
+
+        public override string execute(string target, int timeout = 1000, string auth = "")
         {
             string result = "Error: strategy for the repo must be set";
             return result;
         }
     }
 
-    internal class RepoStrategyHttpGet : RepoStrategy
+    internal class RepoStrategyHttpGet : RepoStrategy<RepoStrategyHttpGet>
     {
 
         public override string execute(string target, int timeout = 1000, string auth = "")
@@ -59,10 +81,10 @@ namespace TableUI
         }
     }
 
-    internal class RepoStrategyUdpReceive : RepoStrategy
+    internal class RepoStrategyUdpReceive : RepoStrategy<RepoStrategyUdpReceive>
     {
         private UdpClient udpClient;
-        private int port = 5004;
+        private int port = 5005;
 
         public override string execute(string target, int timeout = 1000, string auth = "")
         {
@@ -79,21 +101,11 @@ namespace TableUI
             {
                 return null;
             }
-            /*try
-            {
-                int port = int.Parse(target);
-                UdpClient dpClient = new UdpClient(port);
-                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, port);
-                byte[] data = dpClient.Receive(ref remoteEP);
+        }
 
-                response = Encoding.ASCII.GetString(data);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                response = ex.Message;
-                return response;
-            }*/
+        public void close()
+        {
+            udpClient.Close();
         }
     }
 }

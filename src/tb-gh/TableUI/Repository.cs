@@ -16,7 +16,7 @@ namespace TableUI
         private int _expire;
         private string _auth;
 
-        private RepoStrategy repoStrategy;
+        private Strategy repoStrategy;
 
         private string response;
 
@@ -27,14 +27,22 @@ namespace TableUI
             _auth = authorization;
         }
 
-        public void set_strategy(RepoStrategy strategy)
+        public void set_strategy<T>() where T : Strategy
         {
-            repoStrategy = strategy;
+            repoStrategy = RepoStrategy<T>.Instance;
         }
 
         public string get()
         {
-            return repoStrategy.execute(_target, _expire, _auth);
+            return repoStrategy?.execute(_target, _expire, _auth);
+        }
+
+        public void close()
+        {
+            if (repoStrategy is RepoStrategyUdpReceive)
+            {
+                RepoStrategyUdpReceive.Instance.close();
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Policy;
 using Grasshopper.Kernel;
@@ -32,9 +33,11 @@ namespace TableUI
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Expire", "Ex", "Time in ms to timeout the process", GH_ParamAccess.item, 1000);
             pManager.AddTextParameter("Authorization", "A", "The authentication ID for the database", GH_ParamAccess.item, "");
+            pManager.AddTextParameter("RepoStrategy", "S", "The strategy to use for the database", GH_ParamAccess.item, "udp");
 
             pManager[2].Optional = true;
             pManager[3].Optional = true;
+            pManager[4].Optional = true;
         }
 
         /// <summary>
@@ -54,6 +57,7 @@ namespace TableUI
             private int _expire;
             private bool _run;
             private string _auth;
+            private string _strategy;
 
             List<Point2d> outputPoints;
             List<int> outputIds;
@@ -66,6 +70,7 @@ namespace TableUI
                 DA.GetData(1, ref _run);
                 DA.GetData(2, ref _expire);
                 DA.GetData(3, ref _auth);
+                DA.GetData(4, ref _strategy);
 
                 outputPoints = new List<Point2d>();
                 outputIds = new List<int>();
@@ -75,7 +80,17 @@ namespace TableUI
             {
                 if (CancellationToken.IsCancellationRequested) return;
 
-                main.setup(_url, _expire, _auth, "UDP");
+                if (!_run)
+                {
+                    if (_strategy == "udp" && main.udpIsOpen)
+                    {
+                        main.closeUdp();
+                    }
+                    Done();
+                    return;
+                }
+
+                main.setup(_url, _expire, _auth, _strategy);
                 main.run();
                 ParsedData results = main.get_list_results();
 
