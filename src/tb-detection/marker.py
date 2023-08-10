@@ -6,6 +6,7 @@ class Marker(ABC):
     def __init__(self, marker_id_):
         self.id = marker_id_
         self.observers = []
+        self.rotation = 0
 
     def attach_observer(self, observer_):
         self.observers.append(observer_)
@@ -26,31 +27,29 @@ class Marker(ABC):
         marker_data = {
             "id": self.id,
             "location": [self.center[0], self.center[1]],
-            "rotation": 0,
+            "rotation": self.rotation,
         }
         return marker_data
     
     # TODO fix this; currently is only saying the rotation is around 130 degrees
     def calculate_rotation(self, corners_):
-        corner1 = corners_[0][0]
-        corner2 = corners_[0][1]
-        corner3 = corners_[0][2]
-        corner4 = corners_[0][3]
-        
-        # gets vector in one direction
-        vector1 = (corner1[0] - corner2[0], corner1[1] - corner2[1])
-        # gets vector in other direction
-        vector2 = (corner3[0] - corner1[0], corner3[1] - corner1[1])
+        corners = corners_.reshape(-1,2)
 
-        dot_product = vector1[0] * vector2[0] + vector1[1] * vector2[1]
+        centroid = np.mean(corners, axis=0)
 
-        magnitude1 = np.sqrt(vector1[0] ** 2 + vector1[1] ** 2)
-        magnitude2 = np.sqrt(vector2[0] ** 2 + vector2[1] ** 2)
-        
-        cosine_angle = dot_product / (magnitude1 * magnitude2)
+        reference_vector = corners[0] - centroid
 
-        angle_radians = np.arccos(cosine_angle)
-        # return self.rotation
+        angle_rads = np.arctan2(reference_vector[1], reference_vector[0])
+        angle_degree = np.degrees(angle_rads)
+        wrapped_angle = self.wrap_angle(angle_degree)
+
+        self.rotation = int(wrapped_angle)
+
+    def wrap_angle(self, angle_):
+        if angle_ < 0:
+            return abs(angle_)
+        else:
+            return angle_
 
 class ModelMarker(Marker):
     def __init__(self, marker_id_):

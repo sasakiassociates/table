@@ -4,21 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TableUI
+namespace TableUiLogic
 {
     // This is the main class that will be called from the Grasshopper component
-    internal class Main
+    public class Main
     {
         private Repository repository;
-        private Parser parser = new();
+        private Parser parser = new Parser();
 
-        public ParsedData parsedData;
-        public ParsedData parsedDataHistory;
+        public ParsedData parsedData = new ParsedData();
+        public ParsedData latestData;
         public bool udpIsOpen;
 
         public void setup(string url, int expire, string authorization, string repoStrategy)
         {
-            repository = Repository.Instance(url, expire, authorization);
+            repository = new Repository(url, expire, authorization);
             if (repoStrategy == "http")
             {
                 repository.set_strategy<RepoStrategyHttpGet>();
@@ -36,15 +36,15 @@ namespace TableUI
         public void run()
         {
             string jsonString = repository.get();
-            udpIsOpen = true;
 
-            if (jsonString == null)
-            {
-                parsedData = null;
-            } else
+            if (jsonString != null && jsonString.Length > 0)
             {
                 parser.Parse(jsonString);
                 parsedData = parser.MakeDataList();
+            }
+            else if (latestData != null)
+            {
+                /*parsedData = latestData;*/
             }
         }
 

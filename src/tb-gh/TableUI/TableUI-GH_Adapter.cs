@@ -46,7 +46,8 @@ namespace TableUI
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Points", "P", "Points", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("test", "t", "test", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Ids", "I", "Ids", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Rotation", "R", "Rotations", GH_ParamAccess.list);
         }
 
         private class ForLoopWorker : WorkerInstance
@@ -59,6 +60,7 @@ namespace TableUI
             private string _auth;
             private string _strategy;
 
+            List<int> outputRotations;
             List<Point2d> outputPoints;
             List<int> outputIds;
 
@@ -74,6 +76,7 @@ namespace TableUI
 
                 outputPoints = new List<Point2d>();
                 outputIds = new List<int>();
+                outputRotations = new List<int>();
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -108,8 +111,8 @@ namespace TableUI
 
                     Point2d point = new(results.locations[i][0], results.locations[i][1]);
                     outputPoints.Add(point);
-                    // TODO add vector rotation
                     outputIds.Add(results.ids[i]);
+                    outputRotations.Add(results.rotations[i]);
 
                     ReportProgress("Progress", 0.5 + (double)i / results.ids.Count);
                 }
@@ -123,6 +126,7 @@ namespace TableUI
             {
                 DA.SetDataList(0, outputPoints);
                 DA.SetDataList(1, outputIds);
+                DA.SetDataList(2, outputRotations);
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

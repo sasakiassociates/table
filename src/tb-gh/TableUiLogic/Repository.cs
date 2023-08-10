@@ -1,5 +1,4 @@
-﻿using Rhino;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -8,35 +7,23 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TableUI
+namespace TableUiLogic
 {
     internal class Repository
     {
-        private static Repository instance;
-
         private string _target;
         private int _expire;
         private string _auth;
 
         private Strategy repoStrategy;
 
-        public string response;
-        public string pastResponse;
+        private string response;
 
-        private Repository(string target, int expire, string authorization)
+        public Repository(string target, int expire, string authorization)
         {
             _target = target;
             _expire = expire;
             _auth = authorization;
-        }
-
-        public static Repository Instance(string target, int expire, string authorization)
-        {
-            if (instance == null)
-            {
-                instance = new Repository(target, expire, authorization);
-            }
-            return instance;
         }
 
         public void set_strategy<T>() where T : Strategy
@@ -46,8 +33,7 @@ namespace TableUI
 
         public string get()
         {
-            response = repoStrategy?.execute(_target, _expire, _auth);
-            return response;
+            return repoStrategy?.execute(_target, _expire, _auth);
         }
 
         public void close()
