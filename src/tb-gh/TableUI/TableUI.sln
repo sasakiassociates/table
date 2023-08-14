@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUI", "TableUI.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableUiLogic", "..\TableUiLogic\TableUiLogic.csproj", "{6578301F-F76D-46CD-A148-8D35AB09A8E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableUiAdapter", "..\TableUiAdapter\TableUiAdapter.csproj", "{96CDBD72-61CF-427A-AE16-ADC36C36529B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiAdapter", "..\TableUiAdapter\TableUiAdapter.csproj", "{96CDBD72-61CF-427A-AE16-ADC36C36529B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RequestComponent", "..\RequestComponent\RequestComponent.csproj", "{BE4847B6-356D-4F67-A0EC-092BCF4470BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{96CDBD72-61CF-427A-AE16-ADC36C36529B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96CDBD72-61CF-427A-AE16-ADC36C36529B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96CDBD72-61CF-427A-AE16-ADC36C36529B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE4847B6-356D-4F67-A0EC-092BCF4470BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE4847B6-356D-4F67-A0EC-092BCF4470BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE4847B6-356D-4F67-A0EC-092BCF4470BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE4847B6-356D-4F67-A0EC-092BCF4470BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
