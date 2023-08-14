@@ -85,10 +85,10 @@ namespace TableUI
 
                 if (!_run)
                 {
-                    if (_strategy == "udp" && main.udpIsOpen)
+                    /*if (_strategy == "udp" && main.udpIsOpen)
                     {
                         main.closeUdp();
-                    }
+                    }*/
                     Done();
                     return;
                 }

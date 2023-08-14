@@ -1,6 +1,5 @@
 ﻿using Grasshopper.Kernel.Types.Transforms;
 using Newtonsoft.Json;
-using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +15,10 @@ namespace TableUI
 
         public void Parse(string jsonString)
         {
+            if (jsonString == null || jsonString.Length < 1)
+            {
+                return;
+            }
 
             List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(jsonString);
 

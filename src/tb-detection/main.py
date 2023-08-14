@@ -3,7 +3,6 @@ import argparse
 
 import camera
 import repository
-import repository_udp
 
 def get_dict(dict_name):
     aruco_dict = eval(f"aruco.{dict_name}")

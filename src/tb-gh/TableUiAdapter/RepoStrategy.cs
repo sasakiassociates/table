@@ -7,7 +7,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TableUiLogic
+namespace TableUiAdapter
 {
     public abstract class Strategy
     {

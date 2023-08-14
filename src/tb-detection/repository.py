@@ -18,6 +18,7 @@ class Repository():
         self.mode = mode
         self.ip = ip
         self.port = port
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def add_to_data(self, marker_id_, data):
         self.data.setdefault(str(marker_id_), data).update()
@@ -36,8 +37,9 @@ class Repository():
 
     def send_data_udp(self):
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.sendto(bytes(str([self.data]), "utf-8"), (self.ip, self.port))
+            message = str([self.data])
+            message_bytes = message.encode('utf-8')
+            self.udp_socket.sendto(message_bytes, (self.ip, self.port))
         except Exception as e:
             print("Error sending data:", e)
     
@@ -48,7 +50,5 @@ class Repository():
         except Exception as e:
             print("Error sending data:", e)
     
-    # TODO make all marker numbers part of the JSON
-    # TODO change markers that haven't been updated to is_visible = False
     def update(self, marker_json, marker_id):
         self.add_to_data(marker_id, marker_json)
