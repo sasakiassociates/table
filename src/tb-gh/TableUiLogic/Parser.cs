@@ -1,13 +1,9 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TableUiLogic
 {
-    internal class Parser
+    internal class JsonToMarkerParser
     {
         public List<Marker> markers = new List<Marker>();
 

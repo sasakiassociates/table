@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace TableUiAdapter
 {
-    public class Repository
-    {
+    public class Repository     {
+       
         private static Repository instance;
         private static readonly object padlock = new object();
 
@@ -46,8 +46,8 @@ namespace TableUiAdapter
             {
                 throw new Exception("Invalid repoStrategy");
             }
-        }
 
+        }
         public void SetStrategy<T>() where T : Strategy
         {
             if (repoStrategy == null)
@@ -72,5 +72,21 @@ namespace TableUiAdapter
             parsedResponse = parser.Parse(response);
             return parsedResponse;
         }
+
+        public void End()
+        {
+            repoStrategy?.End();
+
+            ListenFor(null, (m) => { Console.WriteLine(m.ToString()); });
+        }
+
+        public async Task ListenFor(object markers, Action<Marker> onMarkerUpdate)
+        {
+
+            // open up the client and listen for markers
+            // are markers active?
+
+
+        } 
     }
 }

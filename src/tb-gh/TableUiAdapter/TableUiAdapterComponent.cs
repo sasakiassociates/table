@@ -76,6 +76,7 @@ namespace TableUiAdapter
                 
                 if (!_run)
                 {
+                    _repository.End();
                     Done();
                     return;
                 }

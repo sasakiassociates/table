@@ -9,12 +9,15 @@ using System.Threading.Tasks;
 
 namespace TableUiAdapter
 {
+
+
     public abstract class Strategy
     {
         public abstract string execute(string target, int timeout = 1000, string auth = "");
-    }
 
-    internal abstract class RepoStrategy<T> : Strategy where T : class
+        public abstract void End();
+    }
+  internal abstract class RepoStrategy<T> : Strategy where T : class
     {
         private static T instance;
         private static readonly object padlock = new object();
@@ -34,6 +37,7 @@ namespace TableUiAdapter
                 }
             }
         }
+  
     }
 
     internal class RepoHttpGet : RepoStrategy<RepoHttpGet>
@@ -67,6 +71,11 @@ namespace TableUiAdapter
                 return ex.Message;
             }
         }
+
+        public override void End()
+        {
+            return;
+        }
     }
 
     internal class RepoUdpReceive : RepoStrategy<RepoUdpReceive>
@@ -95,7 +104,7 @@ namespace TableUiAdapter
             }
         }
 
-        public void Close()
+        public override void End()
         {
             udpClient.Close();
         }

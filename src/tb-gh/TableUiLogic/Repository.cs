@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,14 +11,16 @@ namespace TableUiLogic
 {
     public class Repository
     {
-        private static Repository instance;
-        private static readonly object padlock = new object();
+        private static Repository _instance;
+        private static readonly object padlock = new object();          // Makes the singelton class thread safe
 
-        private Strategy repoStrategy;
+        private UdpClient udpClient;
+        private int port = 5005;
+
         public string response;
         public List<Marker> parsedResponse;
 
-        private Parser parser = new Parser();
+        private JsonToMarkerParser parser = new JsonToMarkerParser();   // David: Parser is too coupled to the incoming data format?
 
         public static Repository Instance
         {
@@ -23,51 +28,58 @@ namespace TableUiLogic
             {
                 lock (padlock)
                 {
-                    if (instance == null)
+                    if (_instance == null)
                     {
-                        instance = new Repository();
+                        _instance = new Repository();
                     }
-                    return instance;
+                    return _instance;
                 }
             }
         }
 
-        public void Setup(string strategy)
+        // Needs to be a singleton and strategy+singleton was overkill
+        public string UdpReceive(int port, int expire)
         {
-            if (strategy == "http")
+            try
             {
-                SetStrategy<RepoHttpGet>();
+                if (udpClient == null)
+                {
+                    udpClient = new UdpClient(port);
+                }
+                IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                udpClient.Client.ReceiveTimeout = expire;
+
+                Byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
+                string returnData = Encoding.ASCII.GetString(receiveBytes);
+
+                return returnData;
             }
-            else if (strategy == "udp")
+            catch (Exception ex)
             {
-                SetStrategy<RepoUdpReceive>();
-            }
-            else
-            {
-                throw new Exception("Invalid repoStrategy");
+                return ex.Message;
             }
         }
 
-        public void SetStrategy<T>() where T : Strategy
+        public void UdpSend(int port, string message)
         {
-            if (repoStrategy == null)
+            try
             {
-                repoStrategy = RepoStrategy<T>.Instance;
+                if (udpClient == null)
+                {
+                    udpClient = new UdpClient(port);
+                }
+                IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
+                Byte[] sendBytes = Encoding.ASCII.GetBytes(message);
+                udpClient.Send(sendBytes, sendBytes.Length, RemoteIpEndPoint);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
 
-        public string Response
-        {
-            get { return response; }
-            set { response = value; }
-        }
-
-        public void MakeCall(string target, int timeout = 1000, string auth = "")
-        {
-            response = repoStrategy?.execute(target, timeout, auth);
-        }
-
-        public List<Marker> Get()
+        public List<Marker> GetMarkers()
         {
             parsedResponse = parser.Parse(response);
             return parsedResponse;

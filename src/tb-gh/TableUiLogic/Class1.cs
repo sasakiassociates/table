@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace TableUiLogic
 {
-    public class Marker
+    class Program
     {
-        public int id { get; set; }
-        public int[] location { get; set; }
-        public int rotation { get; set; }
+        static void Main(string[] args)
+        {
+        }
     }
 }
