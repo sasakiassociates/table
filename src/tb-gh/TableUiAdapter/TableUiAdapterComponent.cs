@@ -2,6 +2,7 @@ using Grasshopper;
 using Grasshopper.Kernel;
 using GrasshopperAsyncComponent;
 using Rhino.Geometry;
+using Sasaki;
 using System;
 using System.Collections.Generic;
 
@@ -73,7 +74,8 @@ namespace TableUiAdapter
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                
+                var Pot = new Potato();
+
                 if (!_run)
                 {
                     _repository.End();

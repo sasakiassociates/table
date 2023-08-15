@@ -42,6 +42,7 @@ class Repository():
         def udp_listen_thread_func():
             while True:
                 self.udp_listen_event.wait()
+                
                 self.udp_listen_event.clear()
                 self.udp_send_data()
         
@@ -60,9 +61,11 @@ class Repository():
 
     def udp_send_data(self):
         try:
+            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             message = str([self.data])
             message_bytes = message.encode('utf-8')
             self.udp_socket.sendto(message_bytes, (self.ip, self.port))
+            self.udp_socket.close()
         except Exception as e:
             print("Error sending data:", e)
     

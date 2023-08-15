@@ -12,5 +12,9 @@
     <PackageReference Include="Grasshopper" Version="7.31.23166.15001" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\tb-lib\TableLib.csproj" />
+  </ItemGroup>
 
 </Project>
