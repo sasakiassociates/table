@@ -2,9 +2,10 @@ using Grasshopper;
 using Grasshopper.Kernel;
 using GrasshopperAsyncComponent;
 using Rhino.Geometry;
-using Sasaki;
 using System;
 using System.Collections.Generic;
+
+using TableLib;
 
 namespace TableUiAdapter
 {
@@ -49,17 +50,16 @@ namespace TableUiAdapter
 
         private class ForLoopWorker : WorkerInstance
         {
-            private string _url;
-            private int _expire;
-            private bool _run;
-            private string _auth;
-            private string _strategy;
+            private int expire;
+            private bool run;
+            private bool wasRunning = false;
 
-            List<Marker> _markers = new List<Marker>();
-            Repository _repository = new Repository();
-            List<int> _ids = new List<int>();
-            List<Point2d> _points = new List<Point2d>();
-            List<int> _rotations = new List<int>();
+            List<Marker> markers = new List<Marker>();
+            Invoker _invoker;
+
+            List<int> ids = new List<int>();
+            List<Point2d> points = new List<Point2d>();
+            List<int> rotations = new List<int>();
 
             public ForLoopWorker() : base(null) { }
 
@@ -67,43 +67,46 @@ namespace TableUiAdapter
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                DA.GetData(0, ref _url);
-                DA.GetData(1, ref _run);
-                DA.GetData(2, ref _strategy);
+                DA.GetData(1, ref run);
+
+                JsonToMarkerParser parseStrategy = new JsonToMarkerParser();
+                _invoker = new Invoker(parseStrategy);
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                var Pot = new Potato();
-
-                if (!_run)
+                if (run)
                 {
-                    _repository.End();
-                    Done();
-                    return;
-                }
-                _repository.Setup(_strategy);
-                _repository.MakeCall(_url);
-                _markers = _repository.Get();
-                    
-                foreach (Marker marker in _markers)
-                {
-                   int x = marker.location[0];
-                   int y = marker.location[1];
-                   Point2d point = new Point2d(x, y);
+                    if (!wasRunning)
+                    {
+                        _invoker.LaunchDetection();
+                        wasRunning = true;
+                    }
 
-                   _ids.Add(marker.id);
-                   _points.Add(point);
-                   _rotations.Add(marker.rotation);
+                    markers = (List<Marker>)_invoker.Run();
+                    foreach (var marker in markers)
+                    {
+                        Point2d point = new Point2d(marker.location[0], marker.location[1]);
+                        ids.Add(marker.id);
+                        points.Add(point);
+                        rotations.Add(marker.rotation);
+                    }
                 }
-                Done();
+                else
+                {
+                    if (wasRunning)
+                    {
+                        _invoker.EndDetection();
+                        wasRunning = false;
+                    }
+                }
             }
             
             public override void SetData(IGH_DataAccess DA)
             {
-                DA.SetDataList(0, _ids);
-                DA.SetDataList(1, _points);
-                DA.SetDataList(2, _rotations);
+                DA.SetDataList(0, ids);
+                DA.SetDataList(1, points);
+                DA.SetDataList(2, rotations);
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

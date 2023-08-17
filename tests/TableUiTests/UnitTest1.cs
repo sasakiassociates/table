@@ -18,7 +18,7 @@ namespace TableUiTests
         private UdpClient udpClient;
 
         private int listenPort = 7000;
-        private int sendPort = 7001;
+        private int sendPort = 5005;
         IPEndPoint ep;
         private string sendMessage = "Hello, UDP Server!";
 
@@ -75,7 +75,7 @@ namespace TableUiTests
         }
 
         [TestMethod]
-        public void UdpPortSendTest()
+        public void UdpPortSendReturnTest()
         {
             udpClient = new UdpClient();
 
@@ -89,6 +89,18 @@ namespace TableUiTests
             Assert.IsTrue(bytes > 0);
             Assert.IsTrue(true);
             Console.WriteLine(bytes);
+        }
+
+        [TestMethod]
+        public void UdpSendTest()
+        {
+            udpClient = new UdpClient();
+
+            IPEndPoint sendEndPoint = new IPEndPoint(IPAddress.Loopback, sendPort);
+
+            byte[] sendData = Encoding.ASCII.GetBytes(sendMessage);
+            udpClient.Send(sendData, sendData.Length, sendEndPoint);
+            Assert.IsTrue(true);
         }
 
         [TestMethod]

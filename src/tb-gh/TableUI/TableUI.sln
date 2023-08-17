@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiAdapter", "..\TableUiAdapter\TableUiAdapter.csproj", "{96CDBD72-61CF-427A-AE16-ADC36C36529B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3} = {43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableUiLogic", "..\TableUiLogic\TableUiLogic.csproj", "{76BB1053-A8BC-402A-9296-6351D84616B5}"
 EndProject
@@ -12,9 +15,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableUiTests", "..\..\..\te
 		{76BB1053-A8BC-402A-9296-6351D84616B5} = {76BB1053-A8BC-402A-9296-6351D84616B5}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableLib", "..\..\tb-lib\TableLib.csproj", "{88FCB991-48CA-47A1-B881-425002961102}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableLibTests", "..\..\..\tests\TableLibTests\TableLibTests.csproj", "{D15B783E-FA03-44BA-B2E6-C21A6E362E03}"
+	ProjectSection(ProjectDependencies) = postProject
+		{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3} = {43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableLibTests", "..\..\..\tests\TableLibTests\TableLibTests.csproj", "{D15B783E-FA03-44BA-B2E6-C21A6E362E03}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableLib", "..\..\tb-lib\TableLib.csproj", "{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,14 +40,14 @@ Global
 		{7046973F-02BE-42CA-AC87-1D3A238470B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7046973F-02BE-42CA-AC87-1D3A238470B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7046973F-02BE-42CA-AC87-1D3A238470B0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{88FCB991-48CA-47A1-B881-425002961102}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{88FCB991-48CA-47A1-B881-425002961102}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{88FCB991-48CA-47A1-B881-425002961102}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{88FCB991-48CA-47A1-B881-425002961102}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D15B783E-FA03-44BA-B2E6-C21A6E362E03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D15B783E-FA03-44BA-B2E6-C21A6E362E03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D15B783E-FA03-44BA-B2E6-C21A6E362E03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D15B783E-FA03-44BA-B2E6-C21A6E362E03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43ECFEEC-8D6F-4A77-BA92-BB85E75218D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -38,7 +38,7 @@ namespace TableUiLogic
         }
 
         // Needs to be a singleton and strategy+singleton was overkill
-        public string UdpReceive(int port, int expire)
+        public string UdpReceive(int port, int expire = 0)
         {
             try
             {
@@ -47,8 +47,10 @@ namespace TableUiLogic
                     udpClient = new UdpClient(port);
                 }
                 IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                udpClient.Client.ReceiveTimeout = expire;
-
+                if (expire != 0)
+                {
+                    udpClient.Client.ReceiveTimeout = expire;
+                }
                 Byte[] receiveBytes = udpClient.Receive(ref RemoteIpEndPoint);
                 string returnData = Encoding.ASCII.GetString(receiveBytes);
 

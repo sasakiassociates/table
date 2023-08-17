@@ -37,7 +37,7 @@ class Camera():
                     self.markerLoop(ids, corners)
 
                 cv.imshow('frame', frame_marked)
-                if cv.waitKey(1) == ord('q'):
+                if cv.waitKey(1) == ord('q') or self.repository_.check_for_terminate():
                     break
         self.cap.release()
         cv.destroyAllWindows()
@@ -53,4 +53,4 @@ class Camera():
             marker_id = marker_id[0]
             marker = self.my_markers[marker_id]
             marker.update(marker_corners)
-        self.repository_.send_data()
+        self.repository_.update_send_data()
