@@ -19,18 +19,6 @@ namespace TableLibTests
         }
 
         [Test]
-        public void CheckLib()
-        {
-            bool testBool = false;
-
-            Test test = new Test();
-            bool newBool = test.TestMethod(testBool);
-
-            Console.WriteLine(newBool);
-            Assert.IsTrue(newBool);
-        }
-
-        [Test]
         public void StartTableLibApp()
         {
             try

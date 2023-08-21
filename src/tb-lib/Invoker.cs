@@ -12,10 +12,11 @@ namespace TableLib
         private IParser _parseStrategy;
         private Repository _repository;
 
-        public Invoker(IParser parseStrategy)
+        public Invoker()
         {
             _repository = Repository.Instance;
-            _parseStrategy = parseStrategy;
+            // The default strategy is to parse the json string into a list of Markers
+            _parseStrategy = ParserFactory.GetParser("Marker");
         }
 
         public object Run()
@@ -24,9 +25,23 @@ namespace TableLib
             _repository.UdpSend("SEND");
             // Receive data
             string response = _repository.UdpReceive();
+            if (response == null)
+            {
+                return null;
+            }
             // Parse data
             object data = _parseStrategy.Parse(response);
             return data;
+        }
+
+        public void Connect()
+        {
+            _repository.Connect();
+        }
+
+        public void Disconnect()
+        {
+            _repository.EndUdpReceive();
         }
         
         public void SetParseStrategy(IParser parseStrategy)
@@ -44,29 +59,36 @@ namespace TableLib
         // Launches the detection program (non-blocking)
         public void LaunchDetection()
         {
-            string virtualEnvPath = "C:/Users/nshikada/Documents/GitHub/table/src/tb-detection/.env";
-            string pythonPathInEnv = Path.Combine(virtualEnvPath, "Scripts", "python.exe"); // For Windows
-            string scriptPath = "../../../../../src/tb-detection/main.py";
-
-            string argument1 = "udp";
-            string arguments = $"{scriptPath} {argument1}";
-
-            ProcessStartInfo startInfo = new ProcessStartInfo
+            try
             {
-                FileName = pythonPathInEnv,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = false
-            };
+                string virtualEnvPath = "C:/Users/nshikada/Documents/GitHub/table/src/tb-detection/.env";
+                string pythonPathInEnv = Path.Combine(virtualEnvPath, "Scripts", "python.exe"); // For Windows
+                string scriptPath = "../../../../../src/tb-detection/main.py";
 
-            Process process = new Process
+                string argument1 = "udp";
+                string arguments = $"{scriptPath} {argument1}";
+
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = pythonPathInEnv,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                };
+
+                Process process = new Process
+                {
+                    StartInfo = startInfo
+                };
+
+                process.Start();
+            }
+            catch (Exception ex)
             {
-                StartInfo = startInfo
-            };
-
-            process.Start();
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 }

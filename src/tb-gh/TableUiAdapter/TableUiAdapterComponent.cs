@@ -4,6 +4,7 @@ using GrasshopperAsyncComponent;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+
 using TableLib;
 
 namespace TableUiAdapter
@@ -30,13 +31,8 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            /*pManager.AddTextParameter("Link", "L", "Link to the database, could be url for http or port for udp", GH_ParamAccess.item);
+            pManager.AddTextParameter("Link", "L", "Link to the database, could be url for http or port for udp", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-            pManager.AddTextParameter("RepoStrategy", "S", "The strategy to use for the database", GH_ParamAccess.item, "udp");
-
-            pManager[2].Optional = true;*/
-
-            pManager.AddBooleanParameter("TestBool", "B", "TestBool", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -44,47 +40,46 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            /*pManager.AddIntegerParameter("Ids", "I", "Ids", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Ids", "I", "Ids", GH_ParamAccess.list);
             pManager.AddPointParameter("Points", "P", "Points", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Rotation", "R", "Rotations", GH_ParamAccess.list);*/
-            pManager.AddBooleanParameter("TestBool", "B", "TestBool", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Rotation", "R", "Rotations", GH_ParamAccess.list);
         }
 
         private class ForLoopWorker : WorkerInstance
         {
-            
+            Invoker _invoker = new Invoker();
 
             private int expire;
             private bool run;
             private bool wasRunning = false;
-            private bool testBool;
+            private string strategy = "Marker";
 
-            /*List<Marker> markers = new List<Marker>();
+            List<Marker> markers = new List<Marker>();
 
             List<int> ids = new List<int>();
             List<Point2d> points = new List<Point2d>();
-            List<int> rotations = new List<int>();*/
+            List<int> rotations = new List<int>();
 
             public ForLoopWorker() : base(null) { }
 
-            
-
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                /*DA.GetData(1, ref run);*/
+                DA.GetData(1, ref run);
 
-                DA.GetData(0, ref testBool);
+                IParser _parseStrategy = ParserFactory.GetParser(strategy);
+                _invoker.SetParseStrategy(_parseStrategy);
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                /*if (run)
+                if (run)
                 {
-                    if (!wasRunning)
+                    /*if (!wasRunning)
                     {
                         _invoker.LaunchDetection();
                         wasRunning = true;
-                    }
+                    }*/
+                    _invoker.Connect();
 
                     markers = (List<Marker>)_invoker.Run();
                     foreach (var marker in markers)
@@ -95,35 +90,24 @@ namespace TableUiAdapter
                         rotations.Add(marker.rotation);
                     }
                 }
-                else
+                else if (!run)
                 {
-                    if (wasRunning)
-                    {
+                    /*if (wasRunning)
+                    {*/
                         _invoker.EndDetection();
                         wasRunning = false;
-                    }
-                }*/
-
-                
-
-                if (run)
-                {
-                    Test test = new Test();
-                    testBool = test.TestMethod(testBool);
+                    //}
                 }
-                
-                
-                
+                _invoker.Disconnect();
+
                 Done();
             }
             
             public override void SetData(IGH_DataAccess DA)
             {
-                /*DA.SetDataList(0, ids);
+                DA.SetDataList(0, ids);
                 DA.SetDataList(1, points);
-                DA.SetDataList(2, rotations);*/
-
-                DA.SetData(0, testBool);
+                DA.SetDataList(2, rotations);
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

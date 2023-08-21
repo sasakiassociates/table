@@ -35,17 +35,17 @@ namespace TableLib
                 return null;
             }
 
-            List<Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<List<Dictionary<string, Marker>>>(json);
+            Dictionary<string, Marker> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Marker>>(json);
 
             foreach (var deserialJson in deserialJsonList)
             {
-                foreach (var kvp in deserialJson)
-                {
+                //foreach (var kvp in deserialJson)
+                //{
 
-                    Marker marker = kvp.Value;
+                    Marker marker = deserialJson.Value;
                     markers.Add(marker);
 
-                }
+                //}
             }
 
             return markers;

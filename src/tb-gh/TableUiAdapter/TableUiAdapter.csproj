@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Reference Include="TableLib">
-      <HintPath>..\..\tb-lib\TableLib.csproj</HintPath>
+      <HintPath>..\TableLib.dll</HintPath>
     </Reference>
   </ItemGroup>
   
