@@ -86,6 +86,12 @@ class HTTPRepo(RepoStrategy):
         # self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
         #     'databaseURL': url
         # })
+    def __init__(self):
+        super().__init__()
+        self.credentials = credentials.Certificate("../key/firebase_table-key.json")
+        self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
+            'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
+        })
 
     def send_data(self):
         try:

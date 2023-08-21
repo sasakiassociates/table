@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	
+
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <Version>1.0</Version>
@@ -7,15 +7,21 @@
     <Description>Description of TableUiAdapter</Description>
     <TargetExt>.gha</TargetExt>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="Grasshopper" Version="7.31.23166.15001" />
+    <PackageReference Include="Grasshopper" Version="7.32.23221.10241" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\tb-lib\TableLib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="TableLib">
+      <HintPath>..\..\tb-lib\TableLib.csproj</HintPath>
+    </Reference>
+  </ItemGroup>
+  
 </Project>
