@@ -11,49 +11,14 @@ namespace TableLib
     {
         private IParser _parseStrategy;
         private Repository _repository;
+        public int expire = 1000;
 
+        // TODO this might be obsolete, see other ways to format this
         public Invoker()
         {
             _repository = Repository.Instance;
             // The default strategy is to parse the json string into a list of Markers
             _parseStrategy = ParserFactory.GetParser("Marker");
-        }
-
-        public object Run()
-        {
-            // Tell the other program to send data
-            _repository.UdpSend("SEND");
-            // Receive data
-            string response = _repository.UdpReceive();
-            if (response == null)
-            {
-                return null;
-            }
-            // Parse data
-            object data = _parseStrategy.Parse(response);
-            return data;
-        }
-
-        public void Connect()
-        {
-            _repository.Connect();
-        }
-
-        public void Disconnect()
-        {
-            _repository.EndUdpReceive();
-        }
-        
-        public void SetParseStrategy(IParser parseStrategy)
-        {
-            _parseStrategy = parseStrategy;
-        }
-
-        public void EndDetection()
-        {
-            // Tell the other program to stop sending data
-            _repository.UdpSend("END");
-            _repository.EndUdpReceive();
         }
 
         // Launches the detection program (non-blocking)
@@ -89,6 +54,51 @@ namespace TableLib
             {
                 Console.WriteLine(ex.Message);
             }
+        }
+
+        public object Run()
+        {
+            // Connect to the UDP client
+            _repository.Connect();
+            
+            // Tell the other program to send data
+            _repository.UdpSend("SEND");
+            
+            // Receive the data
+            string response = _repository.UdpReceive(expire);
+            if (response == null)
+            {
+                Console.WriteLine("No response");
+                return null;
+            }
+            
+            // Parse data
+            object data = _parseStrategy.Parse(response);
+            
+            // Disconnect from the UDP client
+            _repository.EndUdpReceive();
+            
+            return data;
+        }
+        public void Disconnect()
+        {
+            _repository.EndUdpReceive();
+        }
+        
+        public void SetParseStrategy(IParser parseStrategy)
+        {
+            _parseStrategy = parseStrategy;
+        }
+
+        public void EndDetection()
+        {
+            if (!_repository.connected)
+            {
+                _repository.Connect();
+            }
+            // Tell the other program to stop sending data
+            _repository.UdpSend("END");
+            _repository.EndUdpReceive();
         }
     }
 }

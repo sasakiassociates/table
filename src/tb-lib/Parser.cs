@@ -30,22 +30,20 @@ namespace TableLib
         {
             List<Marker> markers = new List<Marker>();
 
-            if (json == null)
+            try
             {
-                return null;
-            }
+                Dictionary<string, Marker> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Marker>>(json);
 
-            Dictionary<string, Marker> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Marker>>(json);
-
-            foreach (var deserialJson in deserialJsonList)
-            {
-                //foreach (var kvp in deserialJson)
-                //{
-
+                foreach (var deserialJson in deserialJsonList)
+                {
                     Marker marker = deserialJson.Value;
                     markers.Add(marker);
-
-                //}
+                }
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine("Error parsing JSON: " + e.Message);
+                return null;
             }
 
             return markers;

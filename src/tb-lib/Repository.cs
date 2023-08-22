@@ -15,7 +15,7 @@ namespace TableLib
         private int listenPort = 5005;
         private int sendPort = 5004;
 
-        private bool connected = false;
+        public bool connected = false;
 
         private IPAddress destination = IPAddress.Parse("127.0.0.1");
         private IPEndPoint receiveIpEndPoint;
@@ -48,14 +48,33 @@ namespace TableLib
             //_udpClient = new UdpClient(receiveIpEndPoint);
         }
 
+        // Connect to the UDP client
         public void Connect()
         {
             if (connected)
             {
+                Console.WriteLine("Alreaady connected");
                 return;
             }
-            _udpClient = new UdpClient(receiveIpEndPoint);
-            connected = true;
+            try
+            {
+                _udpClient = new UdpClient(receiveIpEndPoint);
+                connected = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        
+        public void UdpSend(string message)
+        {
+            if (!connected)
+            {
+                Connect();
+            }
+            byte[] sendData = Encoding.ASCII.GetBytes(message);
+            _udpClient.Send(sendData, sendData.Length, sendEndPoint);
         }
 
         public string UdpReceive(int expire = 0)
@@ -64,16 +83,17 @@ namespace TableLib
             // But this makes a new one and closes every time to work with Grasshopper
             try
             {
-/*                if (_udpClient == null)
+                if (_udpClient == null)
                 {
                     return "UDP client is null";
-                }*/
+                }
+
                 if (expire != 0)
                 {
                     _udpClient.Client.ReceiveTimeout = expire;
                 }
                 byte[] receiveBytes = _udpClient.Receive(ref receiveIpEndPoint);
-                string returnData = System.Text.Encoding.ASCII.GetString(receiveBytes);
+                string returnData = Encoding.ASCII.GetString(receiveBytes);
 
                 response = returnData;
 
@@ -89,29 +109,11 @@ namespace TableLib
         {
             if (!connected)
             {
+                Console.WriteLine("Already disconnected");
                 return;
             }
             _udpClient.Close();
             connected = false;
-        }
-
-        public void UdpSend(string message)
-        {
-            byte[] sendData = Encoding.ASCII.GetBytes(message);
-            _udpClient.Send(sendData, sendData.Length, sendEndPoint);
-        }
-
-        public void SetSendDestination(string ip, int port)
-        {
-            destination = IPAddress.Parse(ip);
-            sendEndPoint = new IPEndPoint(destination, port);
-        }
-
-        public void SetListenDestination(string ip, int port)
-        {
-            destination = IPAddress.Parse(ip);
-            receiveIpEndPoint = new IPEndPoint(destination, port);
-            _udpClient = new UdpClient(receiveIpEndPoint);
         }
     }
 }

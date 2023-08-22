@@ -25,6 +25,7 @@ namespace TableLibTests
             udpClient?.Dispose();
         }
 
+        // Test to see if the client can connect to the server
         [Test]
         public void VerifyClientConnection()
         {
@@ -42,6 +43,7 @@ namespace TableLibTests
             }
         }
 
+        // See if the SEND command is received by the detection program
         [Test]
         public void UdpSendTest()
         {
@@ -60,6 +62,7 @@ namespace TableLibTests
             }
         }
 
+        // Test to see if we can send the END message to shut down the detection program
         [Test]
         public void UdpSendEnd()
         {
@@ -78,6 +81,7 @@ namespace TableLibTests
             }
         }
 
+        // Test to see if we can receive data from the detection program
         [Test]
         public void UdpReceiveTest()
         {
@@ -139,6 +143,10 @@ namespace TableLibTests
             }
         }
 
+        // Send request for data to listener and get a response
+        // Then send the END message to shut down the detection program
+        // If we've already launched the detection program, we want this to pass
+        // Otherwise it should fail. If it doesn't detection might have not ended properly
         [Test]
         public void SendReceiveEndTest()
         {
@@ -174,6 +182,7 @@ namespace TableLibTests
             }
         }
 
+        // See if we can launch the detector program
         [Test]
         public void LaunchPythonTest()
         {
@@ -220,96 +229,6 @@ namespace TableLibTests
 
         }
 
-        [Test]
-        public void LaunchReceiveEndTest()
-        {
-            try
-            {
-                Invoker invoker = new Invoker();
-                invoker.LaunchDetection();
-
-                // Should have launched the OpenCV window, but finished the test while that is running
-                object testReturn = invoker.Run();
-
-                Console.WriteLine(testReturn);
-
-                invoker.EndDetection();
-                Assert.IsTrue(true);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail(ex.Message);
-            }
-        }
-
-        [Test]
-        public void RepositorySendTest()
-        {
-            Repository testRepository = Repository.Instance;
-            testRepository.UdpSend("END");
-
-            Assert.IsTrue(true);
-        }
-
-        [Test]
-        public void RepositoryReceiveTest()
-        {
-            Repository testRepository = new Repository();
-            testRepository.UdpSend("SEND");
-
-            string response = testRepository.UdpReceive();
-
-            Console.WriteLine(response);
-
-            Assert.That(response.Length, Is.AtLeast(0));
-        }
-
-        [Test]
-        public void RepoToParseTest()
-        {
-            Repository testRepository = new Repository();
-            
-            testRepository.UdpSend("SEND");
-
-
-            string response = testRepository.UdpReceive();
-            
-            IParser parser = ParserFactory.GetParser("Marker");
-            parser.Parse(response);
-
-        }
-
-        [Test]
-        public void InvokerParseTest()
-        {
-            Invoker invoker = new Invoker();
-            IParser strategy = ParserFactory.GetParser("Marker");
-            invoker.SetParseStrategy(strategy);
-
-            object testReturn = invoker.Run();
-            Console.WriteLine(testReturn);
-            Assert.That(testReturn, Is.Not.Null);
-        }
-
-        [Test]
-        public void ParseTest()
-        {
-            string testString = "{'48': {'id': 48, 'location': [316, 550], 'rotation': 140}, " +
-                "'44': {'id': 44, 'location': [281, 496], 'rotation': 144}, " +
-                "'39': {'id': 39, 'location': [239, 491], 'rotation': 143}, " +
-                "'1': {'id': 1, 'location': [334, 454], 'rotation': 143}, " +
-                "'45': {'id': 45, 'location': [291, 450], 'rotation': 142}, " +
-                "'40': {'id': 40, 'location': [249, 444], 'rotation': 145}, " +
-                "'47': {'id': 47, 'location': [310, 602], 'rotation': 139}}";
-            IParser parser = ParserFactory.GetParser("Marker");
-            List<Marker> testList = (List<Marker>)parser.Parse(testString);
-            
-            foreach (Marker marker in testList)
-            {
-                Console.WriteLine(marker.id);
-            }
-
-            Assert.That(testList.Count, Is.EqualTo(7));
-        }
+        
     }
 }

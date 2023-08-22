@@ -1,5 +1,6 @@
 using Grasshopper;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Geometry;
 using GrasshopperAsyncComponent;
 using Rhino.Geometry;
 using System;
@@ -40,25 +41,28 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Ids", "I", "Ids", GH_ParamAccess.list);
             pManager.AddPointParameter("Points", "P", "Points", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Ids", "I", "Ids", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Rotation", "R", "Rotations", GH_ParamAccess.list);
+
         }
 
         private class ForLoopWorker : WorkerInstance
         {
             Invoker _invoker = new Invoker();
 
-            private int expire;
             private bool run;
-            private bool wasRunning = false;
             private string strategy = "Marker";
 
             List<Marker> markers = new List<Marker>();
 
-            List<int> ids = new List<int>();
-            List<Point2d> points = new List<Point2d>();
-            List<int> rotations = new List<int>();
+            List<int> ids;
+            List<Point2d> points;
+            List<int> rotations;
+
+            List<int> previousIds;
+            List<Point2d> previousPoints;
+            List<int> previousRotations;
 
             public ForLoopWorker() : base(null) { }
 
@@ -70,18 +74,38 @@ namespace TableUiAdapter
                 _invoker.SetParseStrategy(_parseStrategy);
             }
 
+            //TODO either rework this to use repository directly or make a main to just run
+            // What inputs do we need? Strat
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
                 if (run)
                 {
-                    /*if (!wasRunning)
-                    {
-                        _invoker.LaunchDetection();
-                        wasRunning = true;
-                    }*/
-                    _invoker.Connect();
 
-                    markers = (List<Marker>)_invoker.Run();
+                    Repository _repository = new Repository();
+
+                    // Connect to the UDP client
+                    _repository.Connect();
+
+                    // Tell the other program to send data
+                    _repository.UdpSend("SEND");
+
+                    // Receive the data
+                    string response = _repository.UdpReceive(1000);
+                    Console.WriteLine(response);
+
+                    // Parse data
+                    IParser _parseStrategy = ParserFactory.GetParser(strategy);
+                    List<Marker> markers = (List<Marker>)_parseStrategy.Parse(response);
+
+                    // Disconnect from the UDP client
+                    _repository.EndUdpReceive();
+                    
+                    ids = new List<int>();
+                    points = new List<Point2d>();
+                    rotations = new List<int>();
+
+                    
+
                     foreach (var marker in markers)
                     {
                         Point2d point = new Point2d(marker.location[0], marker.location[1]);
@@ -89,24 +113,25 @@ namespace TableUiAdapter
                         points.Add(point);
                         rotations.Add(marker.rotation);
                     }
+                    
+                    /*_invoker.Disconnect();*/
+                    _repository.EndUdpReceive();
                 }
                 else if (!run)
                 {
-                    /*if (wasRunning)
-                    {*/
-                        _invoker.EndDetection();
-                        wasRunning = false;
-                    //}
+                    //_invoker.EndDetection();
                 }
-                _invoker.Disconnect();
 
                 Done();
             }
             
             public override void SetData(IGH_DataAccess DA)
             {
-                DA.SetDataList(0, ids);
-                DA.SetDataList(1, points);
+
+                // The outputs get nulled out here for a brief moment - leading to a flicker in the UI
+                // Found using breakpoints
+                DA.SetDataList(0, points);
+                DA.SetDataList(1, ids);
                 DA.SetDataList(2, rotations);
             }
             

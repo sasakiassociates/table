@@ -35,6 +35,7 @@ class Camera():
 
                 if ids is not None:
                     self.markerLoop(ids, corners)
+                self.repository_.update_send_data()
 
                 cv.imshow('frame', frame_marked)
                 if cv.waitKey(1) == ord('q') or self.repository_.check_for_terminate():
@@ -53,4 +54,3 @@ class Camera():
             marker_id = marker_id[0]
             marker = self.my_markers[marker_id]
             marker.update(marker_corners)
-        self.repository_.update_send_data()
