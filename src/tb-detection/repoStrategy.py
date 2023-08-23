@@ -61,16 +61,16 @@ class UDPRepo(RepoStrategy):
                 if message == 'SEND':
                     print("Sending data..." + str(self.data))
                     self.send_data()
-                elif message[:5] == 'SETUP':
+                elif message == 'END':
+                    print("Exiting...")
+                    break
+                elif message[:5] == 'SETUP':        # TODO: make this run once, but can't use & with non-string types
                     print("Setting up...")
                     values = map(int, re.findall(r'\d+', message))
                     values = list(values)
                     self.model_num = values[0]
                     self.variable_num = values[1]
                     self.launch = True
-                elif message == 'END':
-                    print("Exiting...")
-                    break
         except Exception as e:
             print(e)
         finally:
@@ -91,14 +91,6 @@ class UDPRepo(RepoStrategy):
         self.data = data
     
 class HTTPRepo(RepoStrategy):
-    # self.credentials = credentials.Certificate("../key/magpietable-firebase-adminsdk-2sqk3-9ecfe00124.json")
-        # self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
-        #     'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
-        # })
-        # self.credentials = credentials.Certificate(key_path)
-        # self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
-        #     'databaseURL': url
-        # })
     def __init__(self):
         super().__init__()
         self.credentials = credentials.Certificate("../key/firebase_table-key.json")

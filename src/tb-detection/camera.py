@@ -6,22 +6,17 @@ import factory
 
 class Camera():
     def __init__(self, camera_num, aruco_dict, params, repository_):
-        self.camera_num = camera_num
-        self.aruco_dict = aruco_dict
-        self.params = params
         self.repository = repository_
-        self.model_num = repository_.model_num
-        self.variable_num = repository_.variable_num
 
-        dictionary_length = len(self.aruco_dict.bytesList)
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.model_num, self.variable_num)
-        self.detector = aruco.ArucoDetector(self.aruco_dict, self.params)
+        dictionary_length = len(aruco_dict.bytesList)
+        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, repository_.model_num, repository_.variable_num)
+        self.detector = aruco.ArucoDetector(aruco_dict, params)
         
-        self.cap = cv.VideoCapture(self.camera_num, cv.CAP_DSHOW)
+        self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
-    def video_loop(self):
+    def videoLoop(self):
         if not self.cap.isOpened():
             print("Cannot open camera")
             exit()

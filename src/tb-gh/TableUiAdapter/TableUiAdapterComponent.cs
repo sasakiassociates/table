@@ -64,7 +64,7 @@ namespace TableUiAdapter
             List<float> rotations;
             List<string> types;
 
-            List<Brep> models;
+            List<Brep> models = new List<Brep>();
 
             public ForLoopWorker() : base(null) { }
 
@@ -81,42 +81,22 @@ namespace TableUiAdapter
             // What inputs do we need? Strat
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                Repository _repository = new Repository();
-                if (models.Count > 0 && firstRun)
-                {
-                    _repository.Connect();
-                    _repository.UdpSend($"SETUP {models.Count} {1}");
-                    _repository.EndUdpReceive();
-                    firstRun = false;
-                }
                 if (run)
                 {
-                    // Connect to the UDP client
-                    _repository.Connect();
-
-                    // Tell the other program to send data
-                    _repository.UdpSend("SEND");
-
-                    // Receive the data
-                    string response = _repository.UdpReceive(1000);
-                    Console.WriteLine(response);
-
-                    if (response == null)
+                    if (models.Count > 0 && firstRun)
                     {
-                        Console.WriteLine("No response");
-                        _repository.EndUdpReceive();
+                        _invoker.Setup(models.Count, 5);
+                        firstRun = false;
+                    }
+
+                    List<Marker> markers = (List<Marker>)_invoker.Run();
+                    
+                    if (markers == null)
+                    {
                         Done();
                         return;
                     }
-                    
-                    // Parse data
-                    IParser _parseStrategy = ParserFactory.GetParser(strategy);
-                    // This needs to only run if the other program sends data, otherwise it'll disrupt the stream
-                    List<Marker> markers = (List<Marker>)_parseStrategy.Parse(response);
 
-                    // Disconnect from the UDP client
-                    _repository.EndUdpReceive();
-                    
                     ids = new List<int>();
                     points = new List<Point2d>();
                     rotations = new List<float>();
@@ -130,18 +110,10 @@ namespace TableUiAdapter
                         rotations.Add(marker.rotation);
                         types.Add(marker.type);
                     }
-
-                    foreach (var model in models)
-                    {
-                        model.Transform(Transform.Translation(new Vector3d(0, 0, 0.1)));
-                    }
-                    
-                    /*_invoker.Disconnect();*/
-                    _repository.EndUdpReceive();
                 }
-                else if (!run)
+                else if (!run && !firstRun)
                 {
-                    //_invoker.EndDetection();
+                    _invoker.EndDetection();
                 }
 
                 Done();
@@ -156,6 +128,8 @@ namespace TableUiAdapter
                 DA.SetDataList(1, ids);
                 DA.SetDataList(2, rotations);
                 DA.SetDataList(3, types);
+
+                // Output a list of the models in their new locations
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

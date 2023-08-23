@@ -38,4 +38,4 @@ if __name__ == "__main__":
     # On startup, the application listens for the SETUP command.
     # That's how arguments are input into the program and then the camera starts with those inputs.
     camera = camera.Camera(args.camera, predefined_dict, params, repository)
-    camera.video_loop()
+    camera.videoLoop()

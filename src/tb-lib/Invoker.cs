@@ -58,6 +58,8 @@ namespace TableLib
 
         public void Setup(int modelNum, int variableNum)
         {
+            _repository.Connect();
+
             _repository.UdpSend($"SETUP {modelNum} {variableNum}");
         }
 
@@ -71,14 +73,14 @@ namespace TableLib
             
             // Receive the data
             string response = _repository.UdpReceive(expire);
-            if (response == null)
+
+            object data = null;
+            // If there is a response, parse the data
+            if (response != null)
             {
-                Console.WriteLine("No response");
-                return null;
+                // Parse data
+                data = _parseStrategy.Parse(response);
             }
-            
-            // Parse data
-            object data = _parseStrategy.Parse(response);
             
             // Disconnect from the UDP client
             _repository.EndUdpReceive();
