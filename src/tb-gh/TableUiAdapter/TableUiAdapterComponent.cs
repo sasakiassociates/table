@@ -32,8 +32,9 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("Link", "L", "Link to the database, could be url for http or port for udp", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
+            // TODO: Assign markers to models in output
+            pManager.AddBrepParameter("Models", "M", "Models to be placed on the table", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -41,10 +42,12 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Points", "P", "Points", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Ids", "I", "Ids", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Rotation", "R", "Rotations", GH_ParamAccess.list);
+            pManager.AddPointParameter("Points", "P", "List of points where the markers are", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Ids", "I", "List of detected ids", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Rotation", "R", "List of rotations of markers in radians", GH_ParamAccess.list);
+            pManager.AddTextParameter("Types", "T", "List of types of markers", GH_ParamAccess.list);
 
+            pManager.AddBrepParameter("Models", "M", "Models, now assigned to the location of the corresponding marker", GH_ParamAccess.list);
         }
 
         private class ForLoopWorker : WorkerInstance
@@ -52,23 +55,23 @@ namespace TableUiAdapter
             Invoker _invoker = new Invoker();
 
             private bool run;
+            private bool firstRun = true;
+            // For now, the strategy is hard coded for this component since this is the only format we're receiving
             private string strategy = "Marker";
-
-            List<Marker> markers = new List<Marker>();
 
             List<int> ids;
             List<Point2d> points;
-            List<int> rotations;
+            List<float> rotations;
+            List<string> types;
 
-            List<int> previousIds;
-            List<Point2d> previousPoints;
-            List<int> previousRotations;
+            List<Brep> models;
 
             public ForLoopWorker() : base(null) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                DA.GetData(1, ref run);
+                DA.GetData(0, ref run);
+                DA.GetDataList(1, models);
 
                 IParser _parseStrategy = ParserFactory.GetParser(strategy);
                 _invoker.SetParseStrategy(_parseStrategy);
@@ -78,11 +81,16 @@ namespace TableUiAdapter
             // What inputs do we need? Strat
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+                Repository _repository = new Repository();
+                if (models.Count > 0 && firstRun)
+                {
+                    _repository.Connect();
+                    _repository.UdpSend($"SETUP {models.Count} {1}");
+                    _repository.EndUdpReceive();
+                    firstRun = false;
+                }
                 if (run)
                 {
-
-                    Repository _repository = new Repository();
-
                     // Connect to the UDP client
                     _repository.Connect();
 
@@ -93,8 +101,17 @@ namespace TableUiAdapter
                     string response = _repository.UdpReceive(1000);
                     Console.WriteLine(response);
 
+                    if (response == null)
+                    {
+                        Console.WriteLine("No response");
+                        _repository.EndUdpReceive();
+                        Done();
+                        return;
+                    }
+                    
                     // Parse data
                     IParser _parseStrategy = ParserFactory.GetParser(strategy);
+                    // This needs to only run if the other program sends data, otherwise it'll disrupt the stream
                     List<Marker> markers = (List<Marker>)_parseStrategy.Parse(response);
 
                     // Disconnect from the UDP client
@@ -102,9 +119,8 @@ namespace TableUiAdapter
                     
                     ids = new List<int>();
                     points = new List<Point2d>();
-                    rotations = new List<int>();
-
-                    
+                    rotations = new List<float>();
+                    types = new List<string>();
 
                     foreach (var marker in markers)
                     {
@@ -112,6 +128,12 @@ namespace TableUiAdapter
                         ids.Add(marker.id);
                         points.Add(point);
                         rotations.Add(marker.rotation);
+                        types.Add(marker.type);
+                    }
+
+                    foreach (var model in models)
+                    {
+                        model.Transform(Transform.Translation(new Vector3d(0, 0, 0.1)));
                     }
                     
                     /*_invoker.Disconnect();*/
@@ -133,6 +155,7 @@ namespace TableUiAdapter
                 DA.SetDataList(0, points);
                 DA.SetDataList(1, ids);
                 DA.SetDataList(2, rotations);
+                DA.SetDataList(3, types);
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

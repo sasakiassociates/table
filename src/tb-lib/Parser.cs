@@ -30,6 +30,11 @@ namespace TableLib
         {
             List<Marker> markers = new List<Marker>();
 
+            if (json == null)
+            {
+                return null;
+            }
+
             try
             {
                 Dictionary<string, Marker> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Marker>>(json);

@@ -22,7 +22,7 @@ namespace TableLib
         }
 
         // Launches the detection program (non-blocking)
-        public void LaunchDetection()
+        public void LaunchDetection(int num_models)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace TableLib
                 string pythonPathInEnv = Path.Combine(virtualEnvPath, "Scripts", "python.exe"); // For Windows
                 string scriptPath = "../../../../../src/tb-detection/main.py";
 
-                string argument1 = "udp";
+                string argument1 = $"udp --num_models {num_models}";
                 string arguments = $"{scriptPath} {argument1}";
 
                 ProcessStartInfo startInfo = new ProcessStartInfo
@@ -54,6 +54,11 @@ namespace TableLib
             {
                 Console.WriteLine(ex.Message);
             }
+        }
+
+        public void Setup(int modelNum, int variableNum)
+        {
+            _repository.UdpSend($"SETUP {modelNum} {variableNum}");
         }
 
         public object Run()
@@ -92,10 +97,6 @@ namespace TableLib
 
         public void EndDetection()
         {
-            if (!_repository.connected)
-            {
-                _repository.Connect();
-            }
             // Tell the other program to stop sending data
             _repository.UdpSend("END");
             _repository.EndUdpReceive();

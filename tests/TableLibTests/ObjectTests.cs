@@ -19,13 +19,12 @@ namespace TableLibTests
         [TearDown]
         public void TearDown()
         {
-            _invoker.EndDetection();
         }
 
         [Test]
         public void LaunchThroughInvokerTest()
         {
-            _invoker.LaunchDetection();
+            _invoker.LaunchDetection(25);
         }
         [Test]
         public void ReadThroughInvokerTest()
@@ -37,6 +36,11 @@ namespace TableLibTests
         public void EndThroughInvokerTest()
         {
             _invoker.EndDetection();
+        }
+        [Test]
+        public void SetupThroughInvoker()
+        {
+            _invoker.Setup(10, 20);
         }
 
         // See if the repository object can send a message

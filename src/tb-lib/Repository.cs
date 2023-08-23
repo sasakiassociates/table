@@ -15,8 +15,6 @@ namespace TableLib
         private int listenPort = 5005;
         private int sendPort = 5004;
 
-        public bool connected = false;
-
         private IPAddress destination = IPAddress.Parse("127.0.0.1");
         private IPEndPoint receiveIpEndPoint;
         private IPEndPoint sendEndPoint;
@@ -51,15 +49,9 @@ namespace TableLib
         // Connect to the UDP client
         public void Connect()
         {
-            if (connected)
-            {
-                Console.WriteLine("Alreaady connected");
-                return;
-            }
             try
             {
                 _udpClient = new UdpClient(receiveIpEndPoint);
-                connected = true;
             }
             catch (Exception ex)
             {
@@ -69,10 +61,7 @@ namespace TableLib
         
         public void UdpSend(string message)
         {
-            if (!connected)
-            {
-                Connect();
-            }
+            Connect();
             byte[] sendData = Encoding.ASCII.GetBytes(message);
             _udpClient.Send(sendData, sendData.Length, sendEndPoint);
         }
@@ -101,19 +90,15 @@ namespace TableLib
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                // return ex.Message;
+                // Return null so that we can have a simple catch later so we don't try to parse an error message
+                return null;
             }
         }
 
         public void EndUdpReceive()
         {
-            if (!connected)
-            {
-                Console.WriteLine("Already disconnected");
-                return;
-            }
             _udpClient.Close();
-            connected = false;
         }
     }
 }

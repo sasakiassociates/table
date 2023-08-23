@@ -24,9 +24,18 @@ if __name__ == "__main__":
     params = aruco.DetectorParameters()
 
     repoStrategy = rs.RepoStrategyFactory.get_strategy(args.mode)
-
+    # Assigns the strategy that the repository will use (currently UDP or HTTP)
     repository = repository.Repository(repoStrategy)
+    # Begins the listening thread
     repository.setup()
 
-    camera = camera.Camera(args.camera, aruco_dict_=predefined_dict, params_=params, repository_=repository)
+    while not repository.check_for_launch():
+        pass
+
+    print("Launching...")
+
+    # What if video loop is delayed? 
+    # On startup, the application listens for the SETUP command.
+    # That's how arguments are input into the program and then the camera starts with those inputs.
+    camera = camera.Camera(args.camera, predefined_dict, params, repository)
     camera.video_loop()

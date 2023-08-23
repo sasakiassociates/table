@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiAdapter", "tb-gh\TableUiAdapter\TableUiAdapter.csproj", "{B589CCE5-DD7F-4DA2-A231-25BE3CD7BD45}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableLib", "tb-lib\TableLib.csproj", "{C577BA2B-CC96-4535-9096-05086B8EEF4D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableLibTests", "..\tests\TableLibTests\TableLibTests.csproj", "{B84D6333-5F96-4536-A347-A3FD5F171E0B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B589CCE5-DD7F-4DA2-A231-25BE3CD7BD45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B589CCE5-DD7F-4DA2-A231-25BE3CD7BD45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B589CCE5-DD7F-4DA2-A231-25BE3CD7BD45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B589CCE5-DD7F-4DA2-A231-25BE3CD7BD45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C577BA2B-CC96-4535-9096-05086B8EEF4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C577BA2B-CC96-4535-9096-05086B8EEF4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C577BA2B-CC96-4535-9096-05086B8EEF4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C577BA2B-CC96-4535-9096-05086B8EEF4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B84D6333-5F96-4536-A347-A3FD5F171E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B84D6333-5F96-4536-A347-A3FD5F171E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B84D6333-5F96-4536-A347-A3FD5F171E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B84D6333-5F96-4536-A347-A3FD5F171E0B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {58587DDC-3671-4030-9EB9-32E1598D6788}
+	EndGlobalSection
+EndGlobal

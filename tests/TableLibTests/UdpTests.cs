@@ -186,11 +186,11 @@ namespace TableLibTests
         [Test]
         public void LaunchPythonTest()
         {
-            string virtualEnvPath = "C:/Users/nshikada/Documents/GitHub/table/src/tb-detection/.env";
+            string virtualEnvPath = "../tb-detection/.env";
             string pythonPathInEnv = Path.Combine(virtualEnvPath, "Scripts", "python.exe"); // For Windows
-            string scriptPath = "../../../../../src/tb-detection/main.py";
+            string scriptPath = "../tb-detection/main.py";
 
-            string argument1 = "udp";
+            string argument1 = "udp --num_models 10";
             string arguments = $"{scriptPath} {argument1}";
 
             ProcessStartInfo startInfo = new ProcessStartInfo

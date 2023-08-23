@@ -5,15 +5,17 @@ from cv2 import aruco
 import factory
 
 class Camera():
-    def __init__(self, camera_num_, aruco_dict_, params_, repository_):
-        self.camera_num = camera_num_
-        self.aruco_dict_ = aruco_dict_
-        self.params_ = params_
-        self.repository_ = repository_
+    def __init__(self, camera_num, aruco_dict, params, repository_):
+        self.camera_num = camera_num
+        self.aruco_dict = aruco_dict
+        self.params = params
+        self.repository = repository_
+        self.model_num = repository_.model_num
+        self.variable_num = repository_.variable_num
 
-        dictionary_length = len(self.aruco_dict_.bytesList)
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
-        self.detector = aruco.ArucoDetector(self.aruco_dict_, self.params_)
+        dictionary_length = len(self.aruco_dict.bytesList)
+        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.model_num, self.variable_num)
+        self.detector = aruco.ArucoDetector(self.aruco_dict, self.params)
         
         self.cap = cv.VideoCapture(self.camera_num, cv.CAP_DSHOW)
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
@@ -35,10 +37,10 @@ class Camera():
 
                 if ids is not None:
                     self.markerLoop(ids, corners)
-                self.repository_.update_send_data()
+                self.repository.update_send_data()
 
                 cv.imshow('frame', frame_marked)
-                if cv.waitKey(1) == ord('q') or self.repository_.check_for_terminate():
+                if cv.waitKey(1) == ord('q') or self.repository.check_for_terminate():
                     break
         self.cap.release()
         cv.destroyAllWindows()

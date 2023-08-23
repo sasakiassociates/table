@@ -5,6 +5,8 @@ from firebase_admin import db
 import socket
 import threading
 
+import re
+
 from abc import ABC, abstractmethod
 
 class RepoStrategy(ABC):
@@ -12,6 +14,10 @@ class RepoStrategy(ABC):
     def __init__(self) -> None:
         self.data = {}
         self.terminate = False
+        self.launch = False
+        self.statup_data = {}
+        self.model_num = 0
+        self.variable_num = 0
 
     @abstractmethod
     def setup():
@@ -55,6 +61,13 @@ class UDPRepo(RepoStrategy):
                 if message == 'SEND':
                     print("Sending data..." + str(self.data))
                     self.send_data()
+                elif message[:5] == 'SETUP':
+                    print("Setting up...")
+                    values = map(int, re.findall(r'\d+', message))
+                    values = list(values)
+                    self.model_num = values[0]
+                    self.variable_num = values[1]
+                    self.launch = True
                 elif message == 'END':
                     print("Exiting...")
                     break
