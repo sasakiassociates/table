@@ -25,6 +25,7 @@ class Repository():
     
     def check_for_launch(self):
         return self.strategy.launch
+        
     
     def update(self, marker_json, marker_id):
         self.add_to_data(marker_id, marker_json)

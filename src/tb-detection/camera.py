@@ -2,6 +2,9 @@ import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
+import sys
+import traceback
+
 import factory
 
 class Camera():
@@ -21,24 +24,30 @@ class Camera():
             print("Cannot open camera")
             exit()
         while True:
-            ret, frame = self.cap.read()
-            if ret:
-                frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            try:
+                ret, frame = self.cap.read()
+                if ret:
+                    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-                # Detect the markers
-                corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
+                    # Detect the markers
+                    corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
 
-                frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
+                    frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
-                if ids is not None:
-                    self.markerLoop(ids, corners)
-                self.repository.update_send_data()
+                    if ids is not None:
+                        self.markerLoop(ids, corners)
+                    self.repository.update_send_data()
 
-                cv.imshow('frame', frame_marked)
-                if cv.waitKey(1) == ord('q') or self.repository.check_for_terminate():
-                    break
+                    cv.imshow('frame', frame_marked)
+                    if cv.waitKey(1) == ord('q') or self.repository.check_for_terminate():
+                        break
+            except Exception as e:
+                sys.stderr.write(str(e))
+                traceback.print_exc()
+                break
         self.cap.release()
         cv.destroyAllWindows()
+        # self.repository.close_threads()
 
     '''
     Loop through the markers and update them

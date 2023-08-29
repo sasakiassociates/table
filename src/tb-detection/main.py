@@ -27,8 +27,15 @@ if __name__ == "__main__":
     # Assigns the strategy that the repository will use (currently UDP or HTTP)
     repository = repository.Repository(repoStrategy)
     # Begins the listening thread
-    repository.setup()
+    try:
+        repository.setup()
+    except:
+        print("Error setting up repository")
+        exit()
 
+    print("Waiting for setup info")
+
+    # Wait for the setup command to be sent
     while not repository.check_for_launch():
         pass
 

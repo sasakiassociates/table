@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -8,9 +10,6 @@ namespace TableLib
 {
     public sealed class Repository
     {
-        private static Repository _instance;
-        private static readonly object _lock = new object();
-
         private UdpClient _udpClient;
         private int listenPort = 5005;
         private int sendPort = 5004;
@@ -20,20 +19,7 @@ namespace TableLib
         private IPEndPoint sendEndPoint;
         
         public string response;
-        public static Repository Instance
-        {
-            get
-            {
-                lock (_lock)
-                {
-                    if (_instance == null)
-                    {
-                        _instance = new Repository();
-                    }
-                    return _instance;
-                }
-            }
-        }
+        public bool isRunning = false;
 
         public Repository()
         {
@@ -42,41 +28,57 @@ namespace TableLib
             receiveIpEndPoint = new IPEndPoint(IPAddress.Any, listenPort);
             // Send to localhost, the same machine (Can be changed to send to another machine)
             sendEndPoint = new IPEndPoint(destination, sendPort);
-
-            //_udpClient = new UdpClient(receiveIpEndPoint);
+            _udpClient = new UdpClient(receiveIpEndPoint);
         }
 
-        // Connect to the UDP client
-        public void Connect()
+        // Launches the detection program (non-blocking)
+        public void LaunchDetectionProgram(string detectionPath)
         {
             try
             {
-                _udpClient = new UdpClient(receiveIpEndPoint);
+                string virtualEnvPath = Path.Combine(detectionPath, ".env");
+                // string virtualEnvPath = "..\\..\\..\\..\\..\\src\\tb-detection\\.env";
+                string pythonPathInEnv = Path.Combine(virtualEnvPath, "Scripts", "python.exe"); // For Windows
+                // string scriptPath = "..\\..\\..\\..\\..\\src\\tb-detection\\main.py";
+                string scriptPath = Path.Combine(detectionPath, "main.py");
+
+                string argument1 = $"udp";
+                string arguments = $"{scriptPath} {argument1}";
+
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = pythonPathInEnv,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                };
+
+                Process process = new Process
+                {
+                    StartInfo = startInfo
+                };
+
+                process.Start();
+                isRunning = true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
         }
-        
+
         public void UdpSend(string message)
         {
-            Connect();
             byte[] sendData = Encoding.ASCII.GetBytes(message);
             _udpClient.Send(sendData, sendData.Length, sendEndPoint);
         }
 
         public string UdpReceive(int expire = 0)
         {
-            // Make a new client - this might need to be optimized so it is continuously connected to the port
-            // But this makes a new one and closes every time to work with Grasshopper
             try
             {
-                if (_udpClient == null)
-                {
-                    return "UDP client is null";
-                }
-
                 if (expire != 0)
                 {
                     _udpClient.Client.ReceiveTimeout = expire;
@@ -96,9 +98,26 @@ namespace TableLib
             }
         }
 
-        public void EndUdpReceive()
+        public bool IsConnected()
+        { 
+            if (_udpClient != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public void Connect()
+        {
+            _udpClient = new UdpClient(receiveIpEndPoint);
+        }
+        public void Disconnect()
         {
             _udpClient.Close();
+            //_udpClient.Dispose();
         }
     }
 }
