@@ -21,7 +21,7 @@ namespace TableLibTests
         [TearDown]
         public void TearDown()
         {
-            _invoker.Disconnect();
+            //_invoker.Disconnect();
             //testRepository.Disconnect();
             //_invoker.DisconnectAndEndDetection();
         }
@@ -63,7 +63,7 @@ namespace TableLibTests
             List<Marker> response = (List<Marker>)_invoker.Run();
             foreach (Marker marker in response)
             {
-                Console.WriteLine(marker.id);
+                Console.WriteLine(marker.rotation);
             }
             Assert.That(response, Is.Not.Null);
         }
@@ -94,35 +94,7 @@ namespace TableLibTests
 
             Assert.IsFalse(_invoker.isRunning);
         }
-        //[Test]
-        /*public void EndThroughInvokerTest()
-        {
-            _invoker = new Invoker();
-            _invoker.DisconnectAndEndDetection();
-        }
-        [Test]
-        public void SetupThroughInvoker()
-        {
-            _invoker = new Invoker();
-            _invoker.SetupDetection(10, 20);
-        }*/
 
-        // See if the repository object can send a message
-        /*[Test]
-        public void RepositoryEndTest()
-        {
-            testRepository.Connect();
-            testRepository.UdpSend("END");
-
-            Assert.IsTrue(true);
-        }
-        [Test]
-        public void RepositoryBoolTest()
-        {
-            testRepository.Connect();
-            Assert.IsTrue(testRepository.IsConnected());
-        }
-*/
         // See if the repository object can receive a message
         [Test]
         public void RepositoryReceiveTest()
@@ -162,6 +134,18 @@ namespace TableLibTests
             Assert.IsTrue(true);
         }
 
+        [Test]
+        public void BuildDictTest()
+        {
+            _invoker.BuildDict(10, 10);
+            for (int i = 0; i < 20; i++)
+            {
+                Console.WriteLine(_invoker.refDict[i]);
+            }
+            Assert.That(_invoker.refDict[2].Equals("model"));
+            Assert.That(_invoker.refDict[11].Equals("variable"));
+        }
+
         // See if the invoker object can get a response from the detection program via the repository
         /*[Test]
         public void InvokerParseTest()
@@ -195,6 +179,25 @@ namespace TableLibTests
             }
 
             Assert.That(testList.Count, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void PairingTest()
+        {
+            List<string> markers = new List<string> { "Marker1", "Marker2", "Marker3", "Marker4" };
+            List<string> breps = new List<string> { "Brep1", "Brep2", "Brep3" };
+
+            Dictionary<string, string> markerBrepPairs = markers
+                .Zip(breps, (marker, brep) => new { Marker = marker, Brep = brep })
+                .ToDictionary(pair => pair.Marker, pair => pair.Brep);
+
+            // Now, markerBrepPairs contains the pairings of markers and breps up to the length of breps
+            foreach (var pair in markerBrepPairs)
+            {
+                Console.WriteLine($"{pair.Key}: {pair.Value}");
+                
+            }
+            Assert.That(markerBrepPairs.Count, Is.EqualTo(3));
         }
     }
 }

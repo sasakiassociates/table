@@ -1,6 +1,7 @@
 using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Geometry;
+using Grasshopper.Kernel.Types.Transforms;
 using GrasshopperAsyncComponent;
 using Rhino.Geometry;
 using System;
@@ -33,22 +34,17 @@ namespace TableUiAdapter
         {
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
             pManager.AddTextParameter("Detection Path", "P", "Path to the detection program", GH_ParamAccess.item);
-            // TODO: Assign markers to models in output
-            pManager.AddBrepParameter("Models", "M", "Models to be placed on the table", GH_ParamAccess.list);
-        }
+            pManager.AddBrepParameter("Models", "M", "Models to test for", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Variables", "V", "Number of variable values you want to keep track of", GH_ParamAccess.item);
+       }
 
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Points", "P", "List of points where the markers are", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Ids", "I", "List of detected ids", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Rotation", "R", "List of rotations of markers in radians", GH_ParamAccess.list);
-            pManager.AddTextParameter("Types", "T", "List of types of markers", GH_ParamAccess.list);
-
-            pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-            // pManager.AddBrepParameter("Models", "M", "Models, now assigned to the location of the corresponding marker", GH_ParamAccess.list);
+            pManager.AddBrepParameter("Models", "M", "Transformed models", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Variables", "V", "Variable values to change (currently associated with the location in the y dimension)", GH_ParamAccess.list);
         }
 
         private class ForLoopWorker : WorkerInstance
@@ -56,17 +52,15 @@ namespace TableUiAdapter
             // Makes singleton "Invoker", whos object "Repository" connects to a UDP Client to listen on port 5005
             Invoker _invoker = Invoker.Instance;
             
+            // INPUTS
             private bool run;
             private string detectionPath;
+            List<Brep> incomingModels = new List<Brep>();
+            int numVariables;
 
-            // INPUTS
-            List<Brep> models;
-            
             // OUTPUTS
-            List<int> ids;
-            List<Point2d> points;
-            List<float> rotations;
-            List<string> types;
+            List<int> variableValues = new List<int>();
+            List<Brep> transformedModels;
 
             public ForLoopWorker() : base(null) { }
 
@@ -74,7 +68,8 @@ namespace TableUiAdapter
             {
                 DA.GetData(0, ref run);
                 DA.GetData(1, ref detectionPath);
-                DA.GetDataList(2, models);
+                DA.GetDataList(2, incomingModels);
+                DA.GetData(3, ref numVariables);
 
                 _invoker.SetParseStrategy(ParserFactory.GetParser("Marker"));
             }
@@ -89,19 +84,26 @@ namespace TableUiAdapter
                     {
                         // _invoker.LaunchDetectionProgram(detectionPath);
                         bool success = _invoker.ExecuteWithTimeLimit(TimeSpan.FromMilliseconds(5000), () => _invoker.SetupDetection(10, 10));
-                        // FAILURE: the detetion program doesn't launch properly
                         if (!success)
                         {
                             Console.WriteLine("Failed to start detection program");
-                            // _invoker.Disconnect();
                             Done();
                             return;
                         }
-                        // _invoker.SetupDetection(10, 10);
-                    }
-                    // If there are no markers, finish the component
-                    List<Marker> markers = (List<Marker>)_invoker.Run();
 
+                        _invoker.modelRefDict = new Dictionary<int, object>();
+
+                        // Build the reference dictionary
+                        _invoker.BuildDict(incomingModels.Count, numVariables);
+
+                    }
+
+                    // TODO: Maybe this guy shouldn't even know about the markers!
+                    // Instead return:
+                    // List<Brep> models
+                    // List<int[]> locations
+                    // List<int> rotations
+                    List<Marker> markers = (List<Marker>)_invoker.Run();
                     // FAILURE: No markers are detected
                     if (markers == null || markers.Count == 0)
                     {
@@ -109,22 +111,51 @@ namespace TableUiAdapter
                         return;
                     }
 
-                    // Otherwise, we need to parse the data into the lists we're outputting
-                    ids = new List<int>();
-                    points = new List<Point2d>();
-                    rotations = new List<float>();
-                    types = new List<string>();
-
-                    // Here, we'll add logic to move the models to the point of their assigned markers
-
-                    foreach (var marker in markers)
+                    for (int i = 0; i < numVariables; i++)
                     {
-                        Point2d point = new Point2d(marker.location[0], marker.location[1]);
-                        ids.Add(marker.id);
-                        points.Add(point);
-                        rotations.Add(marker.rotation);
-                        types.Add(marker.type);
+                        variableValues.Add(0);
                     }
+
+                    transformedModels = new List<Brep>();
+                    // Here, we'll add logic to move the models to the point of their assigned markers
+                    // check marker.id against the list of models
+                    foreach (Marker marker in markers)
+                    {
+                        // if the marker is in the dictionary
+                        if (_invoker.refDict.ContainsKey(marker.id))
+                        {
+                            // check if it's a model or a variable
+                            switch (_invoker.refDict[marker.id])
+                            {
+                                // if it's a model, move the model to the point of the marker and rotate it
+                                case "model":
+                                    Brep model = incomingModels[marker.id];
+                                    Point3d newOrigin = new Point3d(1080 - marker.location[0], 720 - marker.location[1], 0);
+
+                                    Transform translation = Transform.Translation(newOrigin - model.GetBoundingBox(false).Center);
+                                    //Transform transform = Transform.Multiply(rotation, translation);
+
+                                    model.Transform(translation);
+
+                                    // ISSUE: rotation is adding to it's previous rotation
+                                    Transform rotation = Transform.Rotation(Math.Sin(marker.rotation), Math.Cos(marker.rotation), Vector3d.ZAxis, newOrigin);
+                                    model.Transform(rotation);
+                                    transformedModels.Add(model);
+                                    break;
+                                // if it's a variable, update the variable value
+                                case "variable":
+                                    //variableValues[marker.id] = marker.location[0];
+                                    int angle = (int)(marker.rotation * 180 / Math.PI);
+                                    variableValues[marker.id - incomingModels.Count] = angle;
+                                    break;
+                            }
+
+                        }
+                    }
+
+                    // use Marker.id to find the corresponding model
+                    // move the model to the point of the marker
+                    // add the model to the output list
                 }
                 else if (!run && _invoker.isRunning)
                 {
@@ -139,13 +170,8 @@ namespace TableUiAdapter
 
                 // The outputs get nulled out here for a brief moment - leading to a flicker in the UI
                 // Found using breakpoints
-                DA.SetDataList(0, points);
-                DA.SetDataList(1, ids);
-                DA.SetDataList(2, rotations);
-                DA.SetDataList(3, types);
-
-                DA.SetData(4, _invoker.isRunning);
-                // Output a list of the models in their new locations
+                DA.SetDataList(0, transformedModels);
+                DA.SetDataList(1, variableValues);
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

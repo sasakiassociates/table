@@ -12,7 +12,7 @@ class Camera():
         self.repository = repository_
 
         dictionary_length = len(aruco_dict.bytesList)
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, repository_.model_num, repository_.variable_num)
+        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)

@@ -1,14 +1,13 @@
 import numpy as np
-from abc import ABC, abstractmethod
+from math import pi
 
-#TODO get rid of isVisible parameter
-class Marker(ABC):
+#TODO get rid of inherited markers, we only need the one since assignment is done in the other app
+class Marker():
     def __init__(self, marker_id_):
         self.id = marker_id_
         self.observers = []
         self.rotation = 0
-        self.type = "";
-
+        
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     
@@ -29,7 +28,6 @@ class Marker(ABC):
             "id": self.id,
             "location": [self.center[0], self.center[1]],
             "rotation": self.rotation,
-            "type": self.type
         }
         return marker_data
     
@@ -45,26 +43,10 @@ class Marker(ABC):
         reference_vector = corners[0] - centroid
 
         angle_rads = np.arctan2(reference_vector[1], reference_vector[0])
-        
-        adjusted_angle_rads = angle_rads - np.pi/4
-
         angle_degree = np.degrees(angle_rads)
-        wrapped_angle = self.wrap_angle(angle_degree)
 
-        self.rotation = adjusted_angle_rads
+        # Subtract 45 degrees and wrap it to the -180 to 180 degree range
+        adjusted_angle_degree = (angle_degree - 45 + 180) % 360 - 180
+        adjusted_angle_radians = (angle_rads - pi/4 + pi) % (2 * pi) - pi
 
-    def wrap_angle(self, angle_):
-        if angle_ < 0:
-            return abs(angle_)
-        else:
-            return angle_
-
-class ModelMarker(Marker):
-    def __init__(self, marker_id_):
-        super().__init__(marker_id_)
-        self.type = "model";
-    
-class VariableMarker(Marker):
-    def __init__(self, marker_id_):
-        super().__init__(marker_id_)
-        self.type = "variable";
+        self.rotation = adjusted_angle_radians

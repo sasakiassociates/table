@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,6 +10,8 @@ using System.Threading.Tasks;
 namespace TableLib
 {
     // A class that controls the flow of the program.
+    // TODO: Redesign as a State Manager
+    // It'll be much more intelliigable and easier to maintain
     public class Invoker
     {
         // Singleton elements
@@ -21,6 +25,9 @@ namespace TableLib
         public bool isRunning = false;
 
         private string logFilePath = "C:\\Users\\nshikada\\Documents\\GitHub\\table\\src\\tb-gh\\TableUiAdapter\\obj\\Debug\\net48\\error.log";
+
+        public Dictionary<int, object> modelRefDict = new Dictionary<int, object>();
+        public Dictionary<int, string> refDict;
 
         private void LogError(Exception ex)
         {
@@ -36,8 +43,6 @@ namespace TableLib
             }
             catch (Exception)
             {
-                // If an error occurs while writing to the log file, you might want to handle it here.
-                // You can print a message to the console or take other appropriate action.
             }
         }
 
@@ -99,14 +104,6 @@ namespace TableLib
                     process.Start();
                     process.BeginErrorReadLine();
                 }
-
-                /*process.Start();
-
-                StreamReader myStreamReader = process.StandardError;
-                // Read the standard error of net.exe and write it on to console.
-                Console.WriteLine(myStreamReader.ReadLine());*/
-
-                
             }
             catch (Exception ex)
             {
@@ -117,6 +114,7 @@ namespace TableLib
         // TODO this gets stuck in a loop and can't hear the response
         // (Only if the program was launched and then closed and then launched again)
         // UPDATE: This happens when the udp client was formerly closed and then reopened
+        // SOLUTION: for now just don't close the udp client (not best practice)
         public void SetupDetection(int modelNum, int variableNum)
         {
             // Connect to the UDP client
@@ -134,23 +132,10 @@ namespace TableLib
             }
         }
 
-        public bool ExecuteWithTimeLimit(TimeSpan timeSpan, Action codeBlock)
-        {
-            try
-            {
-                Task task = Task.Factory.StartNew(() => codeBlock());
-                task.Wait(timeSpan);
-                return task.IsCompleted;
-            }
-            catch (AggregateException ae)
-            {
-                throw ae.InnerExceptions[0];
-            }
-        }
-
         // TODO the program crashes if openned in Grasshopper
-        // It'll do a handful of updates and then crashes
-        // Might be several things, but has to be Grasshopper specific since it works fine when launched from VS
+        // It'll open, then do a handful of updates, and then crashes
+        // Might be several things, but has to be specific to the way "Process"
+        // works to launch apps since it works fine when launched from command line
         // Might be a threading issue, or a memory issue
         public object Run()
         {
@@ -207,9 +192,37 @@ namespace TableLib
             }
         }
 
-        public void Disconnect()
+        public bool ExecuteWithTimeLimit(TimeSpan timeSpan, Action codeBlock)
         {
-            _repository.Disconnect();
+            try
+            {
+                Task task = Task.Factory.StartNew(() => codeBlock());
+                task.Wait(timeSpan);
+                return task.IsCompleted;
+            }
+            catch (AggregateException ae)
+            {
+                throw ae.InnerExceptions[0];
+            }
+        }
+
+        public void BuildDict(int modelCount, int variableCount)
+        {
+            refDict = new Dictionary<int, string>();
+
+            for (int i = 0; i < modelCount; i++)
+            {
+                refDict.Add(i, "model");
+            }
+            for (int i = 0; i < variableCount; i++)
+            {
+                refDict.Add(i + modelCount, "variable");
+            }
+        }
+
+        public object GetModel(int id)
+        {
+            return modelRefDict[id];
         }
     }
 }

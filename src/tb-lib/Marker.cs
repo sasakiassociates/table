@@ -9,6 +9,5 @@ namespace TableLib
         public int id { get; set; }
         public int[] location { get; set; }
         public float rotation { get; set; }
-        public string type { get; set; }
     }
 }
