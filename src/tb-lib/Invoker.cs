@@ -117,8 +117,10 @@ namespace TableLib
         // SOLUTION: for now just don't close the udp client (not best practice)
         public void SetupDetection(int modelNum, int variableNum)
         {
-            // Connect to the UDP client
-            // _repository.Connect();
+            if (_repository == null)
+            {
+                _repository = new Repository();
+            }
             while (!isRunning)
             {
                 _repository.UdpSend($"SETUP {modelNum} {variableNum}");
@@ -184,7 +186,8 @@ namespace TableLib
                 // After the udp client is closed and/or disposed, it can't be used again
                 // Even when a new instance is created, it can't be used
 
-                // _repository.Disconnect();
+                _repository.Disconnect();
+                _repository = null;
                 isRunning = false;
             } catch (Exception ex)
             {

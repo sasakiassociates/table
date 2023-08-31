@@ -65,7 +65,7 @@ class UDPRepo(RepoStrategy):
                 message = data.decode('utf-8')
                 
                 if message == 'SEND':
-                    print("Sending data..." + str(self.data))
+                    #print("Sending data..." + str(self.data))
                     self.send(str(self.data))
                 
                 elif message.startswith('SETUP'):  # Check for message prefix

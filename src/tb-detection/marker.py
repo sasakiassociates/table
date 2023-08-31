@@ -7,7 +7,7 @@ class Marker():
         self.id = marker_id_
         self.observers = []
         self.rotation = 0
-        
+
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     

@@ -124,6 +124,7 @@ namespace TableUiAdapter
                         // if the marker is in the dictionary
                         if (_invoker.refDict.ContainsKey(marker.id))
                         {
+                            // TODO: rework this so I don't have to use switch statements
                             // check if it's a model or a variable
                             switch (_invoker.refDict[marker.id])
                             {
@@ -131,8 +132,10 @@ namespace TableUiAdapter
                                 case "model":
                                     Brep model = incomingModels[marker.id];
                                     Point3d newOrigin = new Point3d(1080 - marker.location[0], 720 - marker.location[1], 0);
+                                    BoundingBox bbox = model.GetBoundingBox(false);
+                                    Point3d center = new Point3d(bbox.Center.X, bbox.Center.Y, 0);
 
-                                    Transform translation = Transform.Translation(newOrigin - model.GetBoundingBox(false).Center);
+                                    Transform translation = Transform.Translation(newOrigin - center);
                                     //Transform transform = Transform.Multiply(rotation, translation);
 
                                     model.Transform(translation);
@@ -146,6 +149,10 @@ namespace TableUiAdapter
                                 case "variable":
                                     //variableValues[marker.id] = marker.location[0];
                                     int angle = (int)(marker.rotation * 180 / Math.PI);
+                                    if (angle < 0)
+                                    {
+                                        angle = Math.Abs(angle);
+                                    }
                                     variableValues[marker.id - incomingModels.Count] = angle;
                                     break;
                             }
