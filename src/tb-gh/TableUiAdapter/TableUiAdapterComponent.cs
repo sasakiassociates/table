@@ -33,9 +33,6 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-            pManager.AddTextParameter("Detection Path", "P", "Path to the detection program", GH_ParamAccess.item);
-            pManager.AddBrepParameter("Models", "M", "Models to test for", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Variables", "V", "Number of variable values you want to keep track of", GH_ParamAccess.item);
        }
 
         /// <summary>
@@ -43,8 +40,11 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddBrepParameter("Models", "M", "Transformed models", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Variables", "V", "Variable values to change (currently associated with the location in the y dimension)", GH_ParamAccess.list);
+            pManager.AddPointParameter("Camera Origin", "O", "Origin of the camera", GH_ParamAccess.item);
+            pManager.AddPointParameter("Camera Target", "T", "Target of the camera", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Pitch", "P", "Pitch of the camera", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Depth", "D", "Depth of the camera", GH_ParamAccess.item);
+            
         }
 
         private class ForLoopWorker : WorkerInstance
@@ -54,22 +54,29 @@ namespace TableUiAdapter
             
             // INPUTS
             private bool run;
-            private string detectionPath;
             List<Brep> incomingModels = new List<Brep>();
-            int numVariables;
+
+            // PROCESS VARIABLES
+            float cameraRotation;
+            int[] cameraLocation;
+
+            // MAPPING VARIABLES
+            float minRads = 0;
+            float maxRads = (float)Math.PI;
+            int minVariable = 0;
+            int maxVariable = 100;
 
             // OUTPUTS
-            List<int> variableValues = new List<int>();
-            List<Brep> transformedModels;
+            Point3d cameraOrigin;
+            Point3d cameraTarget;
+            float pitch;
+            float depth;
 
             public ForLoopWorker() : base(null) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 DA.GetData(0, ref run);
-                DA.GetData(1, ref detectionPath);
-                DA.GetDataList(2, incomingModels);
-                DA.GetData(3, ref numVariables);
 
                 _invoker.SetParseStrategy(ParserFactory.GetParser("Marker"));
             }
@@ -90,12 +97,6 @@ namespace TableUiAdapter
                             Done();
                             return;
                         }
-
-                        _invoker.modelRefDict = new Dictionary<int, object>();
-
-                        // Build the reference dictionary
-                        _invoker.BuildDict(incomingModels.Count, numVariables);
-
                     }
 
                     // TODO: Maybe this guy shouldn't even know about the markers!
@@ -111,52 +112,30 @@ namespace TableUiAdapter
                         return;
                     }
 
-                    for (int i = 0; i < numVariables; i++)
-                    {
-                        variableValues.Add(0);
-                    }
-
-                    transformedModels = new List<Brep>();
-                    // Here, we'll add logic to move the models to the point of their assigned markers
-                    // check marker.id against the list of models
+                    // This is really bad, but is the quickest way to test this
+                    // TODO rework this so the markers know their type and will report their values
                     foreach (Marker marker in markers)
                     {
-                        // if the marker is in the dictionary
-                        if (_invoker.refDict.ContainsKey(marker.id))
+                        if (marker.id == 99)                // If the marker id is 99, it's the camera marker so get the location and rotation
                         {
-                            // TODO: rework this so I don't have to use switch statements
-                            // check if it's a model or a variable
-                            switch (_invoker.refDict[marker.id])
-                            {
-                                // if it's a model, move the model to the point of the marker and rotate it
-                                case "model":
-                                    Brep model = incomingModels[marker.id];
-                                    Point3d newOrigin = new Point3d(1080 - marker.location[0], 720 - marker.location[1], 0);
-                                    BoundingBox bbox = model.GetBoundingBox(false);
-                                    Point3d center = new Point3d(bbox.Center.X, bbox.Center.Y, 0);
+                            cameraRotation = marker.rotation;
+                            cameraLocation = marker.location;
+                            // Make this into a point
+                            cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.75);
+                            cameraTarget = new Point3d(cameraLocation[0] + 5, cameraLocation[1], 5.75);
 
-                                    Transform translation = Transform.Translation(newOrigin - center);
-                                    //Transform transform = Transform.Multiply(rotation, translation);
-
-                                    model.Transform(translation);
-
-                                    // ISSUE: rotation is adding to it's previous rotation
-                                    Transform rotation = Transform.Rotation(Math.Sin(marker.rotation), Math.Cos(marker.rotation), Vector3d.ZAxis, newOrigin);
-                                    model.Transform(rotation);
-                                    transformedModels.Add(model);
-                                    break;
-                                // if it's a variable, update the variable value
-                                case "variable":
-                                    //variableValues[marker.id] = marker.location[0];
-                                    int angle = (int)(marker.rotation * 180 / Math.PI);
-                                    if (angle < 0)
-                                    {
-                                        angle = Math.Abs(angle);
-                                    }
-                                    variableValues[marker.id - incomingModels.Count] = angle;
-                                    break;
-                            }
-
+                            Transform targetRotation = Transform.Rotation(cameraRotation, Vector3d.ZAxis, cameraOrigin);
+                            cameraTarget.Transform(targetRotation);
+                        }
+                        else if (marker.id == 98)           // This is the pitch marker, so get the rotation
+                        {
+                            float pitchValue = marker.rotation;
+                            pitch = Invoker.MapFloatToInt(Math.Abs(pitchValue), minRads, maxRads, minVariable, maxVariable);
+                        }
+                        else if (marker.id == 97)
+                        {
+                            float depthValue = marker.rotation;
+                            depth = Invoker.MapFloatToInt(Math.Abs(depthValue), minRads, maxRads, minVariable, maxVariable);
                         }
                     }
 
@@ -174,11 +153,13 @@ namespace TableUiAdapter
             
             public override void SetData(IGH_DataAccess DA)
             {
-
                 // The outputs get nulled out here for a brief moment - leading to a flicker in the UI
                 // Found using breakpoints
-                DA.SetDataList(0, transformedModels);
-                DA.SetDataList(1, variableValues);
+                DA.SetData(0, cameraOrigin);
+                DA.SetData(1, cameraTarget);
+                DA.SetData(2, depth);
+                DA.SetData(3, pitch);
+                
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

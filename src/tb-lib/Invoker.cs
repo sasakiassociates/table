@@ -26,8 +26,12 @@ namespace TableLib
 
         private string logFilePath = "C:\\Users\\nshikada\\Documents\\GitHub\\table\\src\\tb-gh\\TableUiAdapter\\obj\\Debug\\net48\\error.log";
 
-        public Dictionary<int, object> modelRefDict = new Dictionary<int, object>();
         public Dictionary<int, string> refDict;
+
+        // TODO change this class to cooperate with a State Pattern
+        // We need a persistant memory for smoothing purposes
+        // For now, we'll put it here, but the structure of this code needs an overhaul later
+
 
         private void LogError(Exception ex)
         {
@@ -223,9 +227,15 @@ namespace TableLib
             }
         }
 
-        public object GetModel(int id)
+        public static int MapFloatToInt(float value, float fromMin, float fromMax, int toMin, int toMax)
         {
-            return modelRefDict[id];
+            // Ensure the value is within the specified range
+            value = Math.Max(fromMin, Math.Min(fromMax, value));
+
+            // Perform linear mapping
+            float range1 = fromMax - fromMin;
+            float range2 = toMax - toMin;
+            return (int)(((value - fromMin) / range1) * range2 + toMin);
         }
     }
 }
