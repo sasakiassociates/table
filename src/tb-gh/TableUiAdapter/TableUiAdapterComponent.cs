@@ -33,7 +33,8 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-       }
+            //pManager.AddTextParameter("Views", "V", "List of the various views we want available to cycle through", GH_ParamAccess.list);
+        }
 
         /// <summary>
         /// Registers all the output parameters for this component.
@@ -42,9 +43,9 @@ namespace TableUiAdapter
         {
             pManager.AddPointParameter("Camera Origin", "O", "Origin of the camera", GH_ParamAccess.item);
             pManager.AddPointParameter("Camera Target", "T", "Target of the camera", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Pitch", "P", "Pitch of the camera", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("Depth", "D", "Depth of the camera", GH_ParamAccess.item);
-            
+            pManager.AddNumberParameter("Pitch", "P", "Pitch of the camera", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Depth", "D", "Depth of the camera", GH_ParamAccess.item);
+            //pManager.AddTextParameter("View", "V", "Text that corresponds to named views", GH_ParamAccess.item);
         }
 
         private class ForLoopWorker : WorkerInstance
@@ -54,31 +55,25 @@ namespace TableUiAdapter
             
             // INPUTS
             private bool run;
-            List<Brep> incomingModels = new List<Brep>();
+            List<string> namedViewList = new List<string>();
 
             // PROCESS VARIABLES
             float cameraRotation;
             int[] cameraLocation;
-
-            // MAPPING VARIABLES
-            float minRads = 0;
-            float maxRads = (float)Math.PI;
-            int minVariable = 0;
-            int maxVariable = 100;
 
             // OUTPUTS
             Point3d cameraOrigin;
             Point3d cameraTarget;
             float pitch;
             float depth;
+            //string namedView;
 
             public ForLoopWorker() : base(null) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 DA.GetData(0, ref run);
-
-                _invoker.SetParseStrategy(ParserFactory.GetParser("Marker"));
+                //DA.GetDataList(1, namedViewList);
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -121,8 +116,8 @@ namespace TableUiAdapter
                             cameraRotation = marker.rotation;
                             cameraLocation = marker.location;
                             // Make this into a point
-                            cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.75);
-                            cameraTarget = new Point3d(cameraLocation[0] + 5, cameraLocation[1], 5.75);
+                            cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.8);
+                            cameraTarget = new Point3d(cameraLocation[0], cameraLocation[1] + 5, 6);
 
                             Transform targetRotation = Transform.Rotation(cameraRotation, Vector3d.ZAxis, cameraOrigin);
                             cameraTarget.Transform(targetRotation);
@@ -130,13 +125,19 @@ namespace TableUiAdapter
                         else if (marker.id == 98)           // This is the pitch marker, so get the rotation
                         {
                             float pitchValue = marker.rotation;
-                            pitch = Invoker.MapFloatToInt(Math.Abs(pitchValue), minRads, maxRads, minVariable, maxVariable);
+                            pitch = pitchValue;
+                            //pitch = Invoker.MapFloatToInt(Math.Abs(pitchValue), minRads, maxRads, minVariable, maxVariable);
                         }
                         else if (marker.id == 97)
                         {
                             float depthValue = marker.rotation;
-                            depth = Invoker.MapFloatToInt(Math.Abs(depthValue), minRads, maxRads, minVariable, maxVariable);
+                            depth = depthValue;
+                            //depth = Invoker.MapFloatToInt(Math.Abs(depthValue), minRads, maxRads, minVariable, maxVariable);
                         }
+                        /*else if (marker.id == 96)
+                        {
+                            namedView = ;
+                        }*/
                     }
 
                     // use Marker.id to find the corresponding model
@@ -159,7 +160,6 @@ namespace TableUiAdapter
                 DA.SetData(1, cameraTarget);
                 DA.SetData(2, depth);
                 DA.SetData(3, pitch);
-                
             }
             
             public override WorkerInstance Duplicate() => new ForLoopWorker();

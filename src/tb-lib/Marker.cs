@@ -10,41 +10,52 @@ namespace TableLib
         public int id { get; set; }
         public int[] location
         {
-            get { return location; }
-            set { location = SmoothLocation(value); }
+            get { return _location; }
+            set { _location = SmoothLocation(value);}
         }
         public float rotation
         { 
-            get { return rotation; } 
-            set { rotation = SmoothRotation(value); }
+            get { return _rotation; }
+            set { _rotation = SmoothRotation(value);}
         }
+        public string type { get; set; }
+
+        // Internal variables for smoothing so the setter doesn't call itself recursively
+        private int[] _location;
+        private float _rotation;
 
         private int[] SmoothLocation(int[] incomingLocation)
         {
-            if (location == null || location.Length == 0)
+            if (_location == null || _location.Length == 0)
             {
-                location = incomingLocation;
-                return location;
+                _location = incomingLocation;
+                return _location;
             }
 
             for (int i = 0; i < incomingLocation.Length; i++)
             {
-                if (Math.Abs(location[i] - incomingLocation[i]) >= 5)
+                if (Math.Abs(location[i] - incomingLocation[i]) >= 1)
                 {
-                    location[i] = incomingLocation[i];
+                    _location[i] = incomingLocation[i];
                 }
             }
-            return location;
+            return _location;
         }
 
         private float SmoothRotation(float incomingRotation)
         {
-            if (Math.Abs(rotation - incomingRotation) >= Math.PI/8)
+            if (Math.Abs(_rotation - incomingRotation) >= Math.PI/64)
             {
-                rotation = incomingRotation;
+                _rotation = incomingRotation;
             }
 
-            return rotation;
+            return _rotation;
+        }
+
+        public void Update(Marker marker)
+        {
+            this.location = marker.location;
+            this.rotation = marker.rotation;
         }
     }
 }

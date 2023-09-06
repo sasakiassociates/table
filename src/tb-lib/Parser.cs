@@ -5,28 +5,10 @@ using Newtonsoft.Json;
 
 namespace TableLib
 {
-    public interface IParser
-    {
-        object Parse(string json);
-    }
 
-    public class ParserFactory
+    public class JsonToMarkerParser
     {
-        public static IParser GetParser(string parserType)
-        {
-            switch (parserType)
-            {
-                case "Marker":
-                    return new JsonToMarkerParser();
-                default:
-                    return null;
-            }
-        }
-    }
-
-    public class JsonToMarkerParser : IParser
-    {
-        public object Parse(string json)
+        public List<Marker> Parse(string json)
         {
             List<Marker> markers = new List<Marker>();
 

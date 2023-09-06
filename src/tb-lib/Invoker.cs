@@ -19,14 +19,16 @@ namespace TableLib
         private static Invoker instance;
         private static readonly object _lock = new object();
 
-        private IParser _parseStrategy;
+        private JsonToMarkerParser _parseStrategy = new JsonToMarkerParser();
         private Repository _repository;
         public int expire = 1000;
         public bool isRunning = false;
 
-        private string logFilePath = "C:\\Users\\nshikada\\Documents\\GitHub\\table\\src\\tb-gh\\TableUiAdapter\\obj\\Debug\\net48\\error.log";
+        private string logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
 
         public Dictionary<int, string> refDict;
+        List<Marker> incomingMarkerData = new List<Marker>();
+        List<Marker> markerMemory = new List<Marker>();
 
         // TODO change this class to cooperate with a State Pattern
         // We need a persistant memory for smoothing purposes
@@ -54,7 +56,6 @@ namespace TableLib
         {
             _repository = new Repository();
             // The default strategy is to parse the json string into a list of Markers
-            _parseStrategy = ParserFactory.GetParser("Marker");
         }
 
         // Singleton implementation
@@ -145,8 +146,6 @@ namespace TableLib
         // Might be a threading issue, or a memory issue
         public object Run()
         {
-            object data = null;
-            
             try
             {
                 // Connect to the UDP client
@@ -158,12 +157,28 @@ namespace TableLib
                 // Receive the data
                 string response = _repository.UdpReceive(expire);
 
-                
                 // If there is a response, parse the data
                 if (response != null)
                 {
-                    // Parse data
-                    data = _parseStrategy.Parse(response);
+                    incomingMarkerData = _parseStrategy.Parse(response);
+
+                    foreach (Marker newMarker in incomingMarkerData)                         // For each marker in the incoming data
+                    {
+                        bool exists = false;                                // Assume the marker doesn't exist in the stable data
+                        foreach (Marker oldMarker in markerMemory)         // Check each marker in the stable data to see if its id matches the incoming marker
+                        {
+                            if (newMarker.id == oldMarker.id)
+                            {
+                                exists = true;                              // If it does, then mark it as existing
+                                oldMarker.Update(newMarker);                // And update the marker's position
+                                break;                                      // Then break out of the loop
+                            }
+                        }
+                        if (!exists)                                        // If the marker doesn't exist in the stable data
+                        {
+                            markerMemory.Add(newMarker);                         // Add it to the stable data
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -172,12 +187,7 @@ namespace TableLib
                 LogError(ex);
             }
             
-            return data;
-        }
-
-        public void SetParseStrategy(IParser parseStrategy)
-        {
-            _parseStrategy = parseStrategy;
+            return markerMemory;
         }
 
         public void StopDetectionProgram()
