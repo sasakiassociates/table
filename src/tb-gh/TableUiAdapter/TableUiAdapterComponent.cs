@@ -3,9 +3,12 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Geometry;
 using Grasshopper.Kernel.Types.Transforms;
 using GrasshopperAsyncComponent;
+using Rhino;
+using Rhino.DocObjects.Custom;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using TableLib;
 
 namespace TableUiAdapter
@@ -33,7 +36,7 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-            //pManager.AddTextParameter("Views", "V", "List of the various views we want available to cycle through", GH_ParamAccess.list);
+            pManager.AddTextParameter("Views", "V", "List of the various views we want available to cycle through", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -45,13 +48,13 @@ namespace TableUiAdapter
             pManager.AddPointParameter("Camera Target", "T", "Target of the camera", GH_ParamAccess.item);
             pManager.AddNumberParameter("Pitch", "P", "Pitch of the camera", GH_ParamAccess.item);
             pManager.AddNumberParameter("Depth", "D", "Depth of the camera", GH_ParamAccess.item);
-            //pManager.AddTextParameter("View", "V", "Text that corresponds to named views", GH_ParamAccess.item);
         }
 
         private class ForLoopWorker : WorkerInstance
         {
             // Makes singleton "Invoker", whos object "Repository" connects to a UDP Client to listen on port 5005
             Invoker _invoker = Invoker.Instance;
+            DataLibrary _reference = DataLibrary.Instance;
             
             // INPUTS
             private bool run;
@@ -66,14 +69,14 @@ namespace TableUiAdapter
             Point3d cameraTarget;
             float pitch;
             float depth;
-            //string namedView;
+            string namedView;
 
             public ForLoopWorker() : base(null) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 DA.GetData(0, ref run);
-                //DA.GetDataList(1, namedViewList);
+                DA.GetDataList(1, namedViewList);
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -91,6 +94,10 @@ namespace TableUiAdapter
                             Console.WriteLine("Failed to start detection program");
                             Done();
                             return;
+                        }
+                        for (int i = 0; i < namedViewList.Count; i++)
+                        {
+                            _reference.BuildDict(i, namedViewList[i]);
                         }
                     }
 
@@ -134,10 +141,25 @@ namespace TableUiAdapter
                             depth = depthValue;
                             //depth = Invoker.MapFloatToInt(Math.Abs(depthValue), minRads, maxRads, minVariable, maxVariable);
                         }
-                        /*else if (marker.id == 96)
+                        else if (marker.id <= 96 && marker.id >= 96 - namedViewList.Count)
                         {
-                            namedView = ;
-                        }*/
+                            int index = 96 - marker.id;
+                            namedView = (string)_reference.GetData(index);
+                            Rhino.Display.RhinoView selectedView = RhinoDoc.ActiveDoc.Views.Find(namedView, false);
+                            RhinoDoc.ActiveDoc.Views.ActiveView = selectedView;
+
+                            RhinoDoc doc = RhinoDoc.ActiveDoc;
+
+                            /*// Get the Rhino document
+                            RhinoDoc doc = RhinoDoc.ActiveDoc;
+                            // view and view names
+                            var active_view_name = doc.Views.ActiveView.ActiveViewport.Name;
+
+                            int viewNum = doc.NamedViews.FindByName(namedView);
+
+                            Rhino.Display.RhinoView[] ListOfViews = doc.Views.GetViewList(true, true);*/
+
+                        }
                     }
 
                     // use Marker.id to find the corresponding model
