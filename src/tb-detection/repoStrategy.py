@@ -16,8 +16,6 @@ class RepoStrategy(ABC):
         self.terminate = False
         self.launch = False
         self.statup_data = {}
-        self.model_num = 0
-        self.variable_num = 0
 
     @abstractmethod
     def setup(self):
@@ -67,15 +65,6 @@ class UDPRepo(RepoStrategy):
                 if message == 'SEND':
                     #print("Sending data..." + str(self.data))
                     self.send(str(self.data))
-                
-                elif message.startswith('SETUP'):  # Check for message prefix
-                    if not self.launch:  # Only run this block once
-                        print("Setting up...")
-                        values = [int(val) for val in re.findall(r'\d+', message)]
-                        self.model_num, self.variable_num = values
-                        self.launch = True
-                    self.send('READY')
-                    print("Setup complete")
                         
                 elif message == 'END':
                     print("Exiting...")
@@ -96,16 +85,6 @@ class UDPRepo(RepoStrategy):
             _socket.close()
         except Exception as e:
             print(e)
-
-    # def send_data(self):
-    #     _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #     try:
-    #         message = str(self.data)
-    #         message_bytes = message.encode('utf-8')
-    #         _socket.sendto(message_bytes, (self.send_ip, self.send_port))
-    #         _socket.close()
-    #     except Exception as e:
-    #         print(e)
     
     def set_data(self, data):
         self.data = data

@@ -6,6 +6,7 @@ using GrasshopperAsyncComponent;
 using Rhino;
 using Rhino.DocObjects.Custom;
 using Rhino.Geometry;
+using Rhino.UI;
 using System;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
@@ -36,7 +37,6 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
-            pManager.AddTextParameter("Views", "V", "List of the various views we want available to cycle through", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -58,7 +58,6 @@ namespace TableUiAdapter
             
             // INPUTS
             private bool run;
-            List<string> namedViewList = new List<string>();
 
             // PROCESS VARIABLES
             float cameraRotation;
@@ -69,14 +68,12 @@ namespace TableUiAdapter
             Point3d cameraTarget;
             float pitch;
             float depth;
-            string namedView;
 
             public ForLoopWorker() : base(null) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 DA.GetData(0, ref run);
-                DA.GetDataList(1, namedViewList);
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -94,10 +91,6 @@ namespace TableUiAdapter
                             Console.WriteLine("Failed to start detection program");
                             Done();
                             return;
-                        }
-                        for (int i = 0; i < namedViewList.Count; i++)
-                        {
-                            _reference.BuildDict(i, namedViewList[i]);
                         }
                     }
 
@@ -141,24 +134,32 @@ namespace TableUiAdapter
                             depth = depthValue;
                             //depth = Invoker.MapFloatToInt(Math.Abs(depthValue), minRads, maxRads, minVariable, maxVariable);
                         }
-                        else if (marker.id <= 96 && marker.id >= 96 - namedViewList.Count)
+                        else if (marker.id <= 96 && marker.id >= 96 - 4)
                         {
+                            RhinoDoc doc = RhinoDoc.ActiveDoc;
                             int index = 96 - marker.id;
-                            namedView = (string)_reference.GetData(index);
-                            Rhino.Display.RhinoView selectedView = RhinoDoc.ActiveDoc.Views.Find(namedView, false);
-                            RhinoDoc.ActiveDoc.Views.ActiveView = selectedView;
+                            List<Guid> viewGuids = new List<Guid>();
 
-                            RhinoDoc doc = RhinoDoc.ActiveDoc;
+                            foreach (Rhino.Display.RhinoView view in doc.Views)
+                            {
+                                viewGuids.Add(view.MainViewport.Id);
+                            }
 
-                            /*// Get the Rhino document
-                            RhinoDoc doc = RhinoDoc.ActiveDoc;
-                            // view and view names
-                            var active_view_name = doc.Views.ActiveView.ActiveViewport.Name;
+                            if (index >= 0 && index <= 3)
+                            {
+                                Guid selectedViewGuid = viewGuids[index];
 
-                            int viewNum = doc.NamedViews.FindByName(namedView);
+                                if (selectedViewGuid != null)
+                                {
+                                    // Set the view as the active view
 
-                            Rhino.Display.RhinoView[] ListOfViews = doc.Views.GetViewList(true, true);*/
-
+                                    doc.Views.ActiveView = doc.Views.Find(selectedViewGuid);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("View not found");
+                                }
+                            }
                         }
                     }
 

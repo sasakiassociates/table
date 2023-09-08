@@ -1,6 +1,8 @@
 import context
 import unittest
 
+import repoStrategy
+
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
@@ -20,6 +22,13 @@ class HttpTests(unittest.TestCase):
     def test_get(self):
         ref = db.reference('/')
         print(ref.get())
+
+    def test_send(self):
+        strategy = repoStrategy.UDPRepo()
+        strategy.setup()
+        # strategy.set_data({"id": 0, "location": [0, 0], "rotation": 0, "type": "model"})
+        strategy.send("TEST")
+        strategy.close_threads();
 
 
 if __name__ == '__main__':

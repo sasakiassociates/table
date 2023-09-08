@@ -55,7 +55,6 @@ namespace TableLib
         private Invoker()
         {
             _repository = new Repository();
-            // The default strategy is to parse the json string into a list of Markers
         }
 
         // Singleton implementation
@@ -122,20 +121,21 @@ namespace TableLib
         // SOLUTION: for now just don't close the udp client (not best practice)
         public void SetupDetection(int modelNum, int variableNum)
         {
+            string path = "C:\\Users\\nshikada\\Documents\\GitHub\\table\\src\\tb-detection";
+            LaunchDetectionProgram(path);
+
             if (_repository == null)
             {
                 _repository = new Repository();
             }
-            while (!isRunning)
+
+            if (!_repository.IsConnected())
             {
-                _repository.UdpSend($"SETUP {modelNum} {variableNum}");
-                string response = _repository.UdpReceive(expire);
-                _repository.IsConnected();
-                if (response == "READY")
-                {
-                    isRunning = true;
-                    break;
-                }
+                _repository.Connect();
+            }
+            else
+            {
+                isRunning = true;
             }
         }
 

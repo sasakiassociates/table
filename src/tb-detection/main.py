@@ -35,10 +35,6 @@ if __name__ == "__main__":
 
     print("Waiting for setup info")
 
-    # Wait for the setup command to be sent
-    while not repository.check_for_launch():
-        pass
-
     print("Launching...")
 
     # What if video loop is delayed? 
@@ -46,3 +42,6 @@ if __name__ == "__main__":
     # That's how arguments are input into the program and then the camera starts with those inputs.
     camera = camera.Camera(args.camera, predefined_dict, params, repository)
     camera.videoLoop()
+
+    # Make sure the listening thread is closed
+    repository.strategy.close_threads()

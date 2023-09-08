@@ -48,9 +48,6 @@ namespace TableLibTests
         {
             string path = "..\\..\\..\\..\\..\\src\\tb-detection\\";
             _invoker.LaunchDetectionProgram(path);
-            // We need to run setup for the detection to start
-            // _invoker.SetupDetection(10, 10);
-            _invoker.SetupDetection(10, 10);
         }
         [Test]
         public void SetupThroughInvokerTest()
@@ -118,14 +115,17 @@ namespace TableLibTests
         [Test]
         public void RepositoryReceiveTest()
         {
-
-            testRepository.UdpSend("SEND");
+            Repository testRepository = new Repository();
+            //testRepository.UdpSend("SEND");
 
             string response = testRepository.UdpReceive(1000);
 
             Console.WriteLine(response);
 
             Assert.That(response.Length, Is.AtLeast(0));
+
+            testRepository.Disconnect();
+            testRepository = null;
         }
 
         // See if the repository object can send a message, receive a response, and then parse it

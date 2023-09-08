@@ -7,6 +7,7 @@ class Marker():
         self.id = marker_id_
         self.observers = []
         self.rotation = 0
+        self.type = ""
 
     def attach_observer(self, observer_):
         self.observers.append(observer_)
@@ -50,3 +51,6 @@ class Marker():
         adjusted_angle_radians = (angle_rads - pi/4 + pi) % (2 * pi) - pi
 
         self.rotation = adjusted_angle_radians
+
+    def set_type(self, type_):
+        self.type = type_
