@@ -77,6 +77,19 @@ namespace TableLibTests
         }
 
         [Test]
+        public void GetMarkerTypes()
+        {
+            List<Marker> response = (List<Marker>)_invoker.Run();
+            foreach (Marker marker in response)
+            {
+                if (marker.id == 99)
+                {
+                    Assert.That(marker.type, Is.EqualTo("camera"));
+                }
+            }
+        }
+
+        [Test]
         public void MarkerUpdate()
         {
             Marker marker1 = new Marker();

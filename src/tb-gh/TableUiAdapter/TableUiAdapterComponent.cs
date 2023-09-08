@@ -37,6 +37,7 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
+            pManager.AddTextParameter("Views", "V", "Views to switch through", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -58,6 +59,7 @@ namespace TableUiAdapter
             
             // INPUTS
             private bool run;
+            private List<string> views = new List<string>();
 
             // PROCESS VARIABLES
             float cameraRotation;
@@ -74,6 +76,7 @@ namespace TableUiAdapter
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 DA.GetData(0, ref run);
+                DA.GetDataList(1, views);
             }
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
@@ -111,16 +114,30 @@ namespace TableUiAdapter
                     // TODO rework this so the markers know their type and will report their values
                     foreach (Marker marker in markers)
                     {
+                        // Eventually we'll do this instead
+                        //if (marker.type == "camera")
+                        //{
+                        //    cameraRotation = marker.rotation;
+                        //    cameraLocation = marker.location;
+                        //    // Make this into a point
+                        //    cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.8);
+                        //    cameraTarget = new Point3d(cameraLocation[0], cameraLocation[1] + 5, 6);
+
                         if (marker.id == 99)                // If the marker id is 99, it's the camera marker so get the location and rotation
                         {
-                            cameraRotation = marker.rotation;
-                            cameraLocation = marker.location;
-                            // Make this into a point
-                            cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.8);
-                            cameraTarget = new Point3d(cameraLocation[0], cameraLocation[1] + 5, 6);
+                            // Check if perspective is the current view since that's the only one we want to change
+                            Rhino.Display.RhinoView view = RhinoDoc.ActiveDoc.Views.ActiveView;
+                            if (view.ActiveViewport.Name == "Perspective")
+                            {
+                                cameraRotation = marker.rotation;
+                                cameraLocation = marker.location;
+                                // Make this into a point
+                                cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.8);
+                                cameraTarget = new Point3d(cameraLocation[0], cameraLocation[1] + 5, 6);
 
-                            Transform targetRotation = Transform.Rotation(cameraRotation, Vector3d.ZAxis, cameraOrigin);
-                            cameraTarget.Transform(targetRotation);
+                                Transform targetRotation = Transform.Rotation(cameraRotation, Vector3d.ZAxis, cameraOrigin);
+                                cameraTarget.Transform(targetRotation);
+                            }
                         }
                         else if (marker.id == 98)           // This is the pitch marker, so get the rotation
                         {
@@ -134,35 +151,25 @@ namespace TableUiAdapter
                             depth = depthValue;
                             //depth = Invoker.MapFloatToInt(Math.Abs(depthValue), minRads, maxRads, minVariable, maxVariable);
                         }
-                        else if (marker.id <= 96 && marker.id >= 96 - 4)
+                        else if (marker.id <= 96 && marker.id >= 96 - views.Count)
                         {
                             RhinoDoc doc = RhinoDoc.ActiveDoc;
                             int index = 96 - marker.id;
                             List<Guid> viewGuids = new List<Guid>();
+                            List<Rhino.Display.RhinoView> viewList = new List<Rhino.Display.RhinoView>();
 
-                            foreach (Rhino.Display.RhinoView view in doc.Views)
+                            foreach (string viewName in views)
                             {
-                                viewGuids.Add(view.MainViewport.Id);
-                            }
-
-                            if (index >= 0 && index <= 3)
-                            {
-                                Guid selectedViewGuid = viewGuids[index];
-
-                                if (selectedViewGuid != null)
+                                Rhino.Display.RhinoView view = doc.Views.Find(viewName, false);
+                                if (view != null)
                                 {
-                                    // Set the view as the active view
-
-                                    doc.Views.ActiveView = doc.Views.Find(selectedViewGuid);
-                                }
-                                else
-                                {
-                                    Console.WriteLine("View not found");
+                                    viewList.Add(view);
                                 }
                             }
+
+                            viewList[index].MainViewport.SetCameraLocations(cameraOrigin, cameraTarget);
                         }
                     }
-
                     // use Marker.id to find the corresponding model
                     // move the model to the point of the marker
                     // add the model to the output list

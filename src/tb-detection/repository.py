@@ -10,7 +10,7 @@ class Repository():
         self.strategy.setup()
 
     # Update the UDP thread with the data
-    def update_send_data(self):
+    def send_data(self):
         self.strategy.set_data(self.data)
         self.data = {}
 

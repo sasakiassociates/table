@@ -44,4 +44,4 @@ if __name__ == "__main__":
     camera.videoLoop()
 
     # Make sure the listening thread is closed
-    repository.strategy.close_threads()
+    repository.strategy.end()

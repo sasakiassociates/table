@@ -17,7 +17,7 @@ class HttpTests(unittest.TestCase):
 
     def test_set(self):
         ref = db.reference('/')
-        ref.set([{"id": 0, "location": [0, 0], "rotation": 0, "type": "model"}])
+        ref.set([{"id": 0, "location": [10, 0], "rotation": 0, "type": "model"}])
 
     def test_get(self):
         ref = db.reference('/')
