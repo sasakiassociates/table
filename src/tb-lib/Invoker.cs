@@ -23,7 +23,10 @@ namespace TableLib
         private Repository _repository;
         public int expire = 1000;
         public bool isRunning = false;
+
+        // Auto Update tests
         public bool isListening = false;
+        public int _counter = 0;
 
         private string logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
 
@@ -77,13 +80,13 @@ namespace TableLib
 
         public async Task<List<Marker>> ListenerThread()
         {
-            if (!isListening)
-            {
-                isListening = true;
-            }
             try
             {
-                while (true)
+                if (!isListening)
+                {
+                    isListening = true;
+                }
+                while (isListening)
                 {
                     List<Marker> response = (List<Marker>)QueryResponse();
                     await Task.Delay(100);
@@ -96,6 +99,7 @@ namespace TableLib
                         return null;
                     }
                 }
+                return null;
             }
             catch (Exception ex)
             {

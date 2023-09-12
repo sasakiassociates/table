@@ -16,6 +16,7 @@ namespace TableUiAdapter
 {
     public class AutoUpdateComponent : GH_AsyncComponent
     {
+
         /// <summary>
         /// Initializes a new instance of the AutoUpdateComponent class.
         /// </summary>
@@ -33,7 +34,6 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("Run", "R", "Run the component", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -48,45 +48,29 @@ namespace TableUiAdapter
         {
             private Invoker _invoker;
             public int _counter;
-            private bool _isListening;
 
             public AutoUpdateWorker(GH_Component _parent) : base(_parent)
             {
                 _invoker = Invoker.Instance;
-                _counter = 0;
+                _counter = _invoker._counter;
             }
             
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                DA.GetData(0, ref _isListening);
             }
 
-            public override void DoWork(Action<string, double> ReportProgress, Action Done)
+            public override async void DoWork(Action<string, double> ReportProgress, Action Done)
             {
                 //if (CancellationToken.IsCancellationRequested) { return; }
-
-                _counter = 12;
-
-                /*if (_invoker.isListening == false)
+                var autoUpdateComponent = (AutoUpdateComponent)Parent;
+                
+                if (!_invoker.isListening)
                 {
-                    
-                    _invoker.isListening = true;
-                    var task = new Task(() =>                                                          // Start a new threaded task to test if it can rerun this component
-                    {
-                        while (true)
-                        {
-                            if (CancellationToken.IsCancellationRequested) { return; }
+                    // start the listener on a separate thread
+                    _ = Task.Run(() => UpdateThreadTest());
+                }
 
-                            _counter++;
-
-                            // do stuff
-                            ReportProgress("Progress", 0);
-                            Thread.Sleep(3000);
-                            // rerun the component
-
-                        }
-                    });
-                }*/
+                Done();
             }
             public override void SetData(IGH_DataAccess DA)
             {
@@ -94,6 +78,27 @@ namespace TableUiAdapter
             }
 
             public override WorkerInstance Duplicate() => new AutoUpdateWorker(Parent);
+
+            private async Task UpdateThreadTest()
+            {
+                _invoker.isListening = true;
+                while (_invoker.isListening)
+                {
+                    _invoker._counter++;
+
+                    // Schedule a solution update on the UI thread
+                    Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
+                    {
+                        Parent.OnPingDocument().ScheduleSolution(1, (doc) =>
+                        {
+                            // This code will run on the UI thread
+                            Parent.ExpireSolution(true);
+                        });
+                    }));
+
+                    await Task.Delay(1000);
+                }
+            }
         }
 
         /// <summary>
@@ -111,6 +116,7 @@ namespace TableUiAdapter
 
         public class AutoUpdateAttributes : GH_ComponentAttributes
         {
+            private Invoker _invoker = Invoker.Instance;
             public AutoUpdateAttributes(GH_Component owner) 
                 : base(owner) { }
             private Rectangle ButtonBounds { get; set; }
@@ -135,7 +141,7 @@ namespace TableUiAdapter
 
                 if (channel == GH_CanvasChannel.Objects)
                 {
-                    GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Run", 2, 0);
+                    GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "End", 2, 0);
                     button.Render(graphics, Selected, Owner.Locked, false);
                     button.Dispose();
                 }
@@ -150,15 +156,20 @@ namespace TableUiAdapter
                         // React to the button click here.
                         // You can trigger your desired action when the button is clicked.
                         // For example, you can show a message box.
-                        MessageBox.Show("Component Run!");
+                        MessageBox.Show("Listening Stopped!");
                         // Run the component
-                        Owner.ExpireSolution(true);
+                        _invoker.isListening = false;
                         return GH_ObjectResponse.Handled;
                     }
                 }
 
                 return base.RespondToMouseUp(sender, e);
             }
+        }
+
+        protected override void ExpireDownStreamObjects()
+        {
+            base.ExpireDownStreamObjects();
         }
 
         /// <summary>
