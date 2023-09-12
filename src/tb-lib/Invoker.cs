@@ -23,6 +23,7 @@ namespace TableLib
         private Repository _repository;
         public int expire = 1000;
         public bool isRunning = false;
+        public bool isListening = false;
 
         private string logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
 
@@ -71,6 +72,39 @@ namespace TableLib
                     }
                     return instance;
                 }
+            }
+        }
+
+        public async Task<List<Marker>> ListenerThread()
+        {
+            if (!isListening)
+            {
+                isListening = true;
+            }
+            try
+            {
+                while (true)
+                {
+                    List<Marker> response = (List<Marker>)QueryResponse();
+                    await Task.Delay(100);
+                    if (response.Count > 0)
+                    {
+                        return response;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return null;
+            }
+            finally
+            {
+                isListening = false;
             }
         }
 
@@ -144,7 +178,7 @@ namespace TableLib
         // Might be several things, but has to be specific to the way "Process"
         // works to launch apps since it works fine when launched from command line
         // Might be a threading issue, or a memory issue
-        public object Run()
+        public object QueryResponse()
         {
             try
             {

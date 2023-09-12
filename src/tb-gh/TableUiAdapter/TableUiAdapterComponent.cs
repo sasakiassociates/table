@@ -88,13 +88,8 @@ namespace TableUiAdapter
                     if (!_invoker.isRunning)
                     {
                         // _invoker.LaunchDetectionProgram(detectionPath);
-                        bool success = _invoker.ExecuteWithTimeLimit(TimeSpan.FromMilliseconds(5000), () => _invoker.SetupDetection(10, 10));
-                        if (!success)
-                        {
-                            Console.WriteLine("Failed to start detection program");
-                            Done();
-                            return;
-                        }
+                        // bool success = _invoker.ExecuteWithTimeLimit(TimeSpan.FromMilliseconds(5000), () => _invoker.SetupDetection(10, 10));
+                        _invoker.isRunning = true;
                     }
 
                     // TODO: Maybe this guy shouldn't even know about the markers!
@@ -102,7 +97,7 @@ namespace TableUiAdapter
                     // List<Brep> models
                     // List<int[]> locations
                     // List<int> rotations
-                    List<Marker> markers = (List<Marker>)_invoker.Run();
+                    List<Marker> markers = (List<Marker>)_invoker.QueryResponse();
                     // FAILURE: No markers are detected
                     if (markers == null || markers.Count == 0)
                     {
@@ -123,12 +118,12 @@ namespace TableUiAdapter
                         //    cameraOrigin = new Point3d(cameraLocation[0], cameraLocation[1], 5.8);
                         //    cameraTarget = new Point3d(cameraLocation[0], cameraLocation[1] + 5, 6);
 
-                        if (marker.id == 99)                // If the marker id is 99, it's the camera marker so get the location and rotation
+                        if (marker.type == "camera")                // If the marker id is 99, it's the camera marker so get the location and rotation
                         {
                             // Check if perspective is the current view since that's the only one we want to change
-                            Rhino.Display.RhinoView view = RhinoDoc.ActiveDoc.Views.ActiveView;
-                            if (view.ActiveViewport.Name == "Perspective")
-                            {
+                            // Rhino.Display.RhinoView view = RhinoDoc.ActiveDoc.Views.ActiveView;
+                            /*if (view.ActiveViewport.Name == "Perspective")
+                            {*/
                                 cameraRotation = marker.rotation;
                                 cameraLocation = marker.location;
                                 // Make this into a point
@@ -137,7 +132,7 @@ namespace TableUiAdapter
 
                                 Transform targetRotation = Transform.Rotation(cameraRotation, Vector3d.ZAxis, cameraOrigin);
                                 cameraTarget.Transform(targetRotation);
-                            }
+                            //}
                         }
                         else if (marker.id == 98)           // This is the pitch marker, so get the rotation
                         {

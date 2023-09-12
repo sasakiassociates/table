@@ -70,10 +70,10 @@ class UDPRepo(RepoStrategy):
                 message = data.decode('utf-8')
                 
                 if message == 'SEND':
-                    if self.new_data:
-                        self.send()
-                        print("Sent data: " + str(self.data))
-                        self.new_data = False
+                    # if self.new_data:
+                    self.send()
+                    print("Sent data: " + str(self.data))
+                    self.new_data = False
                         
                 elif message == 'END':
                     print("Exiting...")

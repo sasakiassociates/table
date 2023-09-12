@@ -9,7 +9,7 @@ class Marker():
         
         self.rotation = 0
         self.prev_rotation = 0
-        self.rotation_threshold = pi/32
+        self.rotation_threshold = pi/100
         
         self.center = (0,0)
         self.prev_center = (0,0)

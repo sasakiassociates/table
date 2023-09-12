@@ -57,10 +57,11 @@ namespace TableLibTests
         [Test]
         public void ReadThroughInvokerTest()
         {
-            List<Marker> response = (List<Marker>)_invoker.Run();
+            List<Marker> response = (List<Marker>)_invoker.QueryResponse();
             foreach (Marker marker in response)
             {
-                Console.WriteLine(marker.rotation);
+                Console.WriteLine("rotation: " + marker.rotation);
+                Console.WriteLine("type: " + marker.type);
             }
             Assert.That(response, Is.Not.Null);
         }
@@ -79,7 +80,7 @@ namespace TableLibTests
         [Test]
         public void GetMarkerTypes()
         {
-            List<Marker> response = (List<Marker>)_invoker.Run();
+            List<Marker> response = (List<Marker>)_invoker.QueryResponse();
             foreach (Marker marker in response)
             {
                 if (marker.id == 99)
