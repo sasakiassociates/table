@@ -15,7 +15,7 @@ namespace TableLibTests
         [SetUp]
         public void Setup()
         {
-            _invoker = Invoker.Instance;
+            //_invoker = Invoker.Instance;
             // testRepository = Repository.Instance;
         }
         [TearDown]
@@ -44,6 +44,30 @@ namespace TableLibTests
         }
 
         [Test]
+        public async Task InvokerReceiveTest()
+        {
+            Invoker _invoker = Invoker.Instance;
+            CancellationToken cancellationToken = new CancellationToken();
+            List<Marker> markers = await _invoker.ListenerThread(cancellationToken);
+            Assert.That(markers, Is.Not.Null);
+        }
+        [Test]
+        public void RepoReceiveTest()
+        {
+            testRepository = new Repository();
+            string response = testRepository.UdpReceive();
+            Assert.That(response, Is.Not.Null);
+        }
+        // TODO the async receive isn't working
+        [Test]
+        public async Task RepoAsyncReceiveTest()
+        {
+            testRepository = new Repository();  
+            string response = await testRepository.Receive(CancellationToken.None);
+            Assert.That(response, Is.Not.Null);
+        }
+
+        [Test]
         public void LaunchThroughInvokerTest()
         {
             string path = "..\\..\\..\\..\\..\\src\\tb-detection\\";
@@ -57,12 +81,14 @@ namespace TableLibTests
         [Test]
         public void ReadThroughInvokerTest()
         {
+            Invoker _invoker = Invoker.Instance;
             List<Marker> response = (List<Marker>)_invoker.QueryResponse();
             foreach (Marker marker in response)
             {
                 Console.WriteLine("rotation: " + marker.rotation);
                 Console.WriteLine("type: " + marker.type);
             }
+            Console.WriteLine(response);
             Assert.That(response, Is.Not.Null);
         }
         [Test]
@@ -88,6 +114,19 @@ namespace TableLibTests
                     Assert.That(marker.type, Is.EqualTo("camera"));
                 }
             }
+        }
+
+        [Test]
+        public void AsyncInvokerReceive()
+        {
+            Invoker _invoker = Invoker.Instance;
+            CancellationToken cancellationToken = new CancellationToken();
+            List<Marker> markers = _invoker.ListenerThread(cancellationToken).Result;
+            foreach (Marker marker in markers)
+            {
+                Console.WriteLine(marker.id);
+            }
+            Assert.That(markers, Is.Not.Null);
         }
 
         [Test]

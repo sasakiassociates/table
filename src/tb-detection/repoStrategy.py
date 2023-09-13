@@ -89,6 +89,7 @@ class UDPRepo(RepoStrategy):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             message = str(self.data)
+            print("Sending data: " + message)
             message_bytes = message.encode('utf-8')
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
             _socket.close()

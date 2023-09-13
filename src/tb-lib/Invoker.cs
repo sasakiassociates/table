@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TableLib
@@ -78,38 +79,14 @@ namespace TableLib
             }
         }
 
-        public async Task<List<Marker>> ListenerThread()
+        public async Task<List<Marker>> ListenerThread(CancellationToken cancelToken)
         {
-            try
-            {
-                if (!isListening)
-                {
-                    isListening = true;
-                }
-                while (isListening)
-                {
-                    List<Marker> response = (List<Marker>)QueryResponse();
-                    await Task.Delay(100);
-                    if (response.Count > 0)
-                    {
-                        return response;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                return null;
-            }
-            finally
-            {
-                isListening = false;
-            }
+            // This is the async method that listens for the udp messages
+            string response = await _repository.Receive(cancelToken, 0);
+            // Parse the response into a list of markers
+            List<Marker> markers = _parseStrategy.Parse(response);
+            // Return the list of markers
+            return markers;
         }
 
         // Launches the detection program (non-blocking)
@@ -193,7 +170,7 @@ namespace TableLib
                 _repository.UdpSend("SEND");
 
                 // Receive the data
-                string response = _repository.UdpReceive(expire);
+                string response = _repository.UdpReceive(0);
 
                 // If there is a response, parse the data
                 if (response != null)
