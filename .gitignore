@@ -91,7 +91,7 @@ StyleCopReport.xml
 *.pidb
 *.svclog
 *.scc
-
+*.env
 
 # ReSharper is a .NET coding add-in
 _ReSharper*/
