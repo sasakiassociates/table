@@ -50,7 +50,10 @@ namespace TableUiAdapter
             private Invoker _invoker;
             public List<Marker> markers;
             private bool newMarkers = false;
-            public List<int> markerids = new List<int>();
+            public List<int> markerids = new List<int>
+            {
+                2
+            };
 
             public AutoUpdateWorker(GH_Component _parent) : base(_parent)
             {
@@ -73,16 +76,17 @@ namespace TableUiAdapter
                 if (!_invoker.isListening)
                 {
                     // start the listener on a separate thread
-                    _ = Task.Run(() => UpdateThreadTest());
+                    _ = Task.Run(() => UpdateThread());
                 }
 
-                if (newMarkers)
+                /*if (newMarkers)
                 {
                     foreach (Marker marker in markers)
                     {
                         markerids.Add(marker.id);
                     }
-                }
+                    newMarkers = false;
+                }*/
 
                 Done();
             }
@@ -97,7 +101,7 @@ namespace TableUiAdapter
             /// This method will run on a separate thread and cause the component to expire if it receives a udp message on port 5005
             /// </summary>
             /// <returns></returns>
-            private async Task UpdateThreadTest()
+            private async Task UpdateThread()
             {
                 _invoker.isListening = true;
                 while (_invoker.isListening)
@@ -111,6 +115,10 @@ namespace TableUiAdapter
                         // update the markers
                         markers = updatedMarkers;
                         newMarkers = true;
+                        markerids = new List<int>
+                        {
+                            1
+                        };
 
                         // Schedule a solution update on the UI thread
                         Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
@@ -121,6 +129,14 @@ namespace TableUiAdapter
                                 Parent.ExpireSolution(true);
                             });
                         }));
+                    }
+                    else
+                    {
+                        markerids = new List<int>
+                        {
+                            0
+                        };
+
                     }
                 }
             }

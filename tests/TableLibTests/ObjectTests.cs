@@ -117,11 +117,11 @@ namespace TableLibTests
         }
 
         [Test]
-        public void AsyncInvokerReceive()
+        public async Task AsyncInvokerReceive()
         {
             Invoker _invoker = Invoker.Instance;
             CancellationToken cancellationToken = new CancellationToken();
-            List<Marker> markers = _invoker.ListenerThread(cancellationToken).Result;
+            List<Marker> markers = await _invoker.ListenerThread(cancellationToken);
             foreach (Marker marker in markers)
             {
                 Console.WriteLine(marker.id);
