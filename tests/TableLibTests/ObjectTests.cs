@@ -48,7 +48,8 @@ namespace TableLibTests
         {
             Invoker _invoker = Invoker.Instance;
             CancellationToken cancellationToken = new CancellationToken();
-            List<Marker> markers = await _invoker.ListenerThread(cancellationToken);
+            await _invoker.ListenerThread(cancellationToken);
+            List<Marker> markers = _invoker.markerMemory;
             Assert.That(markers, Is.Not.Null);
         }
         [Test]
@@ -82,7 +83,8 @@ namespace TableLibTests
         public void ReadThroughInvokerTest()
         {
             Invoker _invoker = Invoker.Instance;
-            List<Marker> response = (List<Marker>)_invoker.QueryResponse();
+            _invoker.QueryResponse();
+            List<Marker> response = _invoker.markerMemory;
             foreach (Marker marker in response)
             {
                 Console.WriteLine("rotation: " + marker.rotation);
@@ -106,7 +108,8 @@ namespace TableLibTests
         [Test]
         public void GetMarkerTypes()
         {
-            List<Marker> response = (List<Marker>)_invoker.QueryResponse();
+            _invoker.QueryResponse();
+            List<Marker> response = _invoker.markerMemory;
             foreach (Marker marker in response)
             {
                 if (marker.id == 99)
@@ -121,12 +124,39 @@ namespace TableLibTests
         {
             Invoker _invoker = Invoker.Instance;
             CancellationToken cancellationToken = new CancellationToken();
-            List<Marker> markers = await _invoker.ListenerThread(cancellationToken);
+            await _invoker.ListenerThread(cancellationToken);
+            List<Marker> markers = _invoker.markerMemory;
+
             foreach (Marker marker in markers)
             {
                 Console.WriteLine(marker.id);
             }
+
+            List<int> ids = _invoker.markerIds;
+            foreach (int id in ids)
+            {
+                Console.WriteLine(id);
+            }
+
             Assert.That(markers, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task AsyncInvokerReceive2()
+        {
+            Invoker _invoker = Invoker.Instance;
+            CancellationToken cancellationToken = new CancellationToken();
+            await _invoker.ListenerThread(cancellationToken);
+            List<Marker> markers = _invoker.markerMemory;
+            
+            if (markers != null)
+            {
+                Assert.IsTrue(true);
+            }
+            else
+            {
+                Assert.Fail();
+            }
         }
 
         [Test]

@@ -83,6 +83,10 @@ namespace TableUiAdapter
                 _invoker.isListening = true;
                 while (_invoker.isListening)
                 {
+                    // wait until there's a message from the udp client
+                    await _invoker.ListenerThread(CancellationToken);
+
+                    // in this test, add to the counter for every message received
                     _invoker._counter++;
 
                     // Schedule a solution update on the UI thread
@@ -95,7 +99,7 @@ namespace TableUiAdapter
                         });
                     }));
 
-                    await Task.Delay(1000);
+                    //await Task.Delay(1000);
                 }
             }
         }

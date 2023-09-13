@@ -27,8 +27,9 @@ class HttpTests(unittest.TestCase):
         strategy = repoStrategy.UDPRepo()
         strategy.setup()
         data = {}
-        data[0] = {"id": 0, "location": [10, 0], "rotation": 0, "type": "model"}
-        data[1] = {"id": 1, "location": [10, 0], "rotation": 0, "type": "model"}
+        data[0] = {"id": 0, "location": [10, 0], "rotation": 50, "type": "model"}
+        data[1] = {"id": 1, "location": [10, 0], "rotation": 30, "type": "model"}
+        data[2] = {"id": 2, "location": [10, 0], "rotation": 10, "type": "model"}
         strategy.set_data(data)
         strategy.send()
 

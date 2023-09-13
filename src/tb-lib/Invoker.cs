@@ -22,18 +22,21 @@ namespace TableLib
 
         private JsonToMarkerParser _parseStrategy = new JsonToMarkerParser();
         private Repository _repository;
-        public int expire = 1000;
-        public bool isRunning = false;
 
         // Auto Update tests
         public bool isListening = false;
-        public int _counter = 0;
 
         private string logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
 
         public Dictionary<int, string> refDict;
         List<Marker> incomingMarkerData = new List<Marker>();
-        List<Marker> markerMemory = new List<Marker>();
+        public List<Marker> markerMemory = new List<Marker>();
+
+        // Desired data
+        public List<int> markerIds = new List<int>();
+        public List<float> markerRotations = new List<float>();
+        public List<int[]> markerLocations = new List<int[]>();
+        public int _counter = 0;
 
         // TODO change this class to cooperate with a State Pattern
         // We need a persistant memory for smoothing purposes
@@ -79,14 +82,45 @@ namespace TableLib
             }
         }
 
-        public async Task<List<Marker>> ListenerThread(CancellationToken cancelToken)
+        public async Task ListenerThread(CancellationToken cancelToken)
         {
             // This is the async method that listens for the udp messages
             string response = await _repository.Receive(cancelToken, 0);
-            // Parse the response into a list of markers
-            List<Marker> markers = _parseStrategy.Parse(response);
-            // Return the list of markers
-            return markers;
+            // If there is a response, parse the data
+            if (response != null)
+            {
+                incomingMarkerData = _parseStrategy.Parse(response);
+
+                foreach (Marker newMarker in incomingMarkerData)                         // For each marker in the incoming data
+                {
+                    bool exists = false;                                // Assume the marker doesn't exist in the stable data
+                    foreach (Marker oldMarker in markerMemory)         // Check each marker in the stable data to see if its id matches the incoming marker
+                    {
+                        if (newMarker.id == oldMarker.id)
+                        {
+                            exists = true;                              // If it does, then mark it as existing
+                            oldMarker.Update(newMarker);                // And update the marker's position
+                            break;                                      // Then break out of the loop
+                        }
+                    }
+                    if (!exists)                                        // If the marker doesn't exist in the stable data
+                    {
+                        markerMemory.Add(newMarker);                         // Add it to the stable data
+                        
+                        
+                    }
+                }
+
+                markerIds.Clear();
+                markerRotations.Clear();
+                markerLocations.Clear();
+                foreach (Marker marker in markerMemory)
+                {
+                    markerIds.Add(marker.id);
+                    markerRotations.Add(marker.rotation);
+                    markerLocations.Add(marker.location);
+                }
+            }
         }
 
         // Launches the detection program (non-blocking)
@@ -130,81 +164,6 @@ namespace TableLib
             }
         }
 
-        // TODO this gets stuck in a loop and can't hear the response
-        // (Only if the program was launched and then closed and then launched again)
-        // UPDATE: This happens when the udp client was formerly closed and then reopened
-        // SOLUTION: for now just don't close the udp client (not best practice)
-        public void SetupDetection(int modelNum, int variableNum)
-        {
-            string path = "C:\\Users\\nshikada\\Documents\\GitHub\\table\\src\\tb-detection";
-            LaunchDetectionProgram(path);
-
-            if (_repository == null)
-            {
-                _repository = new Repository();
-            }
-
-            if (!_repository.IsConnected())
-            {
-                _repository.Connect();
-            }
-            else
-            {
-                isRunning = true;
-            }
-        }
-
-        // TODO the program crashes if openned in Grasshopper
-        // It'll open, then do a handful of updates, and then crashes
-        // Might be several things, but has to be specific to the way "Process"
-        // works to launch apps since it works fine when launched from command line
-        // Might be a threading issue, or a memory issue
-        public object QueryResponse()
-        {
-            try
-            {
-                // Connect to the UDP client
-                //_repository.Connect();
-
-                // Tell the other program to send data
-                _repository.UdpSend("SEND");
-
-                // Receive the data
-                string response = _repository.UdpReceive(0);
-
-                // If there is a response, parse the data
-                if (response != null)
-                {
-                    incomingMarkerData = _parseStrategy.Parse(response);
-
-                    foreach (Marker newMarker in incomingMarkerData)                         // For each marker in the incoming data
-                    {
-                        bool exists = false;                                // Assume the marker doesn't exist in the stable data
-                        foreach (Marker oldMarker in markerMemory)         // Check each marker in the stable data to see if its id matches the incoming marker
-                        {
-                            if (newMarker.id == oldMarker.id)
-                            {
-                                exists = true;                              // If it does, then mark it as existing
-                                oldMarker.Update(newMarker);                // And update the marker's position
-                                break;                                      // Then break out of the loop
-                            }
-                        }
-                        if (!exists)                                        // If the marker doesn't exist in the stable data
-                        {
-                            markerMemory.Add(newMarker);                         // Add it to the stable data
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine(ex.Message);
-                LogError(ex);
-            }
-            
-            return markerMemory;
-        }
-
         public void StopDetectionProgram()
         {
             try
@@ -217,50 +176,11 @@ namespace TableLib
 
                 _repository.Disconnect();
                 _repository = null;
-                isRunning = false;
+                isListening = false;
             } catch (Exception ex)
             {
                 LogError(ex);
             }
-        }
-
-        public bool ExecuteWithTimeLimit(TimeSpan timeSpan, Action codeBlock)
-        {
-            try
-            {
-                Task task = Task.Factory.StartNew(() => codeBlock());
-                task.Wait(timeSpan);
-                return task.IsCompleted;
-            }
-            catch (AggregateException ae)
-            {
-                throw ae.InnerExceptions[0];
-            }
-        }
-
-        public void BuildDict(int modelCount, int variableCount)
-        {
-            refDict = new Dictionary<int, string>();
-
-            for (int i = 0; i < modelCount; i++)
-            {
-                refDict.Add(i, "model");
-            }
-            for (int i = 0; i < variableCount; i++)
-            {
-                refDict.Add(i + modelCount, "variable");
-            }
-        }
-
-        public static int MapFloatToInt(float value, float fromMin, float fromMax, int toMin, int toMax)
-        {
-            // Ensure the value is within the specified range
-            value = Math.Max(fromMin, Math.Min(fromMax, value));
-
-            // Perform linear mapping
-            float range1 = fromMax - fromMin;
-            float range2 = toMax - toMin;
-            return (int)(((value - fromMin) / range1) * range2 + toMin);
         }
     }
 }

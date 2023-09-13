@@ -52,12 +52,18 @@ class UDPRepo(RepoStrategy):
 
     def setup(self):
         # create and run thread to listen for commands
-        listen_thread = threading.Thread(target=self.listen_for_data_thread)
+        listen_thread = threading.Thread(target=self.send_data_thread)
         listen_thread.daemon = True
         listen_thread.start()
 
     def end(self):
         self.terminate = True
+
+    def send_data_thread(self):
+        while not self.terminate:
+            if self.new_data:
+                self.send()
+                self.new_data = False
 
     def listen_for_data_thread(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

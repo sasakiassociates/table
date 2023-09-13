@@ -16,6 +16,8 @@ namespace TableUiAdapter
 {
     public class UdpReceiveUpdateComponent : GH_AsyncComponent
     {
+        protected Invoker _invoker = Invoker.Instance;
+
         /// <summary>
         /// Initializes a new instance of the UdpAutoUpdatingComponent class.
         /// </summary>
@@ -41,6 +43,8 @@ namespace TableUiAdapter
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddIntegerParameter("Marker Ids", "M", "Marker Ids", GH_ParamAccess.list);
+            pManager.AddPointParameter("Locations", "L", "Locations", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Rotations", "R", "Rotations", GH_ParamAccess.list);
         }
 
         private class AutoUpdateWorker : WorkerInstance
@@ -49,11 +53,11 @@ namespace TableUiAdapter
             // Needs to be a singleton across threads for this method to work
             private Invoker _invoker;
             public List<Marker> markers;
-            private bool newMarkers = false;
-            public List<int> markerids = new List<int>
-            {
-                2
-            };
+
+            public List<int> markerids;
+            public List<int[]> markerCoordinates;
+            public List<Point2d> markerLocations;
+            public List<float> markerRotations;
 
             public AutoUpdateWorker(GH_Component _parent) : base(_parent)
             {
@@ -79,20 +83,26 @@ namespace TableUiAdapter
                     _ = Task.Run(() => UpdateThread());
                 }
 
-                /*if (newMarkers)
+                markerids = _invoker.markerIds;
+                markerCoordinates = _invoker.markerLocations;
+                markerRotations = _invoker.markerRotations;
+
+                if (markerCoordinates != null)
                 {
-                    foreach (Marker marker in markers)
+                    markerLocations = new List<Point2d>();
+                    foreach (int[] coord in markerCoordinates)
                     {
-                        markerids.Add(marker.id);
+                        markerLocations.Add(new Point2d(coord[0], coord[1]));
                     }
-                    newMarkers = false;
-                }*/
+                }
 
                 Done();
             }
             public override void SetData(IGH_DataAccess DA)
             {
                 DA.SetDataList(0, markerids);
+                DA.SetDataList(1, markerLocations);
+                DA.SetDataList(2, markerRotations);
             }
 
             public override WorkerInstance Duplicate() => new AutoUpdateWorker(Parent);
@@ -106,38 +116,17 @@ namespace TableUiAdapter
                 _invoker.isListening = true;
                 while (_invoker.isListening)
                 {
-                    // wait until there's a message from the udp client
-                    List<Marker> updatedMarkers = await _invoker.ListenerThread(CancellationToken);
+                    await _invoker.ListenerThread(CancellationToken);
 
-                    // If there's an update to the markers, expire the component to run it again
-                    if (updatedMarkers != null)
+                    // Schedule a solution update on the UI thread
+                    Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
                     {
-                        // update the markers
-                        markers = updatedMarkers;
-                        newMarkers = true;
-                        markerids = new List<int>
+                        Parent.OnPingDocument().ScheduleSolution(1, (doc) =>
                         {
-                            1
-                        };
-
-                        // Schedule a solution update on the UI thread
-                        Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
-                        {
-                            Parent.OnPingDocument().ScheduleSolution(1, (doc) =>
-                            {
-                                // This code will run on the UI thread
-                                Parent.ExpireSolution(true);
-                            });
-                        }));
-                    }
-                    else
-                    {
-                        markerids = new List<int>
-                        {
-                            0
-                        };
-
-                    }
+                            // This code will run on the UI thread
+                            Parent.ExpireSolution(true);
+                        });
+                    }));
                 }
             }
         }
@@ -206,6 +195,12 @@ namespace TableUiAdapter
 
                 return base.RespondToMouseUp(sender, e);
             }
+        }
+
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            base.RemovedFromDocument(document);
+            _invoker.StopDetectionProgram();
         }
 
         /// <summary>
