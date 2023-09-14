@@ -11,6 +11,7 @@ This project has three main components: a `detector` (currently OpenCV), a `proc
 - [Contributing](#contributing)
 - [License](#license)
 # Directory Structure
+```
 table/
 ├── .vs/
 │   └── ..
@@ -83,6 +84,7 @@ table/
 ├── LICENSE
 ├── README.md
 └── tableUI.code-workspace
+```
 # Installation
 # Detector
 # Processor
