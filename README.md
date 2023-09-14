@@ -26,7 +26,7 @@ table/
 │   │   │   └── ..
 │   │   ├── calibration/
 │   │   │   └── ..
-│   │   ├── key/                                # folder to contain the "firebase_table-key.json" file for locating/authenticating access to a Firebase Realtime Database
+│   │   ├── key/                                # Folder to contain the "firebase_table-key.json" file for locating/authenticating access to a Firebase Realtime Database
 │   │   │   └── firebase_table-key.json         # TODO currently needs to be added by user (gitignored and ideally unique for each project). How can users upload this themselves?
 │   │   ├── marker-gen/
 │   │   │   ├── markers/                        # Folder containing images of all the ArUco markers in DICT_6x6_100 of ArUco

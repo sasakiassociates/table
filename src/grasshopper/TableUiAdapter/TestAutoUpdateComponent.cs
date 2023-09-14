@@ -52,7 +52,7 @@ namespace TableUiAdapter
             public AutoUpdateWorker(GH_Component _parent) : base(_parent)
             {
                 _invoker = Invoker.Instance;
-                _counter = _invoker._counter;
+                //_counter = _invoker._counter;
             }
             
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
@@ -87,7 +87,7 @@ namespace TableUiAdapter
                     await _invoker.ListenerThread(CancellationToken);
 
                     // in this test, add to the counter for every message received
-                    _invoker._counter++;
+                    //_invoker._counter++;
 
                     // Schedule a solution update on the UI thread
                     Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
