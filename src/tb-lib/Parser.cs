@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 namespace TableLib
 {
 
-    public class JsonToMarkerParser
+    public class Parser
     {
         public List<Marker> Parse(string json)
         {

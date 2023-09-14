@@ -20,15 +20,12 @@ namespace TableLib
         private static Invoker instance;
         private static readonly object _lock = new object();
 
-        private JsonToMarkerParser _parseStrategy = new JsonToMarkerParser();
+        private Parser _parser = new Parser();
         private Repository _repository;
 
         // Auto Update tests
         public bool isListening = false;
 
-        private string logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
-
-        public Dictionary<int, string> refDict;
         List<Marker> incomingMarkerData = new List<Marker>();
         public List<Marker> markerMemory = new List<Marker>();
 
@@ -36,29 +33,6 @@ namespace TableLib
         public List<int> markerIds = new List<int>();
         public List<float> markerRotations = new List<float>();
         public List<int[]> markerLocations = new List<int[]>();
-        public int _counter = 0;
-
-        // TODO change this class to cooperate with a State Pattern
-        // We need a persistant memory for smoothing purposes
-        // For now, we'll put it here, but the structure of this code needs an overhaul later
-
-
-        private void LogError(Exception ex)
-        {
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(logFilePath, true))
-                {
-                    writer.WriteLine($"[Error Timestamp: {DateTime.Now}]");
-                    writer.WriteLine($"[Error Message]: {ex.Message}");
-                    writer.WriteLine($"[Stack Trace]: {ex.StackTrace}");
-                    writer.WriteLine(new string('-', 50));
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
 
         private Invoker()
         {
@@ -89,7 +63,7 @@ namespace TableLib
             // If there is a response, parse the data
             if (response != null)
             {
-                incomingMarkerData = _parseStrategy.Parse(response);
+                incomingMarkerData = _parser.Parse(response);
 
                 foreach (Marker newMarker in incomingMarkerData)                         // For each marker in the incoming data
                 {
@@ -106,8 +80,6 @@ namespace TableLib
                     if (!exists)                                        // If the marker doesn't exist in the stable data
                     {
                         markerMemory.Add(newMarker);                         // Add it to the stable data
-                        
-                        
                     }
                 }
 
@@ -160,7 +132,7 @@ namespace TableLib
             }
             catch (Exception ex)
             {
-                LogError(ex);
+                Console.WriteLine(ex);
             }
         }
 
@@ -179,7 +151,7 @@ namespace TableLib
                 isListening = false;
             } catch (Exception ex)
             {
-                LogError(ex);
+                Console.WriteLine(ex);
             }
         }
     }

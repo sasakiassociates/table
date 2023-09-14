@@ -1,10 +1,12 @@
-class Repository():
-    def __init__(self, strategy):
-        self.data = {}
-        self.strategy = strategy
+import repoStrategy as rs
 
-    def add_to_data(self, marker_id_, data):
-        self.data.setdefault(str(marker_id_), data).update()
+class Repository():
+    def __init__(self, strategy_name):
+        self.data = {}
+        self.strategy = rs.RepoStrategyFactory.get_strategy(strategy_name)
+
+    def add_to_data(self, marker_id, data):
+        self.data.setdefault(str(marker_id), data).update()
 
     def setup(self):
         self.strategy.setup()

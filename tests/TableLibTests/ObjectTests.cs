@@ -222,7 +222,7 @@ namespace TableLibTests
 
             Console.WriteLine(response);
 
-            JsonToMarkerParser parser = new JsonToMarkerParser();
+            Parser parser = new Parser();
             List<Marker> parsedResponse = (List<Marker>)parser.Parse(response);
 
             Console.WriteLine(parsedResponse);

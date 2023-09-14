@@ -21,7 +21,6 @@ namespace TableLib
         private IPEndPoint sendEndPoint;
         
         public string response;
-        public bool isRunning = false;
 
         public Repository()
         {
@@ -63,7 +62,6 @@ namespace TableLib
                 };
 
                 process.Start();
-                isRunning = true;
             }
             catch (Exception ex)
             {

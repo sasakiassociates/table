@@ -37,8 +37,8 @@ class RepoStrategyFactory():
     def get_strategy(strategy_name):
         if strategy_name == 'udp':
             return UDPRepo()
-        elif strategy_name == 'http':
-            return HTTPRepo()
+        elif strategy_name == 'firebase':
+            return FirebaseRepo()
         else:
             raise Exception('Invalid strategy name')
         
@@ -102,7 +102,7 @@ class UDPRepo(RepoStrategy):
         except Exception as e:
             print(e)
     
-class HTTPRepo(RepoStrategy):
+class FirebaseRepo(RepoStrategy):
     def __init__(self):
         super().__init__()
         self.credentials = credentials.Certificate("./key/firebase_table-key.json")
