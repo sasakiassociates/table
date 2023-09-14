@@ -19,6 +19,8 @@ class Camera():
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
+        self.changed_data = False
+
     def videoLoop(self):
         if not self.cap.isOpened():
             print("Cannot open camera")
@@ -36,7 +38,9 @@ class Camera():
 
                     if ids is not None:
                         self.markerLoop(ids, corners)
-                    self.repository.update_send_data()
+                    if self.changed_data:
+                        self.repository.send_data()
+                        self.changed_data = False
 
                     cv.imshow('frame', frame_marked)
                     if cv.waitKey(1) == ord('q') or self.repository.check_for_terminate():
@@ -60,3 +64,5 @@ class Camera():
             marker_id = marker_id[0]
             marker = self.my_markers[marker_id]
             marker.update(marker_corners)
+            if marker.significant_change:
+                self.changed_data = True

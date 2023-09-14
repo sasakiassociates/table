@@ -5,6 +5,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TableLib
 {
@@ -19,7 +21,6 @@ namespace TableLib
         private IPEndPoint sendEndPoint;
         
         public string response;
-        public bool isRunning = false;
 
         public Repository()
         {
@@ -61,7 +62,6 @@ namespace TableLib
                 };
 
                 process.Start();
-                isRunning = true;
             }
             catch (Exception ex)
             {
@@ -74,6 +74,28 @@ namespace TableLib
             byte[] sendData = Encoding.ASCII.GetBytes(message);
             _udpClient.Send(sendData, sendData.Length, sendEndPoint);
         }
+
+        public async Task<string> Receive(CancellationToken cancelToken, int expire = 0)
+        {
+            try
+            {
+                if (expire != 0)
+                {
+                    _udpClient.Client.ReceiveTimeout = expire;
+                }
+                UdpReceiveResult listenTask;
+                listenTask = await _udpClient.ReceiveAsync();
+                byte[] receiveBytes = listenTask.Buffer;
+                string returnData = Encoding.ASCII.GetString(receiveBytes);
+
+                response = returnData;
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }   
 
         public string UdpReceive(int expire = 0)
         {

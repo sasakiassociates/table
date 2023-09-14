@@ -15,7 +15,7 @@ namespace TableLibTests
         [SetUp]
         public void Setup()
         {
-            _invoker = Invoker.Instance;
+            //_invoker = Invoker.Instance;
             // testRepository = Repository.Instance;
         }
         [TearDown]
@@ -44,13 +44,35 @@ namespace TableLibTests
         }
 
         [Test]
+        public async Task InvokerReceiveTest()
+        {
+            Invoker _invoker = Invoker.Instance;
+            CancellationToken cancellationToken = new CancellationToken();
+            await _invoker.ListenerThread(cancellationToken);
+            List<Marker> markers = _invoker.markerMemory;
+            Assert.That(markers, Is.Not.Null);
+        }
+        [Test]
+        public void RepoReceiveTest()
+        {
+            testRepository = new Repository();
+            string response = testRepository.UdpReceive();
+            Assert.That(response, Is.Not.Null);
+        }
+        // TODO the async receive isn't working
+        [Test]
+        public async Task RepoAsyncReceiveTest()
+        {
+            testRepository = new Repository();  
+            string response = await testRepository.Receive(CancellationToken.None);
+            Assert.That(response, Is.Not.Null);
+        }
+
+        [Test]
         public void LaunchThroughInvokerTest()
         {
             string path = "..\\..\\..\\..\\..\\src\\tb-detection\\";
             _invoker.LaunchDetectionProgram(path);
-            // We need to run setup for the detection to start
-            // _invoker.SetupDetection(10, 10);
-            _invoker.SetupDetection(10, 10);
         }
         [Test]
         public void SetupThroughInvokerTest()
@@ -60,11 +82,15 @@ namespace TableLibTests
         [Test]
         public void ReadThroughInvokerTest()
         {
-            List<Marker> response = (List<Marker>)_invoker.Run();
+            Invoker _invoker = Invoker.Instance;
+            _invoker.QueryResponse();
+            List<Marker> response = _invoker.markerMemory;
             foreach (Marker marker in response)
             {
-                Console.WriteLine(marker.rotation);
+                Console.WriteLine("rotation: " + marker.rotation);
+                Console.WriteLine("type: " + marker.type);
             }
+            Console.WriteLine(response);
             Assert.That(response, Is.Not.Null);
         }
         [Test]
@@ -77,6 +103,79 @@ namespace TableLibTests
                 Assert.Fail();
             }
             Assert.IsTrue(true);
+        }
+
+        [Test]
+        public void GetMarkerTypes()
+        {
+            _invoker.QueryResponse();
+            List<Marker> response = _invoker.markerMemory;
+            foreach (Marker marker in response)
+            {
+                if (marker.id == 99)
+                {
+                    Assert.That(marker.type, Is.EqualTo("camera"));
+                }
+            }
+        }
+
+        [Test]
+        public async Task AsyncInvokerReceive()
+        {
+            Invoker _invoker = Invoker.Instance;
+            CancellationToken cancellationToken = new CancellationToken();
+            await _invoker.ListenerThread(cancellationToken);
+            List<Marker> markers = _invoker.markerMemory;
+
+            foreach (Marker marker in markers)
+            {
+                Console.WriteLine(marker.id);
+            }
+
+            List<int> ids = _invoker.markerIds;
+            foreach (int id in ids)
+            {
+                Console.WriteLine(id);
+            }
+
+            Assert.That(markers, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task AsyncInvokerReceive2()
+        {
+            Invoker _invoker = Invoker.Instance;
+            CancellationToken cancellationToken = new CancellationToken();
+            await _invoker.ListenerThread(cancellationToken);
+            List<Marker> markers = _invoker.markerMemory;
+            
+            if (markers != null)
+            {
+                Assert.IsTrue(true);
+            }
+            else
+            {
+                Assert.Fail();
+            }
+        }
+
+        [Test]
+        public void MarkerUpdate()
+        {
+            Marker marker1 = new Marker();
+            marker1.id = 1;
+            int[] location1 = { 1, 2 };
+            marker1.location = location1;
+            marker1.rotation = 3;
+
+            Marker marker2 = new Marker();
+            marker2.id = 2;
+            int[] location2 = { 4, 5 };
+            marker2.location = location2;
+            marker2.rotation = 6;
+
+            marker1.Update(marker2);
+            Assert.That(marker2.rotation, Is.EqualTo(marker1.rotation));
         }
 
         // We're having problems with the second time the video closes in Grasshopper
@@ -99,14 +198,17 @@ namespace TableLibTests
         [Test]
         public void RepositoryReceiveTest()
         {
-
-            testRepository.UdpSend("SEND");
+            Repository testRepository = new Repository();
+            //testRepository.UdpSend("SEND");
 
             string response = testRepository.UdpReceive(1000);
 
             Console.WriteLine(response);
 
             Assert.That(response.Length, Is.AtLeast(0));
+
+            testRepository.Disconnect();
+            testRepository = null;
         }
 
         // See if the repository object can send a message, receive a response, and then parse it
@@ -120,7 +222,7 @@ namespace TableLibTests
 
             Console.WriteLine(response);
 
-            IParser parser = ParserFactory.GetParser("Marker");
+            Parser parser = new Parser();
             List<Marker> parsedResponse = (List<Marker>)parser.Parse(response);
 
             Console.WriteLine(parsedResponse);
@@ -159,7 +261,7 @@ namespace TableLibTests
             Assert.That(testReturn, Is.Not.Null);
         }*/
 
-        // See if the parser works
+        /*// See if the parser works
         [Test]
         public void ParseTest()
         {
@@ -179,7 +281,7 @@ namespace TableLibTests
             }
 
             Assert.That(testList.Count, Is.EqualTo(7));
-        }
+        }*/
 
         [Test]
         public void PairingTest()

@@ -255,24 +255,6 @@ namespace TableLibTests
             {
                 Assert.Fail(ex.Message);
             }
-
-
-            /*string output = process.StandardOutput.ReadToEnd();
-            string errors = process.StandardError.ReadToEnd();
-
-            Console.WriteLine(output);
-            Console.WriteLine(errors);
-
-            // Add assertions or further code to handle the process output, exit code, etc.
-            // For now, let's just assert that the process started successfully.
-            Assert.IsTrue(process.HasExited);*/
-
-            // Should have launched the OpenCV window, but finished the test while that is running
-            
-
-            // Use this as a last resort to kill the process, prefer to use the UDP calls to end it
-            // process.Dispose();
-
         }
 
         

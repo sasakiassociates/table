@@ -6,7 +6,18 @@ class Marker():
     def __init__(self, marker_id_):
         self.id = marker_id_
         self.observers = []
+        
         self.rotation = 0
+        self.prev_rotation = 0
+        self.rotation_threshold = pi/64
+        
+        self.center = (0,0)
+        self.prev_center = (0,0)
+        self.center_threshold = 2
+
+        self.type = ""
+
+        self.significant_change = False
 
     def attach_observer(self, observer_):
         self.observers.append(observer_)
@@ -16,8 +27,8 @@ class Marker():
             observer.update(self.build_json(), self.id)
     
     def update(self, corners_):
-        self.calculate_rotation(corners_)
-        self.calculate_center(corners_)
+        # check if it's a more significant change than the threshold
+        self.rotation, self.center = self.check_for_threshold_change(corners_)
         self.notify_observers()
     
     def get_id(self):
@@ -28,14 +39,18 @@ class Marker():
             "id": self.id,
             "location": [self.center[0], self.center[1]],
             "rotation": self.rotation,
+            "type": self.type,
         }
         return marker_data
     
     def calculate_center(self, corners_):
+        self.prev_center = self.center
         np_center = np.mean(corners_[0], axis=0)
-        self.center = (int(np_center[0]), int(np_center[1]))
+        center = (int(np_center[0]), int(np_center[1]))
+        return center
     
     def calculate_rotation(self, corners_):
+        self.prev_rotation = self.rotation
         corners = corners_.reshape(-1,2)
 
         centroid = np.mean(corners, axis=0)
@@ -49,4 +64,22 @@ class Marker():
         adjusted_angle_degree = (angle_degree - 45 + 180) % 360 - 180
         adjusted_angle_radians = (angle_rads - pi/4 + pi) % (2 * pi) - pi
 
-        self.rotation = adjusted_angle_radians
+        return adjusted_angle_radians
+
+    def set_type(self, type_):
+        self.type = type_
+
+    def check_for_threshold_change(self, corners):
+        # calculate the rotation and center
+        rotation = self.calculate_rotation(corners)
+        center = self.calculate_center(corners)
+
+        # check if it's a more significant change than the threshold
+        # if it is, return the new values
+        # if not, return the old values
+        if abs(rotation - self.prev_rotation) >= self.rotation_threshold or abs(center[0] - self.prev_center[0]) >= self.center_threshold or abs(center[1] - self.prev_center[1]) >= self.center_threshold:
+            self.significant_change = True
+            return rotation, center
+        else:
+            self.significant_change = False
+            return self.prev_rotation, self.prev_center

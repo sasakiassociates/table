@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TableLib
@@ -19,38 +20,23 @@ namespace TableLib
         private static Invoker instance;
         private static readonly object _lock = new object();
 
-        private IParser _parseStrategy;
+        private Parser _parser = new Parser();
         private Repository _repository;
-        public int expire = 1000;
-        public bool isRunning = false;
 
-        private string logFilePath = "C:\\Users\\nshikada\\Documents\\GitHub\\table\\src\\tb-gh\\TableUiAdapter\\obj\\Debug\\net48\\error.log";
+        // Auto Update tests
+        public bool isListening = false;
 
-        public Dictionary<int, object> modelRefDict = new Dictionary<int, object>();
-        public Dictionary<int, string> refDict;
+        List<Marker> incomingMarkerData = new List<Marker>();
+        public List<Marker> markerMemory = new List<Marker>();
 
-        private void LogError(Exception ex)
-        {
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(logFilePath, true))
-                {
-                    writer.WriteLine($"[Error Timestamp: {DateTime.Now}]");
-                    writer.WriteLine($"[Error Message]: {ex.Message}");
-                    writer.WriteLine($"[Stack Trace]: {ex.StackTrace}");
-                    writer.WriteLine(new string('-', 50));
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
+        // Desired data
+        public List<int> markerIds = new List<int>();
+        public List<float> markerRotations = new List<float>();
+        public List<int[]> markerLocations = new List<int[]>();
 
         private Invoker()
         {
             _repository = new Repository();
-            // The default strategy is to parse the json string into a list of Markers
-            _parseStrategy = ParserFactory.GetParser("Marker");
         }
 
         // Singleton implementation
@@ -66,6 +52,45 @@ namespace TableLib
                         instance = new Invoker();
                     }
                     return instance;
+                }
+            }
+        }
+
+        public async Task ListenerThread(CancellationToken cancelToken)
+        {
+            // This is the async method that listens for the udp messages
+            string response = await _repository.Receive(cancelToken, 0);
+            // If there is a response, parse the data
+            if (response != null)
+            {
+                incomingMarkerData = _parser.Parse(response);
+
+                foreach (Marker newMarker in incomingMarkerData)                         // For each marker in the incoming data
+                {
+                    bool exists = false;                                // Assume the marker doesn't exist in the stable data
+                    foreach (Marker oldMarker in markerMemory)         // Check each marker in the stable data to see if its id matches the incoming marker
+                    {
+                        if (newMarker.id == oldMarker.id)
+                        {
+                            exists = true;                              // If it does, then mark it as existing
+                            oldMarker.Update(newMarker);                // And update the marker's position
+                            break;                                      // Then break out of the loop
+                        }
+                    }
+                    if (!exists)                                        // If the marker doesn't exist in the stable data
+                    {
+                        markerMemory.Add(newMarker);                         // Add it to the stable data
+                    }
+                }
+
+                markerIds.Clear();
+                markerRotations.Clear();
+                markerLocations.Clear();
+                foreach (Marker marker in markerMemory)
+                {
+                    markerIds.Add(marker.id);
+                    markerRotations.Add(marker.rotation);
+                    markerLocations.Add(marker.location);
                 }
             }
         }
@@ -107,73 +132,8 @@ namespace TableLib
             }
             catch (Exception ex)
             {
-                LogError(ex);
+                Console.WriteLine(ex);
             }
-        }
-
-        // TODO this gets stuck in a loop and can't hear the response
-        // (Only if the program was launched and then closed and then launched again)
-        // UPDATE: This happens when the udp client was formerly closed and then reopened
-        // SOLUTION: for now just don't close the udp client (not best practice)
-        public void SetupDetection(int modelNum, int variableNum)
-        {
-            if (_repository == null)
-            {
-                _repository = new Repository();
-            }
-            while (!isRunning)
-            {
-                _repository.UdpSend($"SETUP {modelNum} {variableNum}");
-                string response = _repository.UdpReceive(expire);
-                _repository.IsConnected();
-                if (response == "READY")
-                {
-                    isRunning = true;
-                    break;
-                }
-            }
-        }
-
-        // TODO the program crashes if openned in Grasshopper
-        // It'll open, then do a handful of updates, and then crashes
-        // Might be several things, but has to be specific to the way "Process"
-        // works to launch apps since it works fine when launched from command line
-        // Might be a threading issue, or a memory issue
-        public object Run()
-        {
-            object data = null;
-            
-            try
-            {
-                // Connect to the UDP client
-                //_repository.Connect();
-
-                // Tell the other program to send data
-                _repository.UdpSend("SEND");
-
-                // Receive the data
-                string response = _repository.UdpReceive(expire);
-
-                
-                // If there is a response, parse the data
-                if (response != null)
-                {
-                    // Parse data
-                    data = _parseStrategy.Parse(response);
-                }
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine(ex.Message);
-                LogError(ex);
-            }
-            
-            return data;
-        }
-
-        public void SetParseStrategy(IParser parseStrategy)
-        {
-            _parseStrategy = parseStrategy;
         }
 
         public void StopDetectionProgram()
@@ -188,44 +148,11 @@ namespace TableLib
 
                 _repository.Disconnect();
                 _repository = null;
-                isRunning = false;
+                isListening = false;
             } catch (Exception ex)
             {
-                LogError(ex);
+                Console.WriteLine(ex);
             }
-        }
-
-        public bool ExecuteWithTimeLimit(TimeSpan timeSpan, Action codeBlock)
-        {
-            try
-            {
-                Task task = Task.Factory.StartNew(() => codeBlock());
-                task.Wait(timeSpan);
-                return task.IsCompleted;
-            }
-            catch (AggregateException ae)
-            {
-                throw ae.InnerExceptions[0];
-            }
-        }
-
-        public void BuildDict(int modelCount, int variableCount)
-        {
-            refDict = new Dictionary<int, string>();
-
-            for (int i = 0; i < modelCount; i++)
-            {
-                refDict.Add(i, "model");
-            }
-            for (int i = 0; i < variableCount; i++)
-            {
-                refDict.Add(i + modelCount, "variable");
-            }
-        }
-
-        public object GetModel(int id)
-        {
-            return modelRefDict[id];
         }
     }
 }
