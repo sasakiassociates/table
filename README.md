@@ -19,19 +19,21 @@ table/
 │   └── ..
 ├── src/
 │   ├── .vs/
-│   ├── detection/                              # Python program for detection of AruCo Markers
+│   ├── detector/                               # Python program for detection of AruCo Markers
 │   │   ├── .env/
 │   │   │   └── ..
 │   │   ├── __pycache__/
 │   │   │   └── ..
 │   │   ├── calibration/
 │   │   │   └── ..
-│   │   ├── key/
-│   │   │   └── ..
+│   │   ├── key/                                # folder to contain the "firebase_table-key.json" file for locating/authenticating access to a Firebase Realtime Database
+│   │   │   └── firebase_table-key.json         # TODO currently needs to be added by user (gitignored and ideally unique for each project). How can users upload this themselves?
 │   │   ├── marker-gen/
-│   │   │   └── ..
-│   │   ├── tests/
-│   │   │   └── ..
+│   │   │   ├── markers/                        # Folder containing images of all the ArUco markers in DICT_6x6_100 of ArUco
+│   │   │   │   ├── marker1.png
+│   │   │   │   ├── marker2.png
+│   │   │   │   └── ...
+│   │   │   └── createMarkers.py                # Script to generate ArUco markers from a predefined dictionary
 │   │   ├── adapter.py                          # Should be delected
 │   │   ├── camera.py                           # Camera object that uses OpenCV to take frames from an attached camera
 │   │   ├── factory.py                          # Factory object to create every Marker object we'll be looking for
@@ -70,15 +72,21 @@ table/
 │   └── TableUI.sln
 ├── tests/                                      # All tests live in this folder
 │   └── TableLibTests/                          # Unit tests for TableLib
-│       ├── bin/
+│   │   ├── bin/
+│   │   │   └── ..
+│   │   ├── obj/
+│   │   │   └── ..
+│   │   ├── FunctionTests.cs                    # Unit tests to test out ideas
+│   │   ├── ObjectTests.cs                      # Unit tests for individual objects (TODO separate file for each object)
+│   │   ├── TableLibTests.csproj
+│   │   ├── UdpTests.cs                         # Unit tests involving UDP messages, but not class objects
+│   │   └── Usings.cs
+│   └── DetectionTests/                         # Python unit tests for the Detector
+│       ├── __pycache__/
 │       │   └── ..
-│       ├── obj/
-│       │   └── ..
-│       ├── FunctionTests.cs                    # Unit tests to test out ideas
-│       ├── ObjectTests.cs                      # Unit tests for individual objects (TODO separate for each object)
-│       ├── TableLibTests.csproj
-│       ├── UdpTests.cs                         # Unit tests involving UDP messages, but not class objects
-│       └── Usings.cs
+│       ├── context.py                          # Lets the test scripts locate the Detector files using a relative path
+│       ├── firebaseTests.py                    # Tests for sending data to a Firebase Database
+│       └── udpTests.py                         # Tests for sending data via UDP messages
 ├── .gitignore
 ├── LICENSE
 ├── README.md
