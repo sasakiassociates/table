@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\TableLib\TableLib.csproj" />
     <ProjectReference Include="..\..\src\tb-lib\TableLib.csproj" />
   </ItemGroup>
 

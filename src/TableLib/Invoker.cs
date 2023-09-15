@@ -25,6 +25,7 @@ namespace TableLib
 
         // Auto Update tests
         public bool isListening = false;
+        public bool detectionProgramRunning = false;
 
         List<Marker> incomingMarkerData = new List<Marker>();
         public List<Marker> markerMemory = new List<Marker>();
@@ -58,6 +59,10 @@ namespace TableLib
 
         public async Task ListenerThread(CancellationToken cancelToken)
         {
+            if (_repository == null)
+            {
+                _repository = new Repository();
+            }
             // This is the async method that listens for the udp messages
             string response = await _repository.Receive(cancelToken, 0);
             // If there is a response, parse the data
@@ -129,6 +134,8 @@ namespace TableLib
                     process.Start();
                     process.BeginErrorReadLine();
                 }
+
+                detectionProgramRunning = true;
             }
             catch (Exception ex)
             {
@@ -138,6 +145,8 @@ namespace TableLib
 
         public void StopDetectionProgram()
         {
+            if (detectionProgramRunning == false) { return; }
+
             try
             {
                 // Tell the other program to stop sending data
@@ -148,7 +157,8 @@ namespace TableLib
 
                 _repository.Disconnect();
                 _repository = null;
-                isListening = false;
+
+                detectionProgramRunning = false;
             } catch (Exception ex)
             {
                 Console.WriteLine(ex);

@@ -52,9 +52,13 @@ class UDPRepo(RepoStrategy):
 
     def setup(self):
         # create and run thread to listen for commands
-        listen_thread = threading.Thread(target=self.send_data_thread)
+        listen_thread = threading.Thread(target=self.listen_for_data_thread)
         listen_thread.daemon = True
         listen_thread.start()
+
+        sending_thread = threading.Thread(target=self.send_data_thread)
+        sending_thread.daemon = True
+        sending_thread.start()
 
     def end(self):
         self.terminate = True
@@ -70,19 +74,14 @@ class UDPRepo(RepoStrategy):
         _socket.bind((self.listen_ip, self.listen_port))
         
         try:
-            while True:
+            while not self.terminate:
                 
                 data, addr = _socket.recvfrom(1024)
                 message = data.decode('utf-8')
-                
-                if message == 'SEND':
-                    # if self.new_data:
-                    self.send()
-                    print("Sent data: " + str(self.data))
-                    self.new_data = False
                         
-                elif message == 'END':
+                if message == 'END':
                     print("Exiting...")
+                    self.terminate = True
                     break
         
         except Exception as e:

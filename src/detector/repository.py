@@ -11,6 +11,10 @@ class Repository():
     def setup(self):
         self.strategy.setup()
 
+    def close_threads(self):
+        if self.strategy.terminate == False:
+            self.strategy.teminate = True
+
     # Update the UDP thread with the data
     def send_data(self):
         self.strategy.set_data(self.data)

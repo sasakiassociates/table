@@ -59,6 +59,8 @@ namespace TableUiAdapter
             public List<Point2d> markerLocations;
             public List<float> markerRotations;
 
+            
+
             public AutoUpdateWorker(GH_Component _parent) : base(_parent)
             {
                 _invoker = Invoker.Instance;
@@ -116,17 +118,25 @@ namespace TableUiAdapter
                 _invoker.isListening = true;
                 while (_invoker.isListening)
                 {
-                    await _invoker.ListenerThread(CancellationToken);
-
-                    // Schedule a solution update on the UI thread
-                    Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
+                    try
                     {
-                        Parent.OnPingDocument().ScheduleSolution(1, (doc) =>
+                        await _invoker.ListenerThread(CancellationToken);
+
+                        // Schedule a solution update on the UI thread
+                        Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
                         {
-                            // This code will run on the UI thread
-                            Parent.ExpireSolution(true);
-                        });
-                    }));
+                            Parent.OnPingDocument().ScheduleSolution(1, (doc) =>
+                            {
+                                // This code will run on the UI thread
+                                Parent.ExpireSolution(true);
+                            });
+                        }));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        break;
+                    }
                 }
             }
         }
@@ -146,10 +156,12 @@ namespace TableUiAdapter
 
         public class AutoUpdateAttributes : GH_ComponentAttributes
         {
+            private string pathToDetectionProgram = @"C:\Users\nshikada\Documents\GitHub\table\src\detector";
             private Invoker _invoker = Invoker.Instance;
             public AutoUpdateAttributes(GH_Component owner)
                 : base(owner) { }
-            private Rectangle ButtonBounds { get; set; }
+            private Rectangle Button1Bounds { get; set; }
+            private Rectangle Button2Bounds { get; set; }
 
             protected override void Layout()
             {
@@ -158,11 +170,16 @@ namespace TableUiAdapter
                 baseRec.Height += 26;
                 Bounds = baseRec;
 
-                Rectangle rec = GH_Convert.ToRectangle(Bounds);
-                rec.Y = rec.Bottom - 26;
-                rec.Height = 26;
-                rec.Inflate(-2, -2);
-                ButtonBounds = rec;
+                Rectangle rec1 = GH_Convert.ToRectangle(Bounds);
+                rec1.Y = rec1.Bottom - 26;
+                rec1.Height = 26;
+                rec1.Width = rec1.Width / 2 - 2; // Adjust the width for two buttons
+                rec1.Inflate(-2, -2);
+                Button1Bounds = rec1;
+
+                Rectangle rec2 = Button1Bounds;
+                rec2.X = rec2.Right + 4; // Set the X position for the second button
+                Button2Bounds = rec2;
             }
 
             protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
@@ -171,9 +188,13 @@ namespace TableUiAdapter
 
                 if (channel == GH_CanvasChannel.Objects)
                 {
-                    GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "End", 2, 0);
-                    button.Render(graphics, Selected, Owner.Locked, false);
-                    button.Dispose();
+                    GH_Capsule button1 = GH_Capsule.CreateTextCapsule(Button1Bounds, Button1Bounds, GH_Palette.Black, "Launch", 2, 0);
+                    button1.Render(graphics, Selected, Owner.Locked, false);
+                    button1.Dispose();
+
+                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(Button2Bounds, Button2Bounds, GH_Palette.Black, "Stop", 2, 0);
+                    button2.Render(graphics, Selected, Owner.Locked, false);
+                    button2.Dispose();
                 }
             }
 
@@ -181,13 +202,20 @@ namespace TableUiAdapter
             {
                 if (e.Button == System.Windows.Forms.MouseButtons.Left)
                 {
-                    if (ButtonBounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
+                    if (Button1Bounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
                     {
-                        // React to the button click here.
-                        // You can trigger your desired action when the button is clicked.
-                        // For example, you can show a message box.
-                        MessageBox.Show("Listening Stopped!");
-                        _invoker.isListening = false;
+                        // React to the first button click here.
+
+                        _invoker.LaunchDetectionProgram(pathToDetectionProgram);
+                        
+                        return GH_ObjectResponse.Handled;
+                    }
+                    else if (Button2Bounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
+                    {
+                        // React to the second button click here.
+                        MessageBox.Show("Button 2 Clicked!");
+                        
+                        _invoker.StopDetectionProgram();
 
                         return GH_ObjectResponse.Handled;
                     }
@@ -199,6 +227,7 @@ namespace TableUiAdapter
 
         public override void RemovedFromDocument(GH_Document document)
         {
+            _invoker.isListening = false;
             base.RemovedFromDocument(document);
             _invoker.StopDetectionProgram();
         }
