@@ -101,15 +101,15 @@ namespace TableUiAdapter
         {
             while (isListening)
             {
-                string incomingJson = await _repository.Receive(_cancellationToken);
-                (List<int> ids, List<float> rotations, List<int[]> locations) = Parser.Parse(incomingJson);
+                string incomingJson = await _repository.Receive(_cancellationToken);                            // Keep listening for incoming messages until we get one or the cancellation token is triggered
+                (List<int> ids, List<float> rotations, List<int[]> locations) = Parser.Parse(incomingJson);     // Get the important values from the JSON
 
                 markerIds = ids;
                 markerRotations = rotations;
                 markerLocations = locations;
                 messageCounter++;
 
-                // Schedule a solution update on the UI thread
+                // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)
                 Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
                 {
                     ExpireSolution(true);
@@ -117,6 +117,10 @@ namespace TableUiAdapter
             }
         }
 
+        /// <summary>
+        /// These attributes allow us to add buttons to the component.
+        /// TODO: add a third button below these two to trigger cancellation token
+        /// </summary>
         public class TableUIReceiverAttributes : GH_ComponentAttributes
         {
             public TableUIReceiverAttributes(IGH_Component component) 
@@ -135,12 +139,12 @@ namespace TableUiAdapter
                 Rectangle rec1 = GH_Convert.ToRectangle(Bounds);
                 rec1.Y = rec1.Bottom - 26;
                 rec1.Height = 26;
-                rec1.Width = rec1.Width / 2 - 2; // Adjust the width for two buttons
+                rec1.Width = rec1.Width / 2 - 2;        // Adjust the width two buttons
                 rec1.Inflate(-2, -2);
                 LaunchButtonBounds = rec1;
 
                 Rectangle rec2 = LaunchButtonBounds;
-                rec2.X = rec2.Right + 4; // Set the X position for the second button
+                rec2.X = rec2.Right + 4;                // Set the X position for the stop button
                 StopButtonBounds = rec2;
             }
 
@@ -168,8 +172,8 @@ namespace TableUiAdapter
                     {
                         if (!((TableUIReceiverComponent)Owner).isListening)
                         {
-                            ((TableUIReceiverComponent)Owner).run = true;
-                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);
+                            ((TableUIReceiverComponent)Owner).run = true;               // Set run to true to trigger LaunchDetectionProgram in SolveInstance
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
                         else
                         {
@@ -181,8 +185,8 @@ namespace TableUiAdapter
                     {
                         if (((TableUIReceiverComponent)Owner).isListening)
                         {
-                            ((TableUIReceiverComponent)Owner).run = false;
-                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);
+                            ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
                         else
                         {
