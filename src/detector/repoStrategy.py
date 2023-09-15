@@ -79,7 +79,7 @@ class UDPRepo(RepoStrategy):
                 data, addr = _socket.recvfrom(1024)
                 message = data.decode('utf-8')
                         
-                if message == 'END':
+                if message == 'STOP':
                     print("Exiting...")
                     self.terminate = True
                     break
