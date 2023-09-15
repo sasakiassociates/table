@@ -5,15 +5,17 @@ using Newtonsoft.Json;
 
 namespace TableUiReceiver
 {
-    internal class Parser
+    public class Parser
     {
-        public List<Marker> Parse(string json)
+        public static (List<int> ids, List<float> rotations, List<int[]> locations) Parse(string json)
         {
-            List<Marker> markers = new List<Marker>();
+            List<int> ids = new List<int>();
+            List<float> rotations = new List<float>();
+            List<int[]> locations = new List<int[]>();
 
             if (json == null)
             {
-                return null;
+                return (null, null, null);
             }
 
             try
@@ -23,16 +25,19 @@ namespace TableUiReceiver
                 foreach (var deserialJson in deserialJsonList)
                 {
                     Marker marker = deserialJson.Value;
-                    markers.Add(marker);
+
+                    ids.Add(marker.id);
+                    rotations.Add(marker.rotation);
+                    locations.Add(marker.location);
                 }
             }
             catch (JsonException e)
             {
                 Console.WriteLine("Error parsing JSON: " + e.Message);
-                return null;
+                return (null, null, null);
             }
 
-            return markers;
+            return (ids, rotations, locations);
         }
     }
 }

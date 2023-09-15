@@ -19,11 +19,12 @@ namespace TableUiAdapter
     {
         public List<int> markerIds = new List<int>();
         public List<float> markerRotations = new List<float>();
-        public List<Point3d> markerLocations = new List<Point3d>();
+        public List<int[]> markerLocations = new List<int[]>();
+        public List<Point3d> markerPoints = new List<Point3d>();
 
         public bool isListening = false;
         public bool run = false;
-        public int _counter = 0;
+        public int messageCounter = 0;
 
         private Repository _repository;
         private CancellationToken _cancellationToken = new CancellationToken();
@@ -78,22 +79,36 @@ namespace TableUiAdapter
             {
                 _repository.UdpSend("STOP");        // "STOP" message ends the detection program and it's threads
                 isListening = false;                // Setting isListening to false ends the listening thread
-                _counter = 0;
+                markerIds.Clear();
+                markerRotations.Clear();
+                markerLocations.Clear();
+                messageCounter = 0;
+            }
+
+            markerPoints.Clear();
+            foreach (int[] location in markerLocations)
+            {
+                markerPoints.Add(new Point3d(-location[0], location[1], location[2]));
             }
 
             DA.SetDataList("Marker IDs", markerIds);
             DA.SetDataList("Marker Rotations", markerRotations);
-            DA.SetDataList("Marker Locations", markerLocations);
-            DA.SetData("Counter", _counter);
+            DA.SetDataList("Marker Locations", markerPoints);
+            DA.SetData("Counter", messageCounter);
         }
 
         private async Task ListenThread()
         {
             while (isListening)
             {
-                await _repository.Receive(_cancellationToken);
+                string incomingJson = await _repository.Receive(_cancellationToken);
+                (List<int> ids, List<float> rotations, List<int[]> locations) = Parser.Parse(incomingJson);
 
-                _counter++;
+                markerIds = ids;
+                markerRotations = rotations;
+                markerLocations = locations;
+                messageCounter++;
+
                 // Schedule a solution update on the UI thread
                 Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
                 {

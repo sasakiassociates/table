@@ -37,7 +37,7 @@ class Marker():
     def build_json(self):
         marker_data = {
             "id": self.id,
-            "location": [self.center[0], self.center[1]],
+            "location": [self.center[0], self.center[1], 0],
             "rotation": self.rotation,
             "type": self.type,
         }

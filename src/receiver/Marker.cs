@@ -5,7 +5,7 @@ using System.Text;
 namespace TableUiReceiver
 {
     // TODO Markers need to be persistent elements so they can smooth themselves
-    public class Marker
+    internal class Marker
     {
         public int id { get; set; }
         public int[] location
