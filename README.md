@@ -1,5 +1,5 @@
 # TableUI
-An R&D effort to explore how we can integrate physical input into digital AEC work.
+An R&D effort to explore how we can leverage digital tools using physical input for AEC projects. Curently this is compatible with Rhino Grasshopper.
 ## Overview
 This project has three main components: a `detector` (currently OpenCV), a `processor` to calculate the data we'd like to see, and a `visualizer`.
 ## Table of Contents

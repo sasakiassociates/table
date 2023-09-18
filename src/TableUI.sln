@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiAdapter", "grasshopp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiReceiver", "receiver\TableUiReceiver.csproj", "{E8C83CD0-3726-4499-B264-62D2DB933068}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "C#Detector", "detector\DetectorTest\C#Detector.csproj", "{9B1A08FA-34BD-422B-B00C-8CF412E63984}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "C#Detector", "detector\DetectorTest\C#Detector.csproj", "{9B1A08FA-34BD-422B-B00C-8CF412E63984}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableUiExtractors", "TableUiExtractors\TableUiExtractors.csproj", "{40D8C0B3-1D98-461E-AF51-A60660DE7282}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{9B1A08FA-34BD-422B-B00C-8CF412E63984}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B1A08FA-34BD-422B-B00C-8CF412E63984}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B1A08FA-34BD-422B-B00C-8CF412E63984}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40D8C0B3-1D98-461E-AF51-A60660DE7282}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40D8C0B3-1D98-461E-AF51-A60660DE7282}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40D8C0B3-1D98-461E-AF51-A60660DE7282}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40D8C0B3-1D98-461E-AF51-A60660DE7282}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

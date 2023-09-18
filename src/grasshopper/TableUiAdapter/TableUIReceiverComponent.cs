@@ -52,7 +52,7 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Marker IDs", "IDs", "The IDs of the markers detected by the system.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Marker IDs", "IDs", "The IDs of the markers detected by the system. (currently there are 100 markers)", GH_ParamAccess.list);
             pManager.AddNumberParameter("Marker Rotations", "Rotations", "The rotations of the markers detected by the system.", GH_ParamAccess.list);
             pManager.AddPointParameter("Marker Locations", "Locations", "The locations of the markers detected by the system.", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Counter", "Counter", "The number of times the component has been run.", GH_ParamAccess.item);
