@@ -40,7 +40,7 @@ table/
 │   │   ├── camera.py                           # Camera object that uses OpenCV to take frames from an attached camera
 │   │   ├── factory.py                          # Factory object to create every Marker object we'll be looking for
 │   │   ├── main.py                             # Main file to run the application
-│   │   ├── marker.py                           # Marker object that holds all knowledge of where that marker currently is
+│   │   └── marker.py                           # Marker object that holds all knowledge of where that marker currently is
 │   ├── receiver/
 │   │   ├── bin/
 │   │   │   └── ..
@@ -67,7 +67,7 @@ table/
 │   │   └── ..
 │   └── TableUI.sln
 ├── tests/                                      # All tests live in this folder
-│   └── TableLibTests/                          # Unit tests for TableLib
+│   ├── TableLibTests/                          # Unit tests for TableLib
 │   │   ├── bin/
 │   │   │   └── ..
 │   │   ├── obj/
