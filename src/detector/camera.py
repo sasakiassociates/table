@@ -5,7 +5,7 @@ from cv2 import aruco
 import sys
 import traceback
 
-import factory
+import markerFactory as factory
 
 class Camera():
     def __init__(self, camera_num, aruco_dict, params, repository_):
@@ -36,8 +36,15 @@ class Camera():
 
                     frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
-                    if ids is not None:
-                        self.markerLoop(ids, corners)
+                    # Update the markers
+                    for marker in self.my_markers:
+                        if marker.id in ids & marker.isVisible == False:
+                            marker.found()
+                        elif marker.id in ids & marker.isVisible == True:
+                            marker.tracking()
+                        elif marker.id not in ids & marker.isVisible == True:
+                            marker.lost()
+                            
                     if self.changed_data:
                         self.repository.send_data()
                         self.changed_data = False

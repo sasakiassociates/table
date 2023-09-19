@@ -7,6 +7,15 @@ namespace TableUiReceiver
     // TODO Markers need to be persistent elements so they can smooth themselves
     internal class Marker
     {
+        // Main constructor for creatring markers to remember
+        public Marker(int id, string type)
+        {
+            this.id = id;
+            this.type = type;
+        }
+        // Overload method for use in JSON deserialization
+        public Marker() { }
+
         public int id { get; set; }
         public int[] location
         {

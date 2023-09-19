@@ -1,11 +1,13 @@
 import numpy as np
 from math import pi
+from abc import ABC, abstractmethod
 
-#TODO get rid of inherited markers, we only need the one since assignment is done in the other app
-class Marker():
+@abstractmethod
+class Marker(ABC):
     def __init__(self, marker_id_):
         self.id = marker_id_
         self.observers = []
+        self.isVisible = False
         
         self.rotation = 0
         self.prev_rotation = 0
@@ -14,8 +16,6 @@ class Marker():
         self.center = (0,0)
         self.prev_center = (0,0)
         self.center_threshold = 2
-
-        self.type = ""
 
         self.significant_change = False
 
@@ -30,6 +30,15 @@ class Marker():
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
         self.notify_observers()
+
+    def found(self):
+        pass
+
+    def tracking(self):
+        pass
+
+    def lost(self):
+        pass
     
     def get_id(self):
         return self.id
@@ -39,7 +48,6 @@ class Marker():
             "id": self.id,
             "location": [self.center[0], self.center[1], 0],
             "rotation": self.rotation,
-            "type": self.type,
         }
         return marker_data
     
@@ -66,9 +74,6 @@ class Marker():
 
         return adjusted_angle_radians
 
-    def set_type(self, type_):
-        self.type = type_
-
     def check_for_threshold_change(self, corners):
         # calculate the rotation and center
         rotation = self.calculate_rotation(corners)
@@ -83,3 +88,13 @@ class Marker():
         else:
             self.significant_change = False
             return self.prev_rotation, self.prev_center
+
+# This marker type holds all the data for the project    
+class ProjectMarker(Marker):
+    def __init__(self, marker_id_):
+        super().__init__(marker_id_)
+        dataStrategy = DataStrategyFactory.get_strategy('project')
+
+    def found():
+        # launch the files and details associated with the project
+        pass
