@@ -37,6 +37,9 @@ table/
 │   │   │   └── ..
 │   │   ├── calibration/
 │   │   │   └── ..
+│   │   ├── cs-detector/                        # A C# version of OpenCV to detect ArUco markers
+│   │   │   ├── 
+│   │   │   └── ..
 │   │   ├── camera.py                           # Camera object that uses OpenCV to take frames from an attached camera
 │   │   ├── factory.py                          # Factory object to create every Marker object we'll be looking for
 │   │   ├── main.py                             # Main file to run the application
@@ -88,6 +91,7 @@ table/
 ├── README.md
 └── tableUI.code-workspace
 ```
+
 # Installation
 # Detector
 # Processor
