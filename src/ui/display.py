@@ -1,4 +1,7 @@
 from tkinter import *
+import numpy as np
+
+from PIL import Image, ImageTk
 
 class Display():
     def __init__(self):
@@ -17,15 +20,31 @@ class Display():
         self.h2_font = ("Arial", 16)
         self.p_font = ("Arial", 12)
 
+        self.terminate = False
+
     def add_button(self, text, command):
         button = Button(self.root, text=text, command=command, font=self.h2_font, fg=self.primary_color, bg=self.background)
         button.pack( side=TOP, anchor=NE, expand=True)
 
-    def build(self):
-        exit_button = Display.add_button(self, "X", self.root.destroy)
+    def register_video_image(self, dims):
+        self.canvas = Canvas(self.root, width=dims[0], height=dims[1], bg=self.background)
+        self.canvas.pack(side=TOP, anchor=NW, expand=True)
 
-    def launch(self):
+    def update_video_image(self, frame):
+        image = Image.fromarray(frame)
+        tkimg = ImageTk.PhotoImage(image=image)
+        self.canvas.create_image(0, 0, image=tkimg, anchor=NW)
+        self.root.update()
+
+    def build(self):
+        Display.add_button(self, "X", self.end)
+
+    def launch_gui(self):
         self.root.mainloop()
+
+    def end(self):
+        self.terminate = True
+        self.root.quit()
     
 # Unit tests for this object that'll run when this file is run directly
 if (__name__ == '__main__'):

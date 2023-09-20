@@ -1,59 +1,59 @@
+import sys
+import traceback
+
 import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
-import sys
-import traceback
+import threading
 
-import markerFactory as factory
+#import markerFactory as factory
 
 class Camera():
     def __init__(self, camera_num, aruco_dict, params, repository_):
         self.repository = repository_
 
-        dictionary_length = len(aruco_dict.bytesList)
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
-        self.project_markers = factory.MarkerFactory.make_project_markers()
-        self.detector = aruco.ArucoDetector(aruco_dict, params)
+#        dictionary_length = len(aruco_dict.bytesList)
+        #self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
+        #self.project_markers = factory.MarkerFactory.make_project_markers()
+        #self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
-        self.changed_data = False
-
-    def videoLoop(self):
         if not self.cap.isOpened():
             print("Cannot open camera")
             exit()
-        while True:
-            try:
-                ret, frame = self.cap.read()
-                if ret:
-                    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            
+        self.changed_data = False
 
-                    # Detect the markers
-                    corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
+    # TODO rework this so the while loop is in the main.py file so we don't need to add things to this function to add functionality. Also make it return the frame
+    def videoCapture(self):
+        try:
+            ret, frame = self.cap.read()
+            if ret:
+                frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-                    frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
+                # Detect the markers
+                #corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
 
-                    # Loop through the markers and update them
-                    self.markerLoop(ids, corners)
+                #frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
-                    if self.changed_data:
-                        self.repository.send_data()
-                        self.changed_data = False
+                # Loop through the markers and update them
+                #self.markerLoop(ids, corners)
 
-                    cv.imshow('frame', frame_marked)
-                    if cv.waitKey(1) == ord('q') or self.repository.check_for_terminate():
-                        break
-            except Exception as e:
-                sys.stderr.write(str(e))
-                traceback.print_exc()
-                break
-        self.cap.release()
-        cv.destroyAllWindows()
-        # self.repository.close_threads()
+                if self.changed_data:
+                    self.repository.send_data()
+                    self.changed_data = False
+
+                #cv.imshow('frame', frame_marked)
+                cv.imshow('frame', frame_gray)
+
+                return frame_gray
+        except Exception as e:
+            sys.stderr.write(str(e))
+            traceback.print_exc()
 
     '''
     Loop through the markers and update them
