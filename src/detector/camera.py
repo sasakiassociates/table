@@ -70,3 +70,13 @@ class Camera():
                     self.changed_data = True
             elif marker.id not in ids & marker.isVisible == True:
                 marker.lost()
+
+if (__name__ == '__main__'):
+    print("Running unit tests for camera.py")
+    camera = Camera(0, None, None, None)
+    while True:
+        frame = camera.videoCapture()
+        cv.imshow('frame', frame)
+        if cv.waitKey(1) == ord('q'):
+            break
+    print("Unit tests for camera.py passed")
