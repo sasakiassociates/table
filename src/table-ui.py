@@ -23,6 +23,5 @@ if (__name__ == '__main__'):
 
     display.launch_gui()
 
-    display.root.destroy()
     camera_thread.join()
     camera.cap.release()

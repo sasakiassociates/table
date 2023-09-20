@@ -40,7 +40,6 @@ class Display():
         tkimg = ImageTk.PhotoImage(image=image)
 
         self.lock.acquire()
-        self.canvas.delete("all")
         self.canvas.create_image(0, 0, image=tkimg, anchor=NW)
         self.root.update()
         self.lock.release()
@@ -54,9 +53,8 @@ class Display():
 
     def end(self):
         self.terminate = True
-        self.root.quit()
+        self.root.destroy()
         
-    
 # Unit tests for this object that'll run when this file is run directly
 if (__name__ == '__main__'):
     print("Running unit tests for display.py")
