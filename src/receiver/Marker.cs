@@ -8,10 +8,9 @@ namespace TableUiReceiver
     internal class Marker
     {
         // Main constructor for creatring markers to remember
-        public Marker(int id, string type)
+        public Marker(int id)
         {
             this.id = id;
-            this.type = type;
         }
         // Overload method for use in JSON deserialization
         public Marker() { }
@@ -27,7 +26,6 @@ namespace TableUiReceiver
             get { return _rotation; }
             set { _rotation = SmoothRotation(value);}
         }
-        public string type { get; set; }
 
         // Internal variables for smoothing so the setter doesn't call itself recursively
         private int[] _location;

@@ -7,14 +7,18 @@ class MarkerFactory:
         for i in range(dict_length):
             marker_list.append(m.Marker(i))
             marker_list[i].attach_observer(observer)
-            
-            if i == dict_length - 1:
-                marker_list[i].set_type("camera")
-            elif i >= dict_length - 5:
-                marker_list[i].set_type("rotator")
-            elif i >= dict_length - 9:
-                marker_list[i].set_type("slider")
-            else:
-                marker_list[i].set_type("model")
 
         return marker_list
+    
+    def get_num_project_files():
+        import os
+        import glob
+        folder_path = os.path.join(os.getcwd(), "src", "projects")
+        file_extension = '*.json' # We'll be using json to store information about the projects
+
+        # Use glob to list files with the specified extension in the folder
+        files = glob.glob(os.path.join(folder_path, file_extension))
+
+        # Get the count of files
+        num_files = len(files)
+        return num_files

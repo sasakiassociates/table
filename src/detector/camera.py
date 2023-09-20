@@ -13,6 +13,7 @@ class Camera():
 
         dictionary_length = len(aruco_dict.bytesList)
         self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
+        self.project_markers = factory.MarkerFactory.make_project_markers()
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -36,15 +37,9 @@ class Camera():
 
                     frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
-                    # Update the markers
-                    for marker in self.my_markers:
-                        if marker.id in ids & marker.isVisible == False:
-                            marker.found()
-                        elif marker.id in ids & marker.isVisible == True:
-                            marker.tracking()
-                        elif marker.id not in ids & marker.isVisible == True:
-                            marker.lost()
-                            
+                    # Loop through the markers and update them
+                    self.markerLoop(ids, corners)
+
                     if self.changed_data:
                         self.repository.send_data()
                         self.changed_data = False
@@ -67,9 +62,12 @@ class Camera():
     @param corners: the corners of the markers
     '''
     def markerLoop(self, ids, corners):
-        for marker_id, marker_corners in zip(ids, corners):
-            marker_id = marker_id[0]
-            marker = self.my_markers[marker_id]
-            marker.update(marker_corners)
-            if marker.significant_change:
-                self.changed_data = True
+        for marker in self.my_markers:
+            if marker.id in ids & marker.isVisible == False:
+                marker.found()
+            elif marker.id in ids & marker.isVisible == True:
+                marker.tracking(corners[ids == marker.id])
+                if marker.significant_change:
+                    self.changed_data = True
+            elif marker.id not in ids & marker.isVisible == True:
+                marker.lost()

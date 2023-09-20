@@ -1,11 +1,9 @@
 import numpy as np
 from math import pi
-from abc import ABC, abstractmethod
 
-@abstractmethod
-class Marker(ABC):
-    def __init__(self, marker_id_):
-        self.id = marker_id_
+class Marker():
+    def __init__(self, marker_id, dataStrategy_):
+        self.id = marker_id
         self.observers = []
         self.isVisible = False
         
@@ -19,27 +17,27 @@ class Marker(ABC):
 
         self.significant_change = False
 
+        self.dataStrategy = dataStrategy_
+
+    def found(self):
+        self.isVisible = True
+
+    def tracking(self, corners_):
+        # check if it's a more significant change than the threshold
+        self.rotation, self.center = self.check_for_threshold_change(corners_)
+        self.notify_observers()
+
+    def lost(self):
+        self.isVisible = False
+    
+
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     
     def notify_observers(self):
         for observer in self.observers:
             observer.update(self.build_json(), self.id)
-    
-    def update(self, corners_):
-        # check if it's a more significant change than the threshold
-        self.rotation, self.center = self.check_for_threshold_change(corners_)
-        self.notify_observers()
 
-    def found(self):
-        pass
-
-    def tracking(self):
-        pass
-
-    def lost(self):
-        pass
-    
     def get_id(self):
         return self.id
     
@@ -88,13 +86,3 @@ class Marker(ABC):
         else:
             self.significant_change = False
             return self.prev_rotation, self.prev_center
-
-# This marker type holds all the data for the project    
-class ProjectMarker(Marker):
-    def __init__(self, marker_id_):
-        super().__init__(marker_id_)
-        dataStrategy = DataStrategyFactory.get_strategy('project')
-
-    def found():
-        # launch the files and details associated with the project
-        pass
