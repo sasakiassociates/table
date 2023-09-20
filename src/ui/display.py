@@ -3,6 +3,8 @@ import numpy as np
 
 from PIL import Image, ImageTk
 
+import threading
+
 class Display():
     def __init__(self):
         self.root = Tk()
@@ -20,7 +22,10 @@ class Display():
         self.h2_font = ("Arial", 16)
         self.p_font = ("Arial", 12)
 
+        self.running = False
         self.terminate = False
+
+        self.lock = threading.Lock()
 
     def add_button(self, text, command):
         button = Button(self.root, text=text, command=command, font=self.h2_font, fg=self.primary_color, bg=self.background)
@@ -33,18 +38,24 @@ class Display():
     def update_video_image(self, frame):
         image = Image.fromarray(frame)
         tkimg = ImageTk.PhotoImage(image=image)
+
+        self.lock.acquire()
+        self.canvas.delete("all")
         self.canvas.create_image(0, 0, image=tkimg, anchor=NW)
         self.root.update()
+        self.lock.release()
 
     def build(self):
         Display.add_button(self, "X", self.end)
 
     def launch_gui(self):
+        self.running = True
         self.root.mainloop()
 
     def end(self):
         self.terminate = True
         self.root.quit()
+        
     
 # Unit tests for this object that'll run when this file is run directly
 if (__name__ == '__main__'):

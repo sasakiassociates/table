@@ -48,7 +48,6 @@ class Camera():
                     self.changed_data = False
 
                 #cv.imshow('frame', frame_marked)
-                cv.imshow('frame', frame_gray)
 
                 return frame_gray
         except Exception as e:
