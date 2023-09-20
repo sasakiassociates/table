@@ -23,6 +23,7 @@ class Display():
         self.p_font = ("Arial", 12)
 
         self.video_label = None
+        self.canvas = None
 
         self.terminate = False
 
@@ -31,9 +32,7 @@ class Display():
         button.pack( side=TOP, anchor=NE, expand=True)
 
     def register_video_label(self, dims):
-        # self.canvas = Canvas(self.root, width=dims[0], height=dims[1], bg=self.background)
-        # self.canvas.pack(side=TOP, anchor=NW, expand=True)
-        self.video_label = Label(self.root, bg=self.background)
+        self.video_label = Label(self.root, bg=self.background, width=dims[0], height=dims[1])
         self.video_label.pack(side=TOP, anchor=NW, expand=True)
 
     def update_video_image(self, frame):
@@ -42,7 +41,6 @@ class Display():
 
         self.video_label.configure(image=tkimg)
         self.video_label.image = tkimg
-        #self.canvas.create_image(0, 0, image=tkimg, anchor=NW)
         self.root.update()
 
     def build(self):
@@ -54,7 +52,7 @@ class Display():
     def end(self):
         self.terminate = True
         self.root.quit()
-        
+
 # Unit tests for this object that'll run when this file is run directly
 if (__name__ == '__main__'):
     print("Running unit tests for display.py")

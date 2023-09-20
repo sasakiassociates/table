@@ -5,8 +5,6 @@ import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
-import threading
-
 #import markerFactory as factory
 
 class Camera():
