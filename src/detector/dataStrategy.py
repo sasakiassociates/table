@@ -12,9 +12,13 @@ class DataStrategy(ABC):
 class ProjectStrategy(DataStrategy):
     def __init__(self, data):
         super().__init__(data)
+        assigned = False
 
     def get_data(self):
         return self.data
+    
+    def store_data(self, json_data):
+        pass
     
 class ModelStrategy(DataStrategy):
     def __init__(self, data):

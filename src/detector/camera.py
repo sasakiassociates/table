@@ -11,7 +11,7 @@ class Camera():
     def __init__(self, camera_num, aruco_dict, params, repository_):
         self.repository = repository_
 
-#        dictionary_length = len(aruco_dict.bytesList)
+        #dictionary_length = len(aruco_dict.bytesList)
         #self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
         #self.project_markers = factory.MarkerFactory.make_project_markers()
         self.detector = aruco.ArucoDetector(aruco_dict, params)
