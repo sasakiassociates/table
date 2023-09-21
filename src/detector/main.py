@@ -1,11 +1,14 @@
-from cv2 import aruco
 import argparse
+import os
+import sys
 
 import camera
-import os, sys
+from cv2 import aruco
+
 # navigate to the sender code to import the repository
 sys.path.append(os.path.join(os.path.dirname(__file__), '../sender'))
 import repository
+
 
 def get_dict(dict_name):
     aruco_dict = eval(f"aruco.{dict_name}")

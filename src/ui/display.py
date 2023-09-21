@@ -3,6 +3,8 @@ import numpy as np
 
 from PIL import Image, ImageTk
 
+from . import colors as c    # NOTE this is a relative import, needed since this is the file that is run directly from the GUI
+
 import threading
 
 class Display():
@@ -12,28 +14,17 @@ class Display():
 
         window_width = self.root.winfo_screenwidth()
         window_height = self.root.winfo_screenheight()
+
         self.root.geometry(f"{window_width}x{window_height}+0+0")
         self.root.attributes('-fullscreen', True)
-        self.root.configure(background='black')
-
-        self.background = "black"
-        self.primary_color = "white"
-        self.h1_font = ("Arial", 20)
-        self.h2_font = ("Arial", 16)
-        self.p_font = ("Arial", 12)
-
-        self.video_label = None
-        self.canvas = None
+        self.root.configure(background=c.SasakiColors.blue_4)
 
         self.terminate = False
-
-    def add_button(self, text, command):
-        button = Button(self.root, text=text, command=command, font=self.h2_font, fg=self.primary_color, bg=self.background)
-        button.pack( side=TOP, anchor=NE, expand=True)
+    
 
     def register_video_label(self, dims):
-        self.video_label = Label(self.root, bg=self.background, width=dims[0], height=dims[1])
-        self.video_label.pack(side=TOP, anchor=NW, expand=True)
+        self.video_label = Label(self.root, bg=self.background)
+        self.video_label.pack(side=TOP, anchor=CENTER, expand=False)
 
     def update_video_image(self, frame):
         image = Image.fromarray(frame)
@@ -44,10 +35,20 @@ class Display():
         self.root.update()
 
     def build(self):
-        Display.add_button(self, "X", self.end)
-
+        self.add_button("X", self.end, TOP, NE, self.root)
+        self.register_video_label((940, 720))
+        self.add_button("Start new project", self.open_new_project_window, BOTTOM, CENTER, self.root)
+        self.add_button("Print markers", self.open_new_project_window, BOTTOM, CENTER, self.root)
+        
     def launch_gui(self):
         self.root.mainloop()
+
+    def open_new_project_window(self):
+        newWindow = Toplevel(self.root)
+        newWindow.title("New Project")
+        newWindow.geometry("800x800")
+        newWindow.configure(background='black')
+        # self.add_button("X", self.end(newWindow), TOP, NE, newWindow)
 
     def end(self):
         self.terminate = True
@@ -60,3 +61,9 @@ if (__name__ == '__main__'):
     display.build()
     display.launch()
     print("Unit tests for display.py passed")
+
+# Frame
+#     - Label (video feed)
+# Frame (Menu)
+#     - Button
+#     - Button
