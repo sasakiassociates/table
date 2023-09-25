@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
 import json
 import os
-import numpy as np
+import subprocess
+from abc import ABC, abstractmethod
 from math import pi
+
+import numpy as np
 
 @abstractmethod
 class Marker(ABC):
@@ -93,61 +95,67 @@ class ProjectMarker(Marker):
         self.project_author = ""
         self.project_files = {}
         self.project_date = ""
-        self.project_path = ""
+        self.associated = False
+        self.running = False
 
     # Intakes the project path associated with this marker and parses the json file to build out this marker
-    def associate_marker_with_project(self, project_path):
-        self.project_path = project_path
-        # Read and parse the JSON file
-        try:
-            with open(self.project_path, 'r') as json_file:
-                project_data = json.load(json_file)
-                self.project_name = project_data["name"]
-                self.project_author = project_data["author"]
-                self.project_files = project_data["files"]
-                self.project_date = project_data["date"]
-        except Exception as e:
-            print(f"Error reading project file {os.path.basename(project_path)}")
-            print(e)
-
-    # Sample JSON file:
-    # {
-    #     "name": "Project 1",
-    #     "author": "John Doe",
-    #     "files": {
-    #         "rhino": "C:\\Users\\JohnDoe\\Documents\\Rhino\\Project1.3dm",
-    #         "grasshopper": "C:\\Users\\JohnDoe\\Documents\\Grasshopper\\Project1.gh"
-    #         "unity": "C:\\Users\\JohnDoe\\Documents\\Unity\\Project1\\Project1.unitypackage"
-    #     },
-    #     "date": "2021-01-01"
-    # }
+    def associate_marker_with_project(self, json_data):
+        self.project_name = json_data["name"]
+        self.project_author = json_data["author"]
+        self.project_files = json_data["files"]
+        self.project_date = json_data["date"]
+        self.associated = True
 
     # Save the json file to the project folder and then associate that file with this marker
     def save_project(self, json_data):
-        with open("..\\..\\projects", 'w') as json_file:
+        filename = json_data["name"] + ".json"
+        with open(f"..\\..\\projects\\{filename}", 'w') as json_file:
             json.dump(json_data, json_file, indent=4)
         self.associate_marker_with_project(self.project_path)
 
-    def build_json(self):
-        marker_data = super().build_json()
-        return marker_data
-
-    # TODO implement this
+    # TODO make sure certain types are opened after others (i.e. grasshopper after rhino)
     def open_project(self):
-        for file in self.project_files:
+        rhino_path = None
+        grasshopper_path = None
+        file_path = None
+
+        for filetype in self.project_files:     # Build a list of all the files in the project
             try:
-                if file.endswith(".3dm"):
-                    pass
-                elif file.endswith(".gh"):
-                    pass
-                elif file.endswith(".unitypackage"):
-                    pass
+                if filetype == "rhino":
+                    rhino_path = self.project_files[filetype]
+                elif filetype == "grasshopper":
+                    grasshopper_path = self.project_files[filetype]
                 else:
-                    print(f"File type {file} not supported")
-                    return
+                    file_path = self.project_files[filetype]
             except Exception as e:
-                print(f"Did not find file: {file}")
+                print(f"Did not find file: {self.project_files[filetype]}")
                 print(e)
+        
+        if rhino_path and grasshopper_path:
+            try:
+                program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+                runscript_command = f'''_-RunScript (Set GH = Rhino.GetPlugInObject(""Grasshopper"")) _-Runscript (Call GH.OpenDocument(""{grasshopper_path}""))'''
+                subprocess.Popen(f'"{program_path}" "{rhino_path}" /nosplash /notemplate /runscript="{runscript_command}"', shell=True)
+                self.running = True
+            except Exception as e:
+                print(f"Failed to open rhino and grasshopper: {e}")
+        elif rhino_path:
+            try:
+                program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+                subprocess.Popen(f'"{program_path}" "{rhino_path}" /nosplash /notemplate', shell=True)
+                self.running = True
+            except Exception as e:
+                print(f"Failed to open rhino: {e}")
+        elif grasshopper_path:
+            try:
+                program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+                runscript_command = f'''_-RunScript (Set GH = Rhino.GetPlugInObject(""Grasshopper"")) _-Runscript (Call GH.OpenDocument(""{grasshopper_path}""))'''
+                subprocess.Popen(f'"{program_path}" /nosplash /notemplate /runscript="{runscript_command}"', shell=True)
+                self.running = True
+            except Exception as e:
+                print(f"Failed to open grasshopper: {e}")
+        else:
+            print("Failed to open project")
     
 class ControllerMarker(Marker):
     def __init__(self, marker_id):

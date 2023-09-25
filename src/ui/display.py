@@ -27,7 +27,6 @@ class Display():
     def launch_gui(self):
         self.root.mainloop()
 
-
     def update_video_image(self, frame):
         image = Image.fromarray(frame)
         tkimg = ImageTk.PhotoImage(image=image)

@@ -5,15 +5,15 @@ import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
-#import markerFactory as factory
+from . import markerFactory as factory
+from . import marker as m
 
 class Camera():
     def __init__(self, camera_num, aruco_dict, params, repository_):
         self.repository = repository_
 
-        #dictionary_length = len(aruco_dict.bytesList)
-        #self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
-        #self.project_markers = factory.MarkerFactory.make_project_markers()
+        dictionary_length = len(aruco_dict.bytesList)
+        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -40,6 +40,12 @@ class Camera():
 
                 # Loop through the markers and update them
                 #self.markerLoop(ids, corners)
+                if ids is not None:
+                    for marker_id in ids:
+                        marker = self.my_markers[int(marker_id)]
+                        if isinstance(marker, m.ProjectMarker):
+                            if marker.running == False:
+                                marker.open_project()
 
                 if self.changed_data:
                     self.repository.send_data()

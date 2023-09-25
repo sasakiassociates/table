@@ -19,7 +19,7 @@ def camera_loop(camera, _display):
 
 if (__name__ == '__main__'):
 
-    aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
+    aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_100)
     params = aruco.DetectorParameters()
     
     camera = camera.Camera(0, aruco_dict, params, None)
