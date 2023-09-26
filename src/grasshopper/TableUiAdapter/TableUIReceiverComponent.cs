@@ -17,10 +17,9 @@ namespace TableUiAdapter
 {
     public class TableUIReceiverComponent : GH_Component
     {
-        public List<int> markerIds = new List<int>();
-        public List<float> markerRotations = new List<float>();
-        public List<int[]> markerLocations = new List<int[]>();
-        public List<Point3d> markerPoints = new List<Point3d>();
+        Marker cameraMarker = null;
+        List<Marker> controllerMarkers = new List<Marker>();
+        List<Marker> geometryMarkers = new List<Marker>();
 
         public bool isListening = false;
         public bool run = true;
@@ -52,10 +51,9 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Marker IDs", "IDs", "The IDs of the markers detected by the system. (currently there are 100 markers)", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Marker Rotations", "Rotations", "The rotations of the markers detected by the system.", GH_ParamAccess.list);
-            pManager.AddPointParameter("Marker Locations", "Locations", "The locations of the markers detected by the system.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Counter", "Counter", "The number of times the component has been run.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Camera Marker", "Camera", "The marker that corresponds to the camera", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Geometry Markers", "Geometry", "The markers that will be assigned to geometries", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -78,35 +76,45 @@ namespace TableUiAdapter
             {
                 _repository.UdpSend("STOP");        // "STOP" message ends the detection program and it's threads
                 isListening = false;                // Setting isListening to false ends the listening thread
-                markerIds.Clear();
-                markerRotations.Clear();
-                markerLocations.Clear();
+                cameraMarker = null;
+                controllerMarkers.Clear();
+                geometryMarkers.Clear();
                 messageCounter = 0;
             }
 
-            markerPoints.Clear();
-            foreach (int[] location in markerLocations)
-            {
-                markerPoints.Add(new Point3d(-location[0], location[1], location[2]));
-            }
-
-            DA.SetDataList("Marker IDs", markerIds);
-            DA.SetDataList("Marker Rotations", markerRotations);
-            DA.SetDataList("Marker Locations", markerPoints);
-            DA.SetData("Counter", messageCounter);
+            // TODO: Build out components that use these to do something
+            DA.SetData(0, cameraMarker);
+            DA.SetDataList(1, controllerMarkers);
+            DA.SetDataList(2, geometryMarkers);
         }
 
         private async Task ListenThread()
         {
             while (isListening)
             {
-                string incomingJson = await _repository.Receive(_cancellationToken);                            // Keep listening for incoming messages until we get one or the cancellation token is triggered
-                (List<int> ids, List<float> rotations, List<int[]> locations) = Parser.Parse(incomingJson);     // Get the important values from the JSON
+                string incomingJson = await _repository.Receive(_cancellationToken);      // Keep listening for incoming messages until we get one or the cancellation token is triggered
+                List<Marker> incomingMarkers = new List<Marker>();
+                incomingMarkers = Parser.Parse(incomingJson);                                     // Get the important values from the JSON
 
-                markerIds = ids;
-                markerRotations = rotations;
-                markerLocations = locations;
-                messageCounter++;
+                cameraMarker = null;
+                controllerMarkers.Clear();
+                geometryMarkers.Clear();
+
+                foreach (Marker marker in incomingMarkers)
+                {
+                    switch (marker.type)
+                    {
+                        case "camera":
+                            cameraMarker = marker;
+                            break;
+                        case "controller":
+                            controllerMarkers.Add(marker);
+                            break;
+                        case "geometry":
+                            geometryMarkers.Add(marker);
+                            break;
+                    }
+                }
 
                 // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)
                 Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>

@@ -23,6 +23,8 @@ class Marker(ABC):
         self.prev_center = (0,0)
         self.center_threshold = 2
 
+        self.type = "marker"
+
         self.significant_change = False
 
     def found(self):
@@ -51,6 +53,7 @@ class Marker(ABC):
             "id": self.id,
             "location": [self.center[0], self.center[1], 0],
             "rotation": self.rotation,
+            "type": self.type,
         }
         return marker_data
     
@@ -99,6 +102,7 @@ class ProjectMarker(Marker):
         self.project_date = ""
         self.associated = False
         self.running = False
+        self.type = "project"
 
     # Intakes the project path associated with this marker and parses the json file to build out this marker
     def associate_marker_with_project(self, json_data):
@@ -163,15 +167,8 @@ class ProjectMarker(Marker):
 class ControllerMarker(Marker):
     def __init__(self, marker_id):
         super().__init__(marker_id)
-        self.type = "rotator"
+        self.type = "controller"
         self.controller_name = ""
-
-    def build_json(self):
-        marker_data = {
-            "type": self.type,
-            "rotation": self.rotation
-        }
-        return marker_data
     
     def set_controller_type(self, controller_type):
         self.type = controller_type
@@ -181,11 +178,6 @@ class GeometryMarker(Marker):
         super().__init__(marker_id)
         self.geometry_name = ""
         self.type = "geometry"
-
-    def build_json(self):
-        marker_data = super().build_json()
-        marker_data["type"] = self.type
-        return marker_data
     
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")
