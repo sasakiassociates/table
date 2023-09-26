@@ -41,17 +41,23 @@ class Camera():
                 # Loop through the markers and update them
                 #self.markerLoop(ids, corners)
                 if ids is not None:
-                    for marker_id in ids:
+                    for marker_id, marker_corners in zip(ids, corners):
                         marker = self.my_markers[int(marker_id)]
                         if isinstance(marker, m.ProjectMarker):
                             if marker.running == False:
                                 marker.open_project()
+                        else:
+                            if marker.isVisible == False:
+                                marker.found()
+                                marker.track(marker_corners)
+                            else:
+                                marker.track(marker_corners)
+                                if marker.significant_change:
+                                    self.changed_data = True
 
                 if self.changed_data:
                     self.repository.send_data()
                     self.changed_data = False
-
-                #cv.imshow('frame', frame_marked)
 
                 return frame_marked
         except Exception as e:

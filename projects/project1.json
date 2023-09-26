@@ -3,8 +3,7 @@
      "name": "Project 1",
      "author": "John Doe",
      "files": {
-         "rhino": "C:\\Users\\nshikada\\Desktop\\table-ui_files\\Brown_context-model_orthogonal.3dm",
-         "grasshopper": "C:\\Users\\nshikada\\Desktop\\table-ui_files\\camera_manipulation_test.gh"
+         "grasshopper": "C:\\Users\\nshikada\\Desktop\\table-ui_files\\startuptest.gh"
      },
      "date": "2021-01-01"
 }

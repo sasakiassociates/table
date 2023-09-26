@@ -5,6 +5,7 @@ from cv2 import aruco
 
 from detector import camera
 from ui import display
+from sender import repository
 
 parser = argparse.ArgumentParser(description="Detect ArUco markers and send data to Firebase")
 parser.add_argument("mode", type=str, default="udp", choices=["firebase", "udp"], help="The mode to run the program in")
@@ -21,8 +22,9 @@ if (__name__ == '__main__'):
 
     aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_100)
     params = aruco.DetectorParameters()
+    _repository = repository.Repository("udp")                  # New repository object that opens a UDP connection on a new thread
     
-    camera = camera.Camera(0, aruco_dict, params, None)
+    camera = camera.Camera(0, aruco_dict, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
     _display = display.Display()
     
     _display.build()

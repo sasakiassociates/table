@@ -1,8 +1,10 @@
 import json
 import os
+import signal
 import subprocess
 from abc import ABC, abstractmethod
 from math import pi
+import time
 
 import numpy as np
 
@@ -26,7 +28,7 @@ class Marker(ABC):
     def found(self):
         self.isVisible = True
 
-    def tracking(self, corners_):
+    def track(self, corners_):
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
         self.notify_observers()
@@ -134,9 +136,10 @@ class ProjectMarker(Marker):
         if rhino_path and grasshopper_path:
             try:
                 program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
-                runscript_command = f'''_-RunScript (Set GH = Rhino.GetPlugInObject(""Grasshopper"")) _-Runscript (Call GH.OpenDocument(""{grasshopper_path}""))'''
-                subprocess.Popen(f'"{program_path}" "{rhino_path}" /nosplash /notemplate /runscript="{runscript_command}"', shell=True)
+                runscript_command = f'''_-RunScript (Set GH = Rhino.GetPlugInObject(""Grasshopper"")) _-RunScript (Call GH.OpenDocument(""{grasshopper_path}"")))'''
+                app = subprocess.Popen(f'"{program_path}" "{rhino_path}" /nosplash /notemplate /runscript="{runscript_command}"', shell=True)
                 self.running = True
+                # TODO add a way to kill the program if a new project is detected
             except Exception as e:
                 print(f"Failed to open rhino and grasshopper: {e}")
         elif rhino_path:
@@ -160,25 +163,28 @@ class ProjectMarker(Marker):
 class ControllerMarker(Marker):
     def __init__(self, marker_id):
         super().__init__(marker_id)
+        self.type = "rotator"
         self.controller_name = ""
-        self.controller_data = {}
 
     def build_json(self):
-        marker_data = super().build_json()
-        marker_data["controller_name"] = self.controller_name
-        marker_data["controller_data"] = self.controller_data
+        marker_data = {
+            "type": self.type,
+            "rotation": self.rotation
+        }
         return marker_data
+    
+    def set_controller_type(self, controller_type):
+        self.type = controller_type
     
 class GeometryMarker(Marker):
     def __init__(self, marker_id):
         super().__init__(marker_id)
         self.geometry_name = ""
-        self.geometry_data = {}
+        self.type = "geometry"
 
     def build_json(self):
         marker_data = super().build_json()
-        marker_data["geometry_name"] = self.geometry_name
-        marker_data["geometry_data"] = self.geometry_data
+        marker_data["type"] = self.type
         return marker_data
     
 if (__name__ == '__main__'):

@@ -6,8 +6,6 @@ import os
 
 from . import colors as c    # NOTE this is a relative import, needed since this is the file that is run directly from the GUI
 
-import threading
-
 class Display():
     def __init__(self):
         self.root = tk.Tk()
@@ -33,6 +31,7 @@ class Display():
 
         self.video_label.configure(image=tkimg)
         self.video_label.image = tkimg
+
         self.root.update()
 
     def build(self):

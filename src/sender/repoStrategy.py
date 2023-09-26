@@ -52,9 +52,9 @@ class UDPRepo(RepoStrategy):
 
     def setup(self):
         # create and run thread to listen for commands
-        listen_thread = threading.Thread(target=self.listen_for_data_thread)
-        listen_thread.daemon = True
-        listen_thread.start()
+        # listen_thread = threading.Thread(target=self.listen_for_data_thread)
+        # listen_thread.daemon = True
+        # listen_thread.start()
 
         sending_thread = threading.Thread(target=self.send_data_thread)
         sending_thread.daemon = True
@@ -94,7 +94,7 @@ class UDPRepo(RepoStrategy):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             message = str(self.data)
-            print("Sending data: " + message)
+            # print("Sending data: " + message)
             message_bytes = message.encode('utf-8')
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
             _socket.close()

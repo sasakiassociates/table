@@ -23,7 +23,7 @@ namespace TableUiAdapter
         public List<Point3d> markerPoints = new List<Point3d>();
 
         public bool isListening = false;
-        public bool run = false;
+        public bool run = true;
         public int messageCounter = 0;
 
         private Repository _repository;
@@ -64,14 +64,13 @@ namespace TableUiAdapter
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            if (run && !isListening)
+            if (run && !isListening)                
             {
                 if (_repository == null)
                 {
                     _repository = new Repository();
                 }
 
-                Launcher.LaunchDetectionProgram();  // Launch the detection program
                 _ = Task.Run(() => ListenThread()); // Launch the listening thread
                 isListening = true;
             }

@@ -1,15 +1,14 @@
-import repoStrategy as rs
+# import repoStrategy as rs
+from . import repoStrategy as rs
 
 class Repository():
     def __init__(self, strategy_name):
         self.data = {}
         self.strategy = rs.RepoStrategyFactory.get_strategy(strategy_name)
+        self.strategy.setup()
 
     def add_to_data(self, marker_id, data):
         self.data.setdefault(str(marker_id), data).update()
-
-    def setup(self):
-        self.strategy.setup()
 
     def close_threads(self):
         if self.strategy.terminate == False:
