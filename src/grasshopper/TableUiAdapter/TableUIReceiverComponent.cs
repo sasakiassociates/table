@@ -17,12 +17,12 @@ namespace TableUiAdapter
 {
     public class TableUIReceiverComponent : GH_Component
     {
-        Marker cameraMarker = null;
         List<Marker> controllerMarkers = new List<Marker>();
         List<Marker> geometryMarkers = new List<Marker>();
 
         public bool isListening = false;
         public bool run = true;
+        bool cameraTracking = false;
         public int messageCounter = 0;
 
         private Repository _repository;
@@ -51,7 +51,6 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Camera Marker", "Camera", "The marker that corresponds to the camera", GH_ParamAccess.item);
             pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
             pManager.AddGenericParameter("Geometry Markers", "Geometry", "The markers that will be assigned to geometries", GH_ParamAccess.list);
         }
@@ -76,16 +75,14 @@ namespace TableUiAdapter
             {
                 _repository.UdpSend("STOP");        // "STOP" message ends the detection program and it's threads
                 isListening = false;                // Setting isListening to false ends the listening thread
-                cameraMarker = null;
                 controllerMarkers.Clear();
                 geometryMarkers.Clear();
                 messageCounter = 0;
             }
 
             // TODO: Build out components that use these to do something
-            DA.SetData(0, cameraMarker);
-            DA.SetDataList(1, controllerMarkers);
-            DA.SetDataList(2, geometryMarkers);
+            DA.SetDataList(0, controllerMarkers);
+            DA.SetDataList(1, geometryMarkers);
         }
 
         private async Task ListenThread()
@@ -96,7 +93,6 @@ namespace TableUiAdapter
                 List<Marker> incomingMarkers = new List<Marker>();
                 incomingMarkers = Parser.Parse(incomingJson);                                     // Get the important values from the JSON
 
-                cameraMarker = null;
                 controllerMarkers.Clear();
                 geometryMarkers.Clear();
 
@@ -105,7 +101,21 @@ namespace TableUiAdapter
                     switch (marker.type)
                     {
                         case "camera":
-                            cameraMarker = marker;
+                            // If camera tracking is on, move the camera according to this marker
+                            if (cameraTracking)
+                            {
+                                var doc = Rhino.RhinoDoc.ActiveDoc;
+                                var view = doc.Views.ActiveView;
+                                var camera = view.ActiveViewport.CameraLocation;
+
+                                Point3d cameraLocation = new Point3d(marker.location[0], marker.location[1], 5.5);
+                                view.ActiveViewport.SetCameraLocation(cameraLocation, false);
+
+                                Point3d cameraTarget = new Point3d(marker.location[0], marker.location[1]-1, 5.5);
+                                cameraTarget.Transform(Transform.Rotation(marker.rotation, cameraLocation));
+                                view.ActiveViewport.SetCameraTarget(cameraTarget, false);
+                                view.Redraw();
+                            }
                             break;
                         case "controller":
                             controllerMarkers.Add(marker);
@@ -161,11 +171,11 @@ namespace TableUiAdapter
 
                 if (channel == GH_CanvasChannel.Objects)
                 {
-                    GH_Capsule button1 = GH_Capsule.CreateTextCapsule(LaunchButtonBounds, LaunchButtonBounds, GH_Palette.Black, "Launch", 2, 0);
+                    GH_Capsule button1 = GH_Capsule.CreateTextCapsule(LaunchButtonBounds, LaunchButtonBounds, GH_Palette.Black, "On/Off", 2, 0);
                     button1.Render(graphics, Selected, Owner.Locked, false);
                     button1.Dispose();
 
-                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(StopButtonBounds, StopButtonBounds, GH_Palette.Black, "Stop", 2, 0);
+                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(StopButtonBounds, StopButtonBounds, GH_Palette.Black, "Track Camera On/Off", 2, 0);
                     button2.Render(graphics, Selected, Owner.Locked, false);
                     button2.Dispose();
                 }
@@ -182,22 +192,29 @@ namespace TableUiAdapter
                             ((TableUIReceiverComponent)Owner).run = true;               // Set run to true to trigger LaunchDetectionProgram in SolveInstance
                             ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
-                        else
+                        else if (((TableUIReceiverComponent)Owner).isListening)
                         {
+                            ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                             MessageBox.Show("The detection program is already running.");
                         }
                         return GH_ObjectResponse.Handled;
                     }
                     else if (StopButtonBounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
                     {
-                        if (((TableUIReceiverComponent)Owner).isListening)
-                        {
-                            ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
-                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
-                        }
-                        else
+                        if (!((TableUIReceiverComponent)Owner).isListening) 
                         {
                             MessageBox.Show("The detection program is not running.");
+                        }
+                        else if (!((TableUIReceiverComponent)Owner).cameraTracking)
+                        {
+                            ((TableUIReceiverComponent)Owner).cameraTracking = true;    // Start the camera tracking
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
+                        }
+                        else if (((TableUIReceiverComponent)Owner).cameraTracking)
+                        {
+                            ((TableUIReceiverComponent)Owner).cameraTracking = false;   // Stop the camera tracking
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
                         return GH_ObjectResponse.Handled;
                     }
