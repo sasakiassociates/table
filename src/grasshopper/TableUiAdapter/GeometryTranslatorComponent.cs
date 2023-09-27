@@ -18,7 +18,7 @@ namespace TableUiAdapter
         /// Initializes a new instance of the GeometryTranslatorComponent class.
         /// </summary>
         public GeometryTranslatorComponent()
-          : base("GeometryTranslatorComponent", "Translate Geometry",
+          : base("Translate Geometry", "Translate Geometry",
               "Intakes the TableUI receiver geometry markers and a dictionary of geometries and the marker you want to assign them to and translates those geometries according to the corresponding marker",
               "Strategist", "TableUI")
         {
@@ -30,7 +30,7 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBrepParameter("Geometry", "G", "The geometries to be translated (named using TableUI's GeometryAssigner Component", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Markers", "M", "The markers to be translated to", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Markers", "M", "The incoming markers from the TableUI Receiver", GH_ParamAccess.list);
         }
 
         /// <summary>

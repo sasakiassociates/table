@@ -50,6 +50,7 @@ class MarkerFactory:
             if i not in project_marker_ids:
                 marker_list.append(m.GeometryMarker(i))
                 marker_list[i].attach_observer(observer)
+                marker_list[i].name = "Geometry {i}"
 
         marker_list.sort(key=lambda marker: marker.id) # Sort the markers by their id
 

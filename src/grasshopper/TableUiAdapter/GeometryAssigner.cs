@@ -10,6 +10,7 @@ namespace TableUiAdapter
     {
         List<string> geometryNames = new List<string>();
         List<Brep> geometries = new List<Brep>();
+        List<Brep> namedGeometries = new List<Brep>();
 
         /// <summary>
         /// Initializes a new instance of the GeometryAssigner class.
@@ -37,7 +38,7 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.Register_BRepParam("Geometry", "G", "The geometries with assigned marker IDs", GH_ParamAccess.list);
+            pManager.AddBrepParameter("Geometry", "G", "The geometries with assigned marker IDs", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -51,17 +52,26 @@ namespace TableUiAdapter
 
             for (int i = 0; i < geometries.Count; i++)
             {
+                Brep brep = geometries[i];
+
+                if (brep == null)
+                {
+                    break;
+                }
+
                 if (i < geometryNames.Count)
                 {
-                    geometries[i].UserDictionary.Set("Name", geometryNames[i]);
+                    brep.UserDictionary.Set("Name", geometryNames[i]);
+                    namedGeometries.Add(brep);
                 }
                 else
                 {
-                    geometries[i].UserDictionary.Set("Name", "Geometry " + i);
+                    brep.UserDictionary.Set("Name", "Geometry " + i);
+                    namedGeometries.Add(brep);
                 }
             }
 
-            DA.SetDataList("Geometry", geometries);
+            DA.SetDataList("Geometry", namedGeometries);
         }
 
         /// <summary>

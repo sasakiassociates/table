@@ -51,8 +51,8 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
             pManager.AddGenericParameter("Geometry Markers", "Geometry", "The markers that will be assigned to geometries", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -81,8 +81,8 @@ namespace TableUiAdapter
             }
 
             // TODO: Build out components that use these to do something
-            DA.SetDataList(0, controllerMarkers);
-            DA.SetDataList(1, geometryMarkers);
+            DA.SetDataList(0, geometryMarkers);
+            DA.SetDataList(1, controllerMarkers);
         }
 
         private async Task ListenThread()
@@ -222,6 +222,12 @@ namespace TableUiAdapter
 
                 return base.RespondToMouseUp(sender, e);
             }
+        }
+
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            base.RemovedFromDocument(document);
+            isListening = false;
         }
 
         /// <summary>

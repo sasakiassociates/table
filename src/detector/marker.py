@@ -178,6 +178,7 @@ class GeometryMarker(Marker):
         super().__init__(marker_id)
         self.geometry_name = ""
         self.type = "geometry"
+        self.name = ""
     
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")
