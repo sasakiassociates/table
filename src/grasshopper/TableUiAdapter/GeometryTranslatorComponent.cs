@@ -56,14 +56,16 @@ namespace TableUiAdapter
 
             foreach (Brep brep in breps)
             {
-                string name = brep.UserDictionary.GetString("Name");
+                int id = int.Parse(brep.UserDictionary.GetString("Name"));
 
                 foreach (Marker marker in incomingMarkers)
                 {
-                    if (marker.name == name)
+                    if (marker.id == id)
                     {
                         Point3d newOrigin = new Point3d(marker.location[0], marker.location[1], 0);
-                        Vector3d translationVector = newOrigin - brep.GetBoundingBox(false).Center;
+                        Point3d center = brep.GetBoundingBox(false).Center;
+                        Point3d projectedCenter = new Point3d(center.X, center.Y, 0);
+                        Vector3d translationVector = newOrigin - projectedCenter;
                         brep.Translate(translationVector);
 
                         Transform rotation = Transform.Rotation(marker.rotation, Vector3d.ZAxis, newOrigin);

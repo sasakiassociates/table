@@ -8,7 +8,7 @@ namespace TableUiAdapter
 {
     public class GeometryAssigner : GH_Component
     {
-        List<string> geometryNames = new List<string>();
+        List<string> markerIds = new List<string>();
         List<Brep> geometries = new List<Brep>();
         List<Brep> namedGeometries = new List<Brep>();
 
@@ -28,7 +28,7 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBrepParameter("Geometry", "G", "The geometries to be assigned", GH_ParamAccess.list);
-            pManager.AddTextParameter("Geometry Names", "N", "Custom names to assign to the geometries", GH_ParamAccess.list);
+            pManager.AddTextParameter("Marker IDs", "ID", "A list of markers IDs in the same order as the geometries to assign markers", GH_ParamAccess.list);
 
             pManager[1].Optional = true;
         }
@@ -48,11 +48,11 @@ namespace TableUiAdapter
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             geometries.Clear();
-            geometryNames.Clear();
+            markerIds.Clear();
             namedGeometries.Clear();
 
-            DA.GetDataList("Geometry", geometries);
-            DA.GetDataList("Geometry Names", geometryNames);
+            DA.GetDataList(0, geometries);
+            DA.GetDataList(1, markerIds);
 
             for (int i = 0; i < geometries.Count; i++)
             {
@@ -63,9 +63,9 @@ namespace TableUiAdapter
                     break;
                 }
 
-                if (i < geometryNames.Count)
+                if (i < markerIds.Count)
                 {
-                    brep.UserDictionary.Set("Name", geometryNames[i]);
+                    brep.UserDictionary.Set("Name", markerIds[i]);
                     namedGeometries.Add(brep);
                 }
                 else
