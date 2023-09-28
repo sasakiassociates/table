@@ -21,6 +21,9 @@ class Display():
         self.button_padding = (10, 10)
 
         self.terminate = False
+
+        self.debug_data = None
+        self.input_id = None
     
     def launch_gui(self):
         self.root.mainloop()
@@ -33,6 +36,45 @@ class Display():
         self.video_label.image = tkimg
 
         self.root.update()
+
+    def set_input(self):
+        self.debug_data = {
+            "id": self.id_input.get(),
+            "location": self.location_input.get(),
+            "rotation": self.rotation_input.get(),
+            "type": self.type_input.get()
+        }
+        self.input_id = self.id_input.get()
+        self.debug_data = None
+        self.input_id = None
+
+
+    def add_debug_window(self):
+        debug_window = tk.Toplevel(self.root)
+        debug_window.title("Debug")
+        debug_window.geometry("800x800")
+        debug_window.configure(background='black')
+
+        input_frame = tk.Frame(debug_window)
+        input_frame.configure(background='white', width=400, height=400)
+        input_frame.pack()
+
+        self.id_input = tk.Entry(input_frame)
+        self.id_input.pack()
+
+        self.location_input = tk.Entry(input_frame)
+        self.location_input.pack()
+
+        self.rotation_input = tk.Entry(input_frame)
+        self.rotation_input.pack()
+
+        self.type_input = tk.Entry(input_frame)
+        self.type_input.pack()
+
+        print_button = tk.Button(input_frame, text="Send", command=self.set_input)
+        print_button.pack()
+
+        tk.Label(debug_window, text="Debugging").pack()
 
     def build(self):
         mainFrame = tk.Frame(self.root, bg="white")

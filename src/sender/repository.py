@@ -7,9 +7,6 @@ class Repository():
         self.strategy = rs.RepoStrategyFactory.get_strategy(strategy_name)
         self.strategy.setup()
 
-    def add_to_data(self, marker_id, data):
-        self.data.setdefault(str(marker_id), data).update()
-
     def close_threads(self):
         if self.strategy.terminate == False:
             self.strategy.teminate = True
@@ -23,4 +20,4 @@ class Repository():
         return self.strategy.terminate
         
     def update(self, marker_json, marker_id):
-        self.add_to_data(marker_id, marker_json)
+        self.data.setdefault(str(marker_id), marker_json).update()

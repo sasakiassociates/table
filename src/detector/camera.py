@@ -7,10 +7,17 @@ from cv2 import aruco
 
 from . import markerFactory as factory
 from . import marker as m
+from arucoDictRef import aruco_dict_mapping
 
 class Camera():
-    def __init__(self, camera_num, aruco_dict, params, repository_):
+    def __init__(self, camera_num, aruco_dict_name, params, repository_):
         self.repository = repository_
+
+        if aruco_dict_name in aruco_dict_mapping:
+            aruco_dict = aruco_dict_mapping[aruco_dict_name]
+        else:
+            aruco_dict = aruco_dict_mapping["DICT_6X6_100"]
+            print("Invalid ArUco dictionary name. Using default dictionary: DICT_6X6_100")
 
         dictionary_length = len(aruco_dict.bytesList)
         self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
