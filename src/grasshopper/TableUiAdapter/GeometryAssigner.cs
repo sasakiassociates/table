@@ -47,6 +47,10 @@ namespace TableUiAdapter
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            geometries.Clear();
+            geometryNames.Clear();
+            namedGeometries.Clear();
+
             DA.GetDataList("Geometry", geometries);
             DA.GetDataList("Geometry Names", geometryNames);
 

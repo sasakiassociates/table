@@ -38,6 +38,7 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddBrepParameter("Translated Geometry", "G", "The translated geometries", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -46,8 +47,12 @@ namespace TableUiAdapter
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            DA.SetDataList("Geometry", breps);
-            DA.SetDataList("Markers", incomingMarkers);
+            breps.Clear();
+            incomingMarkers.Clear();
+            transformedBreps.Clear();
+
+            DA.GetDataList("Geometry", breps);
+            DA.GetDataList("Markers", incomingMarkers);
 
             foreach (Brep brep in breps)
             {
@@ -57,7 +62,7 @@ namespace TableUiAdapter
                 {
                     if (marker.name == name)
                     {
-                        Point3d newOrigin = new Point3d(marker.location[0], marker.location[1], marker.location[2]);
+                        Point3d newOrigin = new Point3d(marker.location[0], marker.location[1], 0);
                         Vector3d translationVector = newOrigin - brep.GetBoundingBox(false).Center;
                         brep.Translate(translationVector);
 
@@ -70,6 +75,8 @@ namespace TableUiAdapter
                     }
                 }
             }
+
+            DA.SetDataList("Translated Geometry", transformedBreps);
         }
 
         /// <summary>

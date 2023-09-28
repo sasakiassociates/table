@@ -50,10 +50,17 @@ namespace TableUiAdapter
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            incomingMarkers.Clear();
+
             DA.GetDataList("Markers", incomingMarkers);
             DA.GetData("Marker ID", ref desiredMarkerId);
             DA.GetData("Minimum", ref targetMin);
             DA.GetData("Maximum", ref targetMax);
+
+            if (incomingMarkers.Count == 0)
+            {
+                return;
+            }
 
             foreach (Marker marker in incomingMarkers)
             {

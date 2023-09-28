@@ -25,7 +25,8 @@ class Repository():
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")
     repo = Repository('udp')
-    repo.update({'id': 1, 'location': [1, 2, 3], 'rotation': 0, 'type': 'geometry', 'name': 'Geometry 1'}, 1)
-    repo.update({'id': 2, 'location': [1, 2, 3], 'rotation': 0, 'type': 'geometry', 'name': 'Geometry 2'}, 2)
+    repo.update({'id': 0, 'location': [10, 20], 'rotation': 0, 'type': 'geometry', 'name': 'Geometry 0'}, 1)
+    repo.update({'id': 1, 'location': [20, 150], 'rotation': 0.5, 'type': 'geometry', 'name': 'Geometry 1'}, 2)
+    repo.update({'id': 2, 'location': [30, 250], 'rotation': 0.5, 'type': 'controller'}, 3)
     print(repo.data)
     repo.strategy.send_specified_data(repo.data)
