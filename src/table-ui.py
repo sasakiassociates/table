@@ -40,6 +40,14 @@ def camera_loop(camera, _display):
         frame = camera.videoCapture()
         _display.update_video_image(frame)
 
+def debug_loop(camera, _display):
+    while not _display.terminate:
+        if _display.new_debug_data:
+            camera.repository.update(_display.debug_data, _display.debug_id)
+            camera.repository.send_data()
+            _display.new_debug_data = False
+
+
 if (__name__ == '__main__'):
     
     _display = display.Display()
@@ -57,9 +65,13 @@ if (__name__ == '__main__'):
         # TODO add a window for debug mode that allows you to input markers manually as if they had been detected
         # window just links up to the repository object and allows you to input data for a marker
         # window also allows you to input data for a project
+        debug_thread = threading.Thread(target=debug_loop, args=(camera, _display))
+        debug_thread.daemon = True
+        debug_thread.start()
 
         _display.add_debug_window()
-    
+        _display.launch_gui()
+
     else:
 
         camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
@@ -67,6 +79,7 @@ if (__name__ == '__main__'):
         camera_thread.start()
 
         _display.launch_gui()
-        camera.cap.release()
         _display.root.destroy()
+    camera.cap.release()
+    
         

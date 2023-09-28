@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 import numpy as np
 
@@ -15,7 +16,7 @@ class Display():
         window_height = self.root.winfo_screenheight()
 
         self.root.geometry(f"{window_width}x{window_height}+0+0")
-        self.root.attributes('-fullscreen', True)
+        self.root.attributes('-fullscreen', False)
         self.root.configure(background=c.SasakiColors.blue_4)
 
         self.button_padding = (10, 10)
@@ -23,7 +24,7 @@ class Display():
         self.terminate = False
 
         self.debug_data = None
-        self.input_id = None
+        self.new_debug_data = False
     
     def launch_gui(self):
         self.root.mainloop()
@@ -38,43 +39,45 @@ class Display():
         self.root.update()
 
     def set_input(self):
+        rotation = float(int(self.rotation_input.get()) * math.pi / 180)
         self.debug_data = {
             "id": self.id_input.get(),
             "location": self.location_input.get(),
-            "rotation": self.rotation_input.get(),
+            "rotation": rotation,
             "type": self.type_input.get()
         }
-        self.input_id = self.id_input.get()
-        self.debug_data = None
-        self.input_id = None
-
+        self.new_debug_data
+        print(self.debug_data)
 
     def add_debug_window(self):
         debug_window = tk.Toplevel(self.root)
         debug_window.title("Debug")
-        debug_window.geometry("800x800")
         debug_window.configure(background='black')
+        
+        tk.Label(debug_window, text="Debugging").pack()
 
         input_frame = tk.Frame(debug_window)
         input_frame.configure(background='white', width=400, height=400)
         input_frame.pack()
 
+        tk.Label(input_frame, text="ID").grid(row=0, column=0)
         self.id_input = tk.Entry(input_frame)
-        self.id_input.pack()
+        self.id_input.grid(row=0, column=1)
 
+        tk.Label(input_frame, text="Location").grid(row=1, column=0)
         self.location_input = tk.Entry(input_frame)
-        self.location_input.pack()
+        self.location_input.grid(row=1, column=1)
 
+        tk.Label(input_frame, text="Rotation").grid(row=2, column=0)
         self.rotation_input = tk.Entry(input_frame)
-        self.rotation_input.pack()
+        self.rotation_input.grid(row=2, column=1)
 
+        tk.Label(input_frame, text="Type").grid(row=3, column=0)
         self.type_input = tk.Entry(input_frame)
-        self.type_input.pack()
+        self.type_input.grid(row=3, column=1)
 
         print_button = tk.Button(input_frame, text="Send", command=self.set_input)
-        print_button.pack()
-
-        tk.Label(debug_window, text="Debugging").pack()
+        print_button.grid(row=4, column=1)
 
     def build(self):
         mainFrame = tk.Frame(self.root, bg="white")

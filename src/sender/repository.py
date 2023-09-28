@@ -1,5 +1,5 @@
-# import repoStrategy as rs
-from . import repoStrategy as rs
+import repoStrategy as rs
+# from . import repoStrategy as rs
 
 class Repository():
     def __init__(self, strategy_name):
@@ -21,3 +21,11 @@ class Repository():
         
     def update(self, marker_json, marker_id):
         self.data.setdefault(str(marker_id), marker_json).update()
+
+if (__name__ == '__main__'):
+    print("Running unit tests for repository.py")
+    repo = Repository('udp')
+    repo.update({'id': 1, 'location': [1, 2, 3], 'rotation': 0, 'type': 'geometry', 'name': 'Geometry 1'}, 1)
+    repo.update({'id': 2, 'location': [1, 2, 3], 'rotation': 0, 'type': 'geometry', 'name': 'Geometry 2'}, 2)
+    print(repo.data)
+    repo.strategy.send_specified_data(repo.data)

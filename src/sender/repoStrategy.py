@@ -13,7 +13,7 @@ class RepoStrategy(ABC):
     @abstractmethod
     def __init__(self) -> None:
         self.data = {}
-        self.new_data = True;
+        self.new_data = True
         self.terminate = False
         self.statup_data = {}
 
@@ -51,14 +51,15 @@ class UDPRepo(RepoStrategy):
         self.send_port = 5005
 
     def setup(self):
+        pass
         # create and run thread to listen for commands
         # listen_thread = threading.Thread(target=self.listen_for_data_thread)
         # listen_thread.daemon = True
         # listen_thread.start()
 
-        sending_thread = threading.Thread(target=self.send_data_thread)
-        sending_thread.daemon = True
-        sending_thread.start()
+        # sending_thread = threading.Thread(target=self.send_data_thread)
+        # sending_thread.daemon = True
+        # sending_thread.start()
 
     def end(self):
         self.terminate = True
@@ -89,6 +90,10 @@ class UDPRepo(RepoStrategy):
         finally:
             _socket.close()
             self.terminate = True
+
+    def send_specified_data(self, data):
+        self.data = data
+        self.send()
 
     def send(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

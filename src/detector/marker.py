@@ -33,7 +33,8 @@ class Marker(ABC):
     def track(self, corners_):
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
-        self.notify_observers()
+        if self.significant_change:
+            self.notify_observers()
 
     def lost(self):
         self.isVisible = False
