@@ -90,11 +90,10 @@ namespace TableUiAdapter
             while (isListening)
             {
                 string incomingJson = await _repository.Receive(_cancellationToken);      // Keep listening for incoming messages until we get one or the cancellation token is triggered
-                List<Marker> incomingMarkers = new List<Marker>();
-                incomingMarkers = Parser.Parse(incomingJson);                                     // Get the important values from the JSON
+                List<Marker> incomingMarkers = Parser.Parse(incomingJson);                                     // Get the important values from the JSON
 
-                controllerMarkers.Clear();
-                geometryMarkers.Clear();
+                List<Marker> newControllerMarkers = new List<Marker>(); 
+                List<Marker> newGeometryMarkers = new List<Marker>();
 
                 foreach (Marker marker in incomingMarkers)
                 {
@@ -118,13 +117,16 @@ namespace TableUiAdapter
                             }
                             break;
                         case "controller":
-                            controllerMarkers.Add(marker);
+                            newControllerMarkers.Add(marker);
                             break;
                         case "geometry":
-                            geometryMarkers.Add(marker);
+                            newGeometryMarkers.Add(marker);
                             break;
                     }
                 }
+
+                controllerMarkers = newControllerMarkers;
+                geometryMarkers = newGeometryMarkers;
 
                 // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)
                 Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>

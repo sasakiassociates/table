@@ -57,10 +57,18 @@ class Camera():
                             if marker.isVisible == False:
                                 marker.found()
                                 marker.track(marker_corners)
+                                self.changed_data = True
                             else:
                                 marker.track(marker_corners)
                                 if marker.significant_change:
                                     self.changed_data = True
+                    for marker in self.my_markers:
+                        if marker.isVisible == True and marker.id not in ids:
+                            marker.lost()
+                else:
+                    for marker in self.my_markers:
+                        if marker.isVisible == True:
+                            marker.lost()
 
                 if self.changed_data:
                     self.repository.send_data()

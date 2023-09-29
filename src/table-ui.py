@@ -79,7 +79,6 @@ if (__name__ == '__main__'):
         camera_thread.start()
 
         _display.launch_gui()
-        _display.root.destroy()
     camera.cap.release()
     
         

@@ -5,6 +5,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from math import pi
 import time
+import threading
 
 import numpy as np
 
@@ -21,7 +22,7 @@ class Marker(ABC):
         
         self.center = (0,0)
         self.prev_center = (0,0)
-        self.center_threshold = 2
+        self.center_threshold = 0.25
 
         self.type = "marker"
 
@@ -33,12 +34,13 @@ class Marker(ABC):
     def track(self, corners_):
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
-        if self.significant_change:
-            self.notify_observers()
+        # if self.significant_change:
+        self.notify_observers()
 
     def lost(self):
+        print(f"Marker {self.id} lost")
         self.isVisible = False
-
+        
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     

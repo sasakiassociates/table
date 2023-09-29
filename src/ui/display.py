@@ -16,7 +16,7 @@ class Display():
         window_height = self.root.winfo_screenheight()
 
         self.root.geometry(f"{window_width}x{window_height}+0+0")
-        self.root.attributes('-fullscreen', False)
+        self.root.attributes('-fullscreen', True)
         self.root.configure(background=c.SasakiColors.blue_4)
 
         self.button_padding = (10, 10)
@@ -132,6 +132,7 @@ class Display():
     def end(self):
         self.terminate = True
         self.root.quit()
+        self.root.destroy()
 
 # Unit tests for this object that'll run when this file is run directly
 if (__name__ == '__main__'):

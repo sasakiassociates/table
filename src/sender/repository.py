@@ -1,5 +1,5 @@
-import repoStrategy as rs
-# from . import repoStrategy as rs
+# import repoStrategy as rs
+from . import repoStrategy as rs
 
 class Repository():
     def __init__(self, strategy_name):
@@ -14,13 +14,19 @@ class Repository():
     # Update the UDP thread with the data
     def send_data(self):
         self.strategy.set_data(self.data)
+        self.strategy.send()
         self.data = {}
 
     def check_for_terminate(self):
         return self.strategy.terminate
         
     def update(self, marker_json, marker_id):
-        self.data.setdefault(str(marker_id), marker_json).update()
+        if marker_json['location'] == [0, 0, 0]:
+            self.data.pop(str(marker_id), None)
+            print("Marker {} removed".format(marker_id))
+        else:
+            self.data.setdefault(str(marker_id), marker_json).update()
+        
 
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")
