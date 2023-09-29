@@ -122,3 +122,4 @@ _ReSharper*/
 # MSBuild Binary and Structured Log
 *.binlog
 src/sender/key/firebase_table-key.json
+*.vsidx
