@@ -1,11 +1,20 @@
-import numpy as np
+import json
+import os
+import signal
+import subprocess
+from abc import ABC, abstractmethod
 from math import pi
+import time
+import threading
 
-#TODO get rid of inherited markers, we only need the one since assignment is done in the other app
-class Marker():
-    def __init__(self, marker_id_):
-        self.id = marker_id_
+import numpy as np
+
+@abstractmethod
+class Marker(ABC):
+    def __init__(self, marker_id):
+        self.id = marker_id
         self.observers = []
+        self.isVisible = False
         
         self.rotation = 0
         self.prev_rotation = 0
@@ -13,24 +22,32 @@ class Marker():
         
         self.center = (0,0)
         self.prev_center = (0,0)
-        self.center_threshold = 2
+        self.center_threshold = 0.25
 
-        self.type = ""
+        self.type = "marker"
 
         self.significant_change = False
 
+    def found(self):
+        self.isVisible = True
+
+    def track(self, corners_):
+        # check if it's a more significant change than the threshold
+        self.rotation, self.center = self.check_for_threshold_change(corners_)
+        # if self.significant_change:
+        self.notify_observers()
+
+    def lost(self):
+        print(f"Marker {self.id} lost")
+        self.isVisible = False
+        
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     
     def notify_observers(self):
         for observer in self.observers:
             observer.update(self.build_json(), self.id)
-    
-    def update(self, corners_):
-        # check if it's a more significant change than the threshold
-        self.rotation, self.center = self.check_for_threshold_change(corners_)
-        self.notify_observers()
-    
+
     def get_id(self):
         return self.id
     
@@ -66,20 +83,107 @@ class Marker():
 
         return adjusted_angle_radians
 
-    def set_type(self, type_):
-        self.type = type_
-
     def check_for_threshold_change(self, corners):
         # calculate the rotation and center
         rotation = self.calculate_rotation(corners)
         center = self.calculate_center(corners)
 
         # check if it's a more significant change than the threshold
-        # if it is, return the new values
-        # if not, return the old values
         if abs(rotation - self.prev_rotation) >= self.rotation_threshold or abs(center[0] - self.prev_center[0]) >= self.center_threshold or abs(center[1] - self.prev_center[1]) >= self.center_threshold:
             self.significant_change = True
-            return rotation, center
+            return rotation, center                         # if it is, return the new values
         else:
             self.significant_change = False
-            return self.prev_rotation, self.prev_center
+            return self.prev_rotation, self.prev_center     # if not, return the old values
+        
+class ProjectMarker(Marker):
+    def __init__(self, marker_id):
+        super().__init__(marker_id)
+        self.project_name = ""
+        self.project_author = ""
+        self.project_files = {}
+        self.project_date = ""
+        self.associated = False
+        self.running = False
+        self.type = "project"
+
+    # Intakes the project path associated with this marker and parses the json file to build out this marker
+    def associate_marker_with_project(self, json_data):
+        self.project_name = json_data["name"]
+        self.project_author = json_data["author"]
+        self.project_files = json_data["files"]
+        self.project_date = json_data["date"]
+        self.associated = True
+
+    # Save the json file to the project folder and then associate that file with this marker
+    def save_project(self, json_data):
+        filename = json_data["name"] + ".json"
+        with open(f"..\\..\\projects\\{filename}", 'w') as json_file:
+            json.dump(json_data, json_file, indent=4)
+        self.associate_marker_with_project(self.project_path)
+
+    # TODO make sure certain types are opened after others (i.e. grasshopper after rhino)
+    def open_project(self):
+        rhino_path = None
+        grasshopper_path = None
+        file_path = None
+
+        for filetype in self.project_files:     # Build a list of all the files in the project
+            try:
+                if filetype == "rhino":
+                    rhino_path = self.project_files[filetype]
+                elif filetype == "grasshopper":
+                    grasshopper_path = self.project_files[filetype]
+                else:
+                    file_path = self.project_files[filetype]
+            except Exception as e:
+                print(f"Did not find file: {self.project_files[filetype]}")
+                print(e)
+        
+        if rhino_path and grasshopper_path:
+            try:
+                program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+                runscript_command = f'''_-RunScript (Set GH = Rhino.GetPlugInObject(""Grasshopper"")) _-RunScript (Call GH.OpenDocument(""{grasshopper_path}"")))'''
+                app = subprocess.Popen(f'"{program_path}" "{rhino_path}" /nosplash /notemplate /runscript="{runscript_command}"', shell=True)
+                self.running = True
+                # TODO add a way to kill the program if a new project is detected
+            except Exception as e:
+                print(f"Failed to open rhino and grasshopper: {e}")
+        elif rhino_path:
+            try:
+                program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+                subprocess.Popen(f'"{program_path}" "{rhino_path}" /nosplash /notemplate', shell=True)
+                self.running = True
+            except Exception as e:
+                print(f"Failed to open rhino: {e}")
+        elif grasshopper_path:
+            try:
+                program_path = "C:\\Program Files\\Rhino 7\\System\\Rhino.exe"
+                runscript_command = f'''_-RunScript (Set GH = Rhino.GetPlugInObject(""Grasshopper"")) _-Runscript (Call GH.OpenDocument(""{grasshopper_path}""))'''
+                subprocess.Popen(f'"{program_path}" /nosplash /notemplate /runscript="{runscript_command}"', shell=True)
+                self.running = True
+            except Exception as e:
+                print(f"Failed to open grasshopper: {e}")
+        else:
+            print("Failed to open project")
+    
+class ControllerMarker(Marker):
+    def __init__(self, marker_id):
+        super().__init__(marker_id)
+        self.type = "controller"
+        self.controller_name = ""
+    
+    def set_controller_type(self, controller_type):
+        self.type = controller_type
+    
+class GeometryMarker(Marker):
+    def __init__(self, marker_id):
+        super().__init__(marker_id)
+        self.geometry_name = ""
+        self.type = "geometry"
+        self.name = ""
+    
+if (__name__ == '__main__'):
+    print("Running unit tests for marker.py")
+
+    print("Unit tests for marker.py passed")

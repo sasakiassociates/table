@@ -17,13 +17,12 @@ namespace TableUiAdapter
 {
     public class TableUIReceiverComponent : GH_Component
     {
-        public List<int> markerIds = new List<int>();
-        public List<float> markerRotations = new List<float>();
-        public List<int[]> markerLocations = new List<int[]>();
-        public List<Point3d> markerPoints = new List<Point3d>();
+        List<Marker> controllerMarkers = new List<Marker>();
+        List<Marker> geometryMarkers = new List<Marker>();
 
         public bool isListening = false;
-        public bool run = false;
+        public bool run = true;
+        bool cameraTracking = false;
         public int messageCounter = 0;
 
         private Repository _repository;
@@ -52,10 +51,8 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Marker IDs", "IDs", "The IDs of the markers detected by the system. (currently there are 100 markers)", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Marker Rotations", "Rotations", "The rotations of the markers detected by the system.", GH_ParamAccess.list);
-            pManager.AddPointParameter("Marker Locations", "Locations", "The locations of the markers detected by the system.", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Counter", "Counter", "The number of times the component has been run.", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Geometry Markers", "Geometry", "The markers that will be assigned to geometries", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -64,14 +61,13 @@ namespace TableUiAdapter
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            if (run && !isListening)
+            if (run && !isListening)                
             {
                 if (_repository == null)
                 {
                     _repository = new Repository();
                 }
 
-                Launcher.LaunchDetectionProgram();  // Launch the detection program
                 _ = Task.Run(() => ListenThread()); // Launch the listening thread
                 isListening = true;
             }
@@ -79,35 +75,58 @@ namespace TableUiAdapter
             {
                 _repository.UdpSend("STOP");        // "STOP" message ends the detection program and it's threads
                 isListening = false;                // Setting isListening to false ends the listening thread
-                markerIds.Clear();
-                markerRotations.Clear();
-                markerLocations.Clear();
+                controllerMarkers.Clear();
+                geometryMarkers.Clear();
                 messageCounter = 0;
             }
 
-            markerPoints.Clear();
-            foreach (int[] location in markerLocations)
-            {
-                markerPoints.Add(new Point3d(-location[0], location[1], location[2]));
-            }
-
-            DA.SetDataList("Marker IDs", markerIds);
-            DA.SetDataList("Marker Rotations", markerRotations);
-            DA.SetDataList("Marker Locations", markerPoints);
-            DA.SetData("Counter", messageCounter);
+            // TODO: Build out components that use these to do something
+            DA.SetDataList(0, geometryMarkers);
+            DA.SetDataList(1, controllerMarkers);
         }
 
         private async Task ListenThread()
         {
             while (isListening)
             {
-                string incomingJson = await _repository.Receive(_cancellationToken);                            // Keep listening for incoming messages until we get one or the cancellation token is triggered
-                (List<int> ids, List<float> rotations, List<int[]> locations) = Parser.Parse(incomingJson);     // Get the important values from the JSON
+                string incomingJson = await _repository.Receive(_cancellationToken);      // Keep listening for incoming messages until we get one or the cancellation token is triggered
+                List<Marker> incomingMarkers = Parser.Parse(incomingJson);                                     // Get the important values from the JSON
 
-                markerIds = ids;
-                markerRotations = rotations;
-                markerLocations = locations;
-                messageCounter++;
+                List<Marker> newControllerMarkers = new List<Marker>(); 
+                List<Marker> newGeometryMarkers = new List<Marker>();
+
+                foreach (Marker marker in incomingMarkers)
+                {
+                    switch (marker.type)
+                    {
+                        case "camera":
+                            // If camera tracking is on, move the camera according to this marker
+                            if (cameraTracking)
+                            {
+                                var doc = Rhino.RhinoDoc.ActiveDoc;
+                                var view = doc.Views.ActiveView;
+                                var camera = view.ActiveViewport.CameraLocation;
+
+                                Point3d cameraLocation = new Point3d(marker.location[0], marker.location[1], 5.5);
+                                view.ActiveViewport.SetCameraLocation(cameraLocation, false);
+
+                                Point3d cameraTarget = new Point3d(marker.location[0], marker.location[1]-1, 5.5);
+                                cameraTarget.Transform(Transform.Rotation(marker.rotation, cameraLocation));
+                                view.ActiveViewport.SetCameraTarget(cameraTarget, false);
+                                view.Redraw();
+                            }
+                            break;
+                        case "controller":
+                            newControllerMarkers.Add(marker);
+                            break;
+                        case "geometry":
+                            newGeometryMarkers.Add(marker);
+                            break;
+                    }
+                }
+
+                controllerMarkers = newControllerMarkers;
+                geometryMarkers = newGeometryMarkers;
 
                 // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)
                 Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
@@ -154,11 +173,11 @@ namespace TableUiAdapter
 
                 if (channel == GH_CanvasChannel.Objects)
                 {
-                    GH_Capsule button1 = GH_Capsule.CreateTextCapsule(LaunchButtonBounds, LaunchButtonBounds, GH_Palette.Black, "Launch", 2, 0);
+                    GH_Capsule button1 = GH_Capsule.CreateTextCapsule(LaunchButtonBounds, LaunchButtonBounds, GH_Palette.Black, "On/Off", 2, 0);
                     button1.Render(graphics, Selected, Owner.Locked, false);
                     button1.Dispose();
 
-                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(StopButtonBounds, StopButtonBounds, GH_Palette.Black, "Stop", 2, 0);
+                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(StopButtonBounds, StopButtonBounds, GH_Palette.Black, "Track Camera On/Off", 2, 0);
                     button2.Render(graphics, Selected, Owner.Locked, false);
                     button2.Dispose();
                 }
@@ -175,22 +194,29 @@ namespace TableUiAdapter
                             ((TableUIReceiverComponent)Owner).run = true;               // Set run to true to trigger LaunchDetectionProgram in SolveInstance
                             ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
-                        else
+                        else if (((TableUIReceiverComponent)Owner).isListening)
                         {
+                            ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                             MessageBox.Show("The detection program is already running.");
                         }
                         return GH_ObjectResponse.Handled;
                     }
                     else if (StopButtonBounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
                     {
-                        if (((TableUIReceiverComponent)Owner).isListening)
-                        {
-                            ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
-                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
-                        }
-                        else
+                        if (!((TableUIReceiverComponent)Owner).isListening) 
                         {
                             MessageBox.Show("The detection program is not running.");
+                        }
+                        else if (!((TableUIReceiverComponent)Owner).cameraTracking)
+                        {
+                            ((TableUIReceiverComponent)Owner).cameraTracking = true;    // Start the camera tracking
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
+                        }
+                        else if (((TableUIReceiverComponent)Owner).cameraTracking)
+                        {
+                            ((TableUIReceiverComponent)Owner).cameraTracking = false;   // Stop the camera tracking
+                            ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
                         return GH_ObjectResponse.Handled;
                     }
@@ -198,6 +224,12 @@ namespace TableUiAdapter
 
                 return base.RespondToMouseUp(sender, e);
             }
+        }
+
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            base.RemovedFromDocument(document);
+            isListening = false;
         }
 
         /// <summary>

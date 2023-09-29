@@ -7,15 +7,13 @@ namespace TableUiReceiver
 {
     public class Parser
     {
-        public static (List<int> ids, List<float> rotations, List<int[]> locations) Parse(string json)
+        public static List<Marker> Parse(string json)
         {
-            List<int> ids = new List<int>();
-            List<float> rotations = new List<float>();
-            List<int[]> locations = new List<int[]>();
+            List<Marker> result = new List<Marker>();
 
             if (json == null)
             {
-                return (null, null, null);
+                return null;
             }
 
             try
@@ -25,19 +23,16 @@ namespace TableUiReceiver
                 foreach (var deserialJson in deserialJsonList)
                 {
                     Marker marker = deserialJson.Value;
-
-                    ids.Add(marker.id);
-                    rotations.Add(marker.rotation);
-                    locations.Add(marker.location);
+                    result.Add(marker);
                 }
             }
             catch (JsonException e)
             {
                 Console.WriteLine("Error parsing JSON: " + e.Message);
-                return (null, null, null);
+                return null;
             }
 
-            return (ids, rotations, locations);
+            return result;
         }
     }
 }

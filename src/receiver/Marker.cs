@@ -5,8 +5,16 @@ using System.Text;
 namespace TableUiReceiver
 {
     // TODO Markers need to be persistent elements so they can smooth themselves
-    internal class Marker
+    public class Marker
     {
+        // Main constructor for creatring markers to remember
+        public Marker(int id)
+        {
+            this.id = id;
+        }
+        // Overload method for use in JSON deserialization
+        public Marker() { }
+
         public int id { get; set; }
         public int[] location
         {
@@ -19,6 +27,7 @@ namespace TableUiReceiver
             set { _rotation = SmoothRotation(value);}
         }
         public string type { get; set; }
+        public string name { get; set; }
 
         // Internal variables for smoothing so the setter doesn't call itself recursively
         private int[] _location;

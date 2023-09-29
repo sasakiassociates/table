@@ -1,15 +1,23 @@
+import sys
+import traceback
+
 import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
-import sys
-import traceback
-
-import factory
+from . import markerFactory as factory
+from . import marker as m
+from . import arucoReference as ar
 
 class Camera():
-    def __init__(self, camera_num, aruco_dict, params, repository_):
+    def __init__(self, camera_num, aruco_dict_name, params, repository_):
         self.repository = repository_
+
+        if aruco_dict_name in ar.aruco_dict_mapping:
+            aruco_dict = aruco.getPredefinedDictionary(ar.aruco_dict_mapping[aruco_dict_name])
+        else:
+            aruco_dict = aruco.getPredefinedDictionary(ar.aruco_dict_mapping['DICT_6X6_100'])
+            print("Invalid ArUco dictionary name. Using default dictionary: DICT_6X6_100")
 
         dictionary_length = len(aruco_dict.bytesList)
         self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_)
@@ -19,39 +27,57 @@ class Camera():
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
-        self.changed_data = False
-
-    def videoLoop(self):
         if not self.cap.isOpened():
             print("Cannot open camera")
             exit()
-        while True:
-            try:
-                ret, frame = self.cap.read()
-                if ret:
-                    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            
+        self.changed_data = False
 
-                    # Detect the markers
-                    corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
+    # TODO rework this so the while loop is in the main.py file so we don't need to add things to this function to add functionality. Also make it return the frame
+    def videoCapture(self):
+        try:
+            ret, frame = self.cap.read()
+            if ret:
+                frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
-                    frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
+                # Detect the markers
+                corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
 
-                    if ids is not None:
-                        self.markerLoop(ids, corners)
-                    if self.changed_data:
-                        self.repository.send_data()
-                        self.changed_data = False
+                frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
-                    cv.imshow('frame', frame_marked)
-                    if cv.waitKey(1) == ord('q') or self.repository.check_for_terminate():
-                        break
-            except Exception as e:
-                sys.stderr.write(str(e))
-                traceback.print_exc()
-                break
-        self.cap.release()
-        cv.destroyAllWindows()
-        # self.repository.close_threads()
+                # Loop through the markers and update them
+                #self.markerLoop(ids, corners)
+                if ids is not None:
+                    for marker_id, marker_corners in zip(ids, corners):
+                        marker = self.my_markers[int(marker_id)]
+                        if isinstance(marker, m.ProjectMarker):
+                            if marker.running == False:
+                                marker.open_project()
+                        else:
+                            if marker.isVisible == False:
+                                marker.found()
+                                marker.track(marker_corners)
+                                self.changed_data = True
+                            else:
+                                marker.track(marker_corners)
+                                if marker.significant_change:
+                                    self.changed_data = True
+                    for marker in self.my_markers:
+                        if marker.isVisible == True and marker.id not in ids:
+                            marker.lost()
+                else:
+                    for marker in self.my_markers:
+                        if marker.isVisible == True:
+                            marker.lost()
+
+                if self.changed_data:
+                    self.repository.send_data()
+                    self.changed_data = False
+
+                return frame_marked
+        except Exception as e:
+            sys.stderr.write(str(e))
+            traceback.print_exc()
 
     '''
     Loop through the markers and update them
@@ -60,9 +86,22 @@ class Camera():
     @param corners: the corners of the markers
     '''
     def markerLoop(self, ids, corners):
-        for marker_id, marker_corners in zip(ids, corners):
-            marker_id = marker_id[0]
-            marker = self.my_markers[marker_id]
-            marker.update(marker_corners)
-            if marker.significant_change:
-                self.changed_data = True
+        for marker in self.my_markers:
+            if marker.id in ids & marker.isVisible == False:
+                marker.found()
+            elif marker.id in ids & marker.isVisible == True:
+                marker.tracking(corners[ids == marker.id])
+                if marker.significant_change:
+                    self.changed_data = True
+            elif marker.id not in ids & marker.isVisible == True:
+                marker.lost()
+
+if (__name__ == '__main__'):
+    print("Running unit tests for camera.py")
+    camera = Camera(0, None, None, None)
+    while True:
+        frame = camera.videoCapture()
+        cv.imshow('frame', frame)
+        if cv.waitKey(1) == ord('q'):
+            break
+    print("Unit tests for camera.py passed")

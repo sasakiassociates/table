@@ -15,6 +15,6 @@ destination_folder = parser.parse_args().destination_folder
 if not os.path.exists(destination_folder):
     os.makedirs(destination_folder)
 
-for i in range(1, 100):
-    marker = aruco.generateImageMarker(dictionary, i, 700, None, 1)
+for i in range(0, 99):
+    marker = aruco.generateImageMarker(dictionary, i, 100, None, 1)
     cv.imwrite(destination_folder + "marker" + str(i) + ".png", marker)
