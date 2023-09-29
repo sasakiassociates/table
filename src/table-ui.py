@@ -13,11 +13,9 @@ ARUCO_DEFAULT_DICT = "DICT_6X6_100"
 
 parser = argparse.ArgumentParser(description="Detect ArUco markers and send data to Firebase")
 
-# ------------------------------------ Required arguments ------------------------------------ #
-parser.add_argument("mode", type=str, default="udp", choices=["firebase", "udp"], 
-                    help="The mode to run the program in")
-
 # ------------------------------------ Optional arguments ------------------------------------ #
+parser.add_argument("--mode", type=str, default="udp", choices=["firebase", "udp"], 
+                    help="The mode to run the program in")
 parser.add_argument("--url", type=str, default=FIREBASE_DEFAULT_URL, 
                     help="The path to the Firebase realtime database found in the Realtime Database tab of the Firebase project page")
 parser.add_argument("--camera", type=int, default=0, 
@@ -81,4 +79,14 @@ if (__name__ == '__main__'):
         _display.launch_gui()
     camera.cap.release()
     
-        
+# To Package:
+# Use pyinstaller and include the following arguments:
+# --onefile
+# --icon="icon.ico"
+# --add-data="projects;projects"
+# --add-data="src/ui/ui_elements"
+# --distpath /../dist
+# --workpath /../build
+
+# Example:
+# pyinstaller --onefile --add-data="../projects;projects" --add-data="ui/ui_elements;ui_elements" --distpath ../dist --workpath ../build table-ui.py

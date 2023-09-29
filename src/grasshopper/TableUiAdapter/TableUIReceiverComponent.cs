@@ -110,8 +110,15 @@ namespace TableUiAdapter
                                 Point3d cameraLocation = new Point3d(marker.location[0], marker.location[1], 5.5);
                                 view.ActiveViewport.SetCameraLocation(cameraLocation, false);
 
-                                Point3d cameraTarget = new Point3d(marker.location[0], marker.location[1]-1, 5.5);
-                                cameraTarget.Transform(Transform.Rotation(marker.rotation, cameraLocation));
+                                Point3d cameraTarget = new Point3d(marker.location[0] - 1, marker.location[1], 5.55);
+                                Transform rotation = Transform.Rotation(marker.rotation, cameraLocation);
+                                cameraTarget.Transform(rotation);
+
+                                Vector3d cameraDirection = cameraTarget - cameraLocation;
+
+                                view.ActiveViewport.SetCameraDirection(cameraDirection, false);
+
+                                //cameraTarget.Transform(Transform.Rotation(marker.rotation, cameraLocation));
                                 view.ActiveViewport.SetCameraTarget(cameraTarget, false);
                                 view.Redraw();
                             }

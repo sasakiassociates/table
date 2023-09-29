@@ -87,7 +87,7 @@ class Display():
 
         exit_button = tk.Button(headerFrame, text="X", command=self.end)
         exit_button.grid(row=0, column=2, sticky=tk.NE)
-        logo = Image.open(os.path.join(os.path.dirname(__file__), 'elements\\sasaki_logo.jpg'))
+        logo = Image.open(os.path.join(os.path.dirname(__file__), 'ui_elements\\sasaki_logo.jpg'))
         # Set the desired width (you can change this to your desired value)
         new_height = 50
 

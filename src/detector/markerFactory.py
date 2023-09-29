@@ -13,12 +13,15 @@ class MarkerFactory:
         project_set_num = int(dict_length * 0.1)                        # 10% of the markers will be project markers
         controller_set_num = int(dict_length * 0.1)                     # 10% of the markers will be controller markers
         
+        # First, let's make the camera marker
+        marker_list.append(m.ControllerMarker(0))
+        marker_list[0].attach_observer(observer)
+        marker_list[0].set_controller_type("camera")
+
         # Next, let's make the controller marker set
-        for i in range(controller_set_num):
+        for i in range(1, controller_set_num):
             marker_list.append(m.ControllerMarker(i))
             marker_list[i].attach_observer(observer)
-            if (i == 0):
-                marker_list[i].set_controller_type("camera")
         
         # Next, let's make the project marker set (making sure they are not the same as the controller marker ids)
         # json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
