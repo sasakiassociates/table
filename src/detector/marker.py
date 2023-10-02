@@ -18,11 +18,11 @@ class Marker(ABC):
         
         self.rotation = 0
         self.prev_rotation = 0
-        self.rotation_threshold = pi/64
+        self.rotation_threshold = pi/32
         
         self.center = (0,0)
         self.prev_center = (0,0)
-        self.center_threshold = 0.25
+        self.center_threshold = 3
 
         self.type = "marker"
 

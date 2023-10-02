@@ -12,6 +12,7 @@ using TableUiReceiver;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using System.Drawing;
 using System.Windows.Forms;
+using Grasshopper.GUI.SettingsControls;
 
 namespace TableUiAdapter
 {
@@ -205,8 +206,16 @@ namespace TableUiAdapter
                         {
                             ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
                             ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
-                            MessageBox.Show("The detection program is already running.");
-                        }
+                            var doc = Rhino.RhinoDoc.ActiveDoc;
+                            var view = doc.Views.ActiveView;
+                            var camera = view.ActiveViewport.CameraLocation;
+                            Point3d cameraLocation = new Point3d(100, 100, 0);
+                            view.ActiveViewport.SetCameraLocation(cameraLocation, false);
+                            Point3d cameraTarget = new Point3d(0, 0, 0);
+                            view.ActiveViewport.SetCameraTarget(cameraTarget, false);
+                            view.Redraw();
+/*                          MessageBox.Show("The detection program is already running.");
+*/                        }
                         return GH_ObjectResponse.Handled;
                     }
                     else if (StopButtonBounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
