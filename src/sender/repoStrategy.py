@@ -3,23 +3,15 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 import socket
-import threading
-
-import re
 
 from abc import ABC, abstractmethod
 
+@abstractmethod
 class RepoStrategy(ABC):
     @abstractmethod
-    def __init__(self) -> None:
-        self.data = {}
-        self.new_data = True
+    def __init__(self, repository_) -> None:
         self.terminate = False
-        self.statup_data = {}
-
-    @abstractmethod
-    def setup(self):
-        pass
+        self.repository = repository_
 
     @abstractmethod
     def send(self):
@@ -29,37 +21,22 @@ class RepoStrategy(ABC):
     def end(self):
         pass
 
-    def set_data(self, data):
-        self.data = data
-        self.new_data = True
-
 class RepoStrategyFactory():
-    def get_strategy(strategy_name):
+    def get_strategy(strategy_name, repository_):
         if strategy_name == 'udp':
-            return UDPRepo()
+            return UDPRepo(repository_)
         elif strategy_name == 'firebase':
-            return FirebaseRepo()
+            return FirebaseRepo(repository_)
         else:
             raise Exception('Invalid strategy name')
         
 class UDPRepo(RepoStrategy):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, repository_) -> None:
+        super().__init__(repository_)
         self.listen_ip = '0.0.0.0'
         self.listen_port = 5004
         self.send_ip = '127.0.0.1'
         self.send_port = 5005
-
-    def setup(self):
-        pass
-        # create and run thread to listen for commands
-        # listen_thread = threading.Thread(target=self.listen_for_data_thread)
-        # listen_thread.daemon = True
-        # listen_thread.start()
-
-        # sending_thread = threading.Thread(target=self.send_data_thread)
-        # sending_thread.daemon = True
-        # sending_thread.start()
 
     def end(self):
         self.terminate = True
@@ -90,7 +67,7 @@ class UDPRepo(RepoStrategy):
     def send(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            message = str(self.data)
+            message = str(self.repository.data)
             message_bytes = message.encode('utf-8')
             print("Sending data:", message)
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
@@ -99,8 +76,8 @@ class UDPRepo(RepoStrategy):
             print(e)
     
 class FirebaseRepo(RepoStrategy):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, repository_):
+        super().__init__(repository_)
         self.credentials = credentials.Certificate("./key/firebase_table-key.json")
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
@@ -121,7 +98,6 @@ class FirebaseRepo(RepoStrategy):
         try:
             ref = db.reference('/')
             ref.set([self.data])
-            print(self.data)
         except Exception as e:
             print("Error sending data:", e)
 

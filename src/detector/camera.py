@@ -21,8 +21,9 @@ class Camera():
             print("Invalid ArUco dictionary name. Using default dictionary: DICT_6X6_100")
 
         dictionary_length = len(aruco_dict.bytesList)
-        timer = t.Timer()
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, timer)
+        self.timer = t.Timer()
+        self.timer.start()
+        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -33,9 +34,6 @@ class Camera():
             print("Cannot open camera")
             exit()
             
-        self.changed_data = False
-
-    # TODO rework this so the while loop is in the main.py file so we don't need to add things to this function to add functionality. Also make it return the frame
     def videoCapture(self):
         try:
             ret, frame = self.cap.read()
@@ -59,29 +57,31 @@ class Camera():
                             if marker.is_visible == False:
                                 marker.found()
                                 marker.track(marker_corners)
-                                self.changed_data = True
                             else:
                                 marker.track(marker_corners)
-                                if marker.significant_change:
-                                    self.changed_data = True
                     for marker in self.my_markers:
                         if marker.is_visible == True and marker.id not in ids:
-                            marker.lost()
-                            self.changed_data = True
+                            marker.lost_tracking()
+                            marker.is_visible = False
                 else:
                     for marker in self.my_markers:
                         if marker.is_visible == True:
-                            marker.lost()
-                            # self.changed_data = True
+                            marker.lost_tracking()
+                            marker.is_visible = False
                             
-                if self.changed_data:
-                    self.repository.send_data()
-                    self.changed_data = False
+                if self.repository.new_data:
+                    self.repository.strategy.send()
+                    self.repository.new_data = False
 
                 return frame_marked
         except Exception as e:
             sys.stderr.write(str(e))
             traceback.print_exc()
+
+    def end(self):
+        self.cap.release()
+        cv.destroyAllWindows()
+        self.timer.stop()
 
 if (__name__ == '__main__'):
     print("Running unit tests for camera.py")

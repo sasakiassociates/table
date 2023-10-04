@@ -77,7 +77,8 @@ if (__name__ == '__main__'):
         camera_thread.start()
 
         _display.launch_gui()
-    camera.cap.release()
+
+    camera.end()
     
 # To Package:
 # Use pyinstaller and include the following arguments:

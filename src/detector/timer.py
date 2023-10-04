@@ -18,6 +18,7 @@ class Timer(threading.Thread):
                 for marker in self.lost_markers:            # Loop through the lost markers
                     if self.time_since_start - marker.time_last_seen > marker.lost_threshold:
                         marker.lost()                       # If the marker has been lost for more than its lost_threshold, report it as lost
+                        self.lost_markers.remove(marker)    # Remove the marker from the list of lost markers
 
     def stop(self):
         self.running = False
@@ -30,7 +31,8 @@ class Timer(threading.Thread):
     def report_found(self, marker):
         with self.lock:
             marker.time_last_seen = None
-            self.lost_markers.remove(marker)
+            if marker in self.lost_markers:
+                self.lost_markers.remove(marker)
 
 if __name__ == "__main__":
     # Create a Timer thread

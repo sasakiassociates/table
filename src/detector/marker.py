@@ -29,21 +29,24 @@ class Marker(ABC):
         self.significant_change = False
 
     def found(self):
-        self.significant_change = True
         self.is_visible = True
+        self.timer.report_found(self)
+        self.notify_observers()
 
     def track(self, corners_):
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
-        # if self.significant_change:
-        self.notify_observers()
+        if self.significant_change:
+            self.notify_observers()
 
     def lost(self):
-        self.significant_change = True
         self.is_visible = False
         self.center = (0,0)
         self.rotation = 0
         self.notify_observers()
+
+    def lost_tracking(self):
+        self.timer.report_lost(self)
         
     def attach_observer(self, observer_):
         self.observers.append(observer_)
