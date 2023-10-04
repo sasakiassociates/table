@@ -7,20 +7,20 @@ import glob
 
 class MarkerFactory:
     @staticmethod
-    def make_markers(dict_length, observer):
+    def make_markers(dict_length, observer, timer_):
         marker_list = []
 
         project_set_num = int(dict_length * 0.1)                        # 10% of the markers will be project markers
         controller_set_num = int(dict_length * 0.1)                     # 10% of the markers will be controller markers
         
         # First, let's make the camera marker
-        marker_list.append(m.ControllerMarker(0))
+        marker_list.append(m.ControllerMarker(0, timer_))
         marker_list[0].attach_observer(observer)
         marker_list[0].set_controller_type("camera")
 
         # Next, let's make the controller marker set
         for i in range(1, controller_set_num):
-            marker_list.append(m.ControllerMarker(i))
+            marker_list.append(m.ControllerMarker(i, timer_))
             marker_list[i].attach_observer(observer)
         
         # Next, let's make the project marker set (making sure they are not the same as the controller marker ids)
@@ -40,7 +40,7 @@ class MarkerFactory:
 
         for marker_id in project_marker_ids:
             marker_id = int(marker_id)
-            NewMarker = m.ProjectMarker(marker_id)
+            NewMarker = m.ProjectMarker(marker_id, timer_)
             NewMarker.attach_observer(observer)
             for file in json_files:                                     # If a marker id matches the associated marker id of a project file, associate the project file with the marker
                 if int(file['marker_id']) == marker_id:
@@ -51,7 +51,7 @@ class MarkerFactory:
         # Finally, let's make the geometry marker set
         for i in range(controller_set_num, dict_length):
             if i not in project_marker_ids:
-                marker_list.append(m.GeometryMarker(i))
+                marker_list.append(m.GeometryMarker(i, timer_))
                 marker_list[i].attach_observer(observer)
                 marker_list[i].name = "Geometry {i}"
 

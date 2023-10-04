@@ -14,8 +14,10 @@ namespace TableUiAdapter
         List<Brep> breps = new List<Brep>();
         List<Marker> incomingMarkers = new List<Marker>();
         List<Brep> transformedBreps = new List<Brep>();
-        Point2d newOrigin = new Point2d(0, 0);
+        Mesh topo = new Mesh();
+        Point2d newOriginVar = new Point2d(0, 0);
         double newRotation = 0;
+        double newModelRotation = 0;
 
         /// <summary>
         /// Initializes a new instance of the GeometryTranslatorComponent class.
@@ -34,8 +36,14 @@ namespace TableUiAdapter
         {
             pManager.AddBrepParameter("Geometry", "G", "The geometries to be translated (named using TableUI's GeometryAssigner Component", GH_ParamAccess.list);
             pManager.AddGenericParameter("Markers", "M", "The incoming markers from the TableUI Receiver", GH_ParamAccess.list);
-            pManager.AddPointParameter("New Origin", "O", "The new origin the model's movement will be based on", GH_ParamAccess.item);
-            pManager.AddNumberParameter("New Rotation", "R", "The new rotation the model's rotation will be based on", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Base Topography", "T", "(Optional) The topography of the base model", GH_ParamAccess.item);
+            pManager.AddPointParameter("Custom Origin", "O", "(Optional) The new origin the model's movement will be based on", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Custom Rotation", "R", "(Optional) The new rotation the model's rotation will be based on", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Custom Model Rotation", "R", "(Optional) The new rotation the model's rotation will be based on", GH_ParamAccess.item);
+
+            pManager[2].Optional = true;
+            pManager[3].Optional = true;
+            pManager[4].Optional = true;
         }
 
         /// <summary>
@@ -60,10 +68,12 @@ namespace TableUiAdapter
 
             DA.GetDataList("Geometry", breps);
             DA.GetDataList("Markers", incomingMarkers);
-            DA.GetData("New Origin", ref tempOrigin);
-            DA.GetData("New Rotation", ref newRotation);
+            DA.GetData("Base Topography", ref topo);
+            DA.GetData("Custom Origin", ref tempOrigin);
+            DA.GetData("Custom Rotation", ref newRotation);
+            DA.GetData("Custom Model Rotation", ref newModelRotation);
 
-            newOrigin = new Point2d(tempOrigin.Value.X, tempOrigin.Value.Y);
+            newOriginVar = new Point2d(tempOrigin.Value.X, tempOrigin.Value.Y);
 
             foreach (Brep brep in breps)
             {
@@ -73,16 +83,31 @@ namespace TableUiAdapter
                 {
                     if (marker.id == id)
                     {
-                        Point3d markerOrigin = new Point3d(marker.location[0] + newOrigin.X, marker.location[1] + newOrigin.Y, 0);
-                        Point3d center = brep.GetBoundingBox(false).Center;
-                        Point3d projectedCenter = new Point3d(center.X, center.Y, 0);
-                        Vector3d translationVector = markerOrigin - projectedCenter;
-                        brep.Translate(translationVector);
+                        int z = 0;
+                        if (topo != null)
+                        {
+                            Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
+                            Point3d topoPoint = topo.ClosestPoint(markerPoint);
+                            z = (int)topoPoint.Z;
+                        }
 
-                        double newRotationRads = newRotation * Math.PI / 180;
-                        Transform rotation = Transform.Rotation(marker.rotation + newRotationRads, Vector3d.ZAxis, markerOrigin);
-                        brep.Transform(rotation);
-                        
+                        // Create a new origin point for all marker transforms
+                        Point3d newOrigin = new Point3d(marker.location[0] + newOriginVar.X, marker.location[1] + newOriginVar.Y, z); // First find where the marker is
+                        // then rotate that point by the predefined variable the user inputs
+                        Transform originRotation = Transform.Rotation(newRotation * Math.PI / 180, Vector3d.ZAxis, Point3d.Origin);
+                        newOrigin.Transform(originRotation); // this is our new origin
+
+                        // Now we need to move our model here
+                        Point3d modelCenter = brep.GetBoundingBox(false).Center;
+                        Point3d projectedModelCenter = new Point3d(modelCenter.X, modelCenter.Y, z);
+                        Vector3d translationVector = newOrigin - projectedModelCenter;
+                        Transform modelTranslation = Transform.Translation(translationVector);
+                        brep.Transform(modelTranslation);
+
+                        // Now we rotate that model around the new origin
+                        Transform modelRotation = Transform.Rotation(marker.rotation + (newModelRotation * Math.PI / 180), Vector3d.ZAxis, newOrigin);
+                        brep.Transform(modelRotation);
+
                         transformedBreps.Add(brep);
 
                         break;
@@ -91,6 +116,15 @@ namespace TableUiAdapter
             }
 
             DA.SetDataList("Translated Geometry", transformedBreps);
+        }
+
+        private Vector3d RotateVector(Vector3d vector, double angle)
+        {
+            double cos = Math.Cos(angle);
+            double sin = Math.Sin(angle);
+            double x = vector.X * cos - vector.Y * sin;
+            double y = vector.X * sin + vector.Y * cos;
+            return new Vector3d(x, y, vector.Z);
         }
 
         /// <summary>

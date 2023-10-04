@@ -16,18 +16,17 @@ class Repository():
         self.strategy.set_data(self.data)
         self.strategy.send()
         self.data = {}
+        
 
     def check_for_terminate(self):
         return self.strategy.terminate
         
-    def update(self, marker_json, marker_id):
+    def update(self, marker_json):
         if marker_json['location'] == [0, 0, 0]:
-            self.data.pop(str(marker_id), None)
-            print("Marker {} removed".format(marker_id))
+            self.data.pop(str(marker_json['id']), None)
         else:
-            self.data.setdefault(str(marker_id), marker_json).update()
+            self.data.setdefault(str(marker_json['id']), marker_json).update()
         
-
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")
     repo = Repository('udp')

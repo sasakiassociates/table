@@ -123,3 +123,5 @@ _ReSharper*/
 *.binlog
 src/sender/key/firebase_table-key.json
 *.vsidx
+*.3dm
+*.3dmbak

@@ -129,6 +129,10 @@ class Display():
         newWindow.configure(background='black')
         # self.add_button("X", self.end(newWindow), TOP, NE, newWindow)
 
+    def print_file(self):
+        print("Printing file")
+        
+
     def end(self):
         self.terminate = True
         self.root.quit()

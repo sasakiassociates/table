@@ -1,20 +1,16 @@
 import json
-import os
-import signal
 import subprocess
 from abc import ABC, abstractmethod
 from math import pi
-import time
-import threading
 
 import numpy as np
 
 @abstractmethod
 class Marker(ABC):
-    def __init__(self, marker_id):
+    def __init__(self, marker_id, timer_):
         self.id = marker_id
         self.observers = []
-        self.isVisible = False
+        self.is_visible = False
         
         self.rotation = 0
         self.prev_rotation = 0
@@ -24,12 +20,17 @@ class Marker(ABC):
         self.prev_center = (0,0)
         self.center_threshold = 3
 
+        self.timer = timer_         # A reference to the timer object so we can report when a marker is lost
+        self.time_last_seen = None
+        self.lost_threshold = 2     # sets the time (in seconds) before a marker is considered lost
+
         self.type = "marker"
 
         self.significant_change = False
 
     def found(self):
-        self.isVisible = True
+        self.significant_change = True
+        self.is_visible = True
 
     def track(self, corners_):
         # check if it's a more significant change than the threshold
@@ -38,15 +39,18 @@ class Marker(ABC):
         self.notify_observers()
 
     def lost(self):
-        print(f"Marker {self.id} lost")
-        self.isVisible = False
+        self.significant_change = True
+        self.is_visible = False
+        self.center = (0,0)
+        self.rotation = 0
+        self.notify_observers()
         
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     
     def notify_observers(self):
         for observer in self.observers:
-            observer.update(self.build_json(), self.id)
+            observer.update(self.build_json())
 
     def get_id(self):
         return self.id
@@ -54,7 +58,7 @@ class Marker(ABC):
     def build_json(self):
         marker_data = {
             "id": self.id,
-            "location": [self.center[0], self.center[1], 0],
+            "location": [-self.center[0], -self.center[1], 0],
             "rotation": self.rotation,
             "type": self.type,
         }
@@ -97,8 +101,8 @@ class Marker(ABC):
             return self.prev_rotation, self.prev_center     # if not, return the old values
         
 class ProjectMarker(Marker):
-    def __init__(self, marker_id):
-        super().__init__(marker_id)
+    def __init__(self, marker_id, timer_):
+        super().__init__(marker_id, timer_)
         self.project_name = ""
         self.project_author = ""
         self.project_files = {}
@@ -168,8 +172,8 @@ class ProjectMarker(Marker):
             print("Failed to open project")
     
 class ControllerMarker(Marker):
-    def __init__(self, marker_id):
-        super().__init__(marker_id)
+    def __init__(self, marker_id, timer_):
+        super().__init__(marker_id, timer_)
         self.type = "controller"
         self.controller_name = ""
     
@@ -189,13 +193,13 @@ class ControllerMarker(Marker):
         return distance_to_marker
     
 class GeometryMarker(Marker):
-    def __init__(self, marker_id):
-        super().__init__(marker_id)
+    def __init__(self, marker_id, timer_):
+        super().__init__(marker_id, timer_)
         self.geometry_name = ""
         self.type = "geometry"
         self.name = ""
 
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")
-
+    
     print("Unit tests for marker.py passed")

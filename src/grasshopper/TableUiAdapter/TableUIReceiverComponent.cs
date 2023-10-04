@@ -20,11 +20,14 @@ namespace TableUiAdapter
     {
         List<Marker> controllerMarkers = new List<Marker>();
         List<Marker> geometryMarkers = new List<Marker>();
+        Marker cameraMarker = new Marker();
 
         public bool isListening = false;
         public bool run = true;
         bool cameraTracking = false;
         public int messageCounter = 0;
+
+        public double scale = 1.0;
 
         private Repository _repository;
         private CancellationToken _cancellationToken = new CancellationToken();
@@ -45,6 +48,7 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddNumberParameter("Scale", "S", "Adjust the scale of changes the markers affect", GH_ParamAccess.item, 1.0);
         }
 
         /// <summary>
@@ -54,6 +58,7 @@ namespace TableUiAdapter
         {
             pManager.AddGenericParameter("Geometry Markers", "Geometry", "The markers that will be assigned to geometries", GH_ParamAccess.list);
             pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Camera Marker", "Camera", "The marker that controls the camera", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -62,6 +67,8 @@ namespace TableUiAdapter
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            DA.GetData(0, ref scale);
+
             if (run && !isListening)                
             {
                 if (_repository == null)
@@ -84,6 +91,7 @@ namespace TableUiAdapter
             // TODO: Build out components that use these to do something
             DA.SetDataList(0, geometryMarkers);
             DA.SetDataList(1, controllerMarkers);
+            DA.SetData(2, cameraMarker);
         }
 
         private async Task ListenThread()
@@ -95,40 +103,23 @@ namespace TableUiAdapter
 
                 List<Marker> newControllerMarkers = new List<Marker>(); 
                 List<Marker> newGeometryMarkers = new List<Marker>();
+                List<int> newGeometryIds = new List<int>();
 
                 foreach (Marker marker in incomingMarkers)
                 {
                     switch (marker.type)
                     {
                         case "camera":
-                            // If camera tracking is on, move the camera according to this marker
-                            if (cameraTracking)
-                            {
-                                var doc = Rhino.RhinoDoc.ActiveDoc;
-                                var view = doc.Views.ActiveView;
-                                var camera = view.ActiveViewport.CameraLocation;
-
-                                Point3d cameraLocation = new Point3d(marker.location[0], marker.location[1], 5.5);
-                                view.ActiveViewport.SetCameraLocation(cameraLocation, false);
-
-                                Point3d cameraTarget = new Point3d(marker.location[0] - 1, marker.location[1], 5.55);
-                                Transform rotation = Transform.Rotation(marker.rotation, cameraLocation);
-                                cameraTarget.Transform(rotation);
-
-                                Vector3d cameraDirection = cameraTarget - cameraLocation;
-
-                                view.ActiveViewport.SetCameraDirection(cameraDirection, false);
-
-                                //cameraTarget.Transform(Transform.Rotation(marker.rotation, cameraLocation));
-                                view.ActiveViewport.SetCameraTarget(cameraTarget, false);
-                                view.Redraw();
-                            }
+                            cameraMarker = marker;
                             break;
                         case "controller":
                             newControllerMarkers.Add(marker);
                             break;
                         case "geometry":
+                            marker.location[0] = (int)(marker.location[0] * scale);
+                            marker.location[1] = (int)(marker.location[1] * scale);
                             newGeometryMarkers.Add(marker);
+                            newGeometryIds.Add(marker.id);
                             break;
                     }
                 }

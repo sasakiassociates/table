@@ -64,22 +64,14 @@ class UDPRepo(RepoStrategy):
     def end(self):
         self.terminate = True
 
-    def send_data_thread(self):
-        while not self.terminate:
-            if self.new_data:
-                self.send()
-                self.new_data = False
-
     def listen_for_data_thread(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         _socket.bind((self.listen_ip, self.listen_port))
         
         try:
             while not self.terminate:
-                
                 data, addr = _socket.recvfrom(1024)
                 message = data.decode('utf-8')
-                        
                 if message == 'STOP':
                     print("Exiting...")
                     self.terminate = True
@@ -99,8 +91,8 @@ class UDPRepo(RepoStrategy):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             message = str(self.data)
-            # print("Sending data: " + message)
             message_bytes = message.encode('utf-8')
+            print("Sending data:", message)
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
             _socket.close()
         except Exception as e:

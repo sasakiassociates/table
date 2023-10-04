@@ -23,5 +23,6 @@ namespace TableLibTests
         {
             Launcher.LaunchDetectionProgram();
         }
+
     }
 }
