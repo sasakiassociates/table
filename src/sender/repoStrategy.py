@@ -69,7 +69,6 @@ class UDPRepo(RepoStrategy):
         try:
             message = str(self.repository.data)
             message_bytes = message.encode('utf-8')
-            print("Sending data:", message)
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
             _socket.close()
         except Exception as e:
