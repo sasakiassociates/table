@@ -91,7 +91,7 @@ namespace TableUiAdapter
 
             // TODO: Build out components that use these to do something
             DA.SetDataList("Marker IDs", ids);
-            DA.SetDataList("Transform Planes", planes);
+            DA.SetDataList("Marker Planes", planes);
         }
 
         private async Task ListenThread()
@@ -149,7 +149,8 @@ namespace TableUiAdapter
                                 Point3d topoPoint = topo.ClosestPoint(markerPoint);
                                 marker.location[2] = (int)topoPoint.Z;
                             }
-                            Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], marker.location[2]), new Vector3d(marker.rotation, 0, 0));
+                            Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], marker.location[2]), Vector3d.ZAxis);
+                            plane.Rotate(marker.rotation, Vector3d.ZAxis);
                             planes.Add(plane);
                             break;
                     }
@@ -204,7 +205,7 @@ namespace TableUiAdapter
                     button1.Render(graphics, Selected, Owner.Locked, false);
                     button1.Dispose();
 
-                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(StopButtonBounds, StopButtonBounds, GH_Palette.Black, "Track Camera On/Off", 2, 0);
+                    GH_Capsule button2 = GH_Capsule.CreateTextCapsule(StopButtonBounds, StopButtonBounds, GH_Palette.Black, "Track Camera", 2, 0);
                     button2.Render(graphics, Selected, Owner.Locked, false);
                     button2.Dispose();
                 }
