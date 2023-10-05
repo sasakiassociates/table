@@ -22,7 +22,7 @@ class Marker(ABC):
 
         self.timer = timer_         # A reference to the timer object so we can report when a marker is lost
         self.time_last_seen = None
-        self.lost_threshold = 2     # sets the time (in seconds) before a marker is considered lost
+        self.lost_threshold = 500     # sets the time (in milliseconds) before a marker is considered lost
 
         self.type = "marker"
 

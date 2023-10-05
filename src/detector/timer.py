@@ -12,7 +12,7 @@ class Timer(threading.Thread):
     def run(self):
         self.running = True
         while self.running:
-            time.sleep(1)  # Sleep for 1 second
+            time.sleep(0.001)  # Sleep for 1 millisecond
             with self.lock:
                 self.time_since_start += 1                  # Increment the time since start
                 for marker in self.lost_markers:            # Loop through the lost markers
