@@ -13,47 +13,36 @@ class MarkerFactory:
         project_set_num = int(dict_length * 0.1)                        # 10% of the markers will be project markers
         controller_set_num = int(dict_length * 0.1)                     # 10% of the markers will be controller markers
         
-        # First, let's make the camera marker
-        marker_list.append(m.ControllerMarker(0, timer_))
-        marker_list[0].attach_observer(observer)
-        marker_list[0].set_controller_type("camera")
-
-        # Next, let's make the controller marker set
-        for i in range(1, controller_set_num):
-            marker_list.append(m.ControllerMarker(i, timer_))
-            marker_list[i].attach_observer(observer)
-        
-        # Next, let's make the project marker set (making sure they are not the same as the controller marker ids)
+        # First, let's make the project marker set (making sure they are not the same as the controller marker ids)
         # json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
         json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
 
         project_marker_ids = []
         for file in json_files:
             marker_id = int(file['marker_id'])
-            if marker_id not in range(controller_set_num) and marker_id < dict_length:
+            if marker_id > 1 & marker_id < dict_length:
                 project_marker_ids.append(marker_id)           # Build a list of all the marker ids associated with a project file
-            elif marker_id in range(controller_set_num):
-                print(f"ERROR: {file['name']} has the same ID ({marker_id}) as a controller marker.")
-                print(f"IDs 0 through {controller_set_num - 1} are reserved for controller markers. Please change the ID of this project.")
+            elif marker_id == 0:
+                print(f"ERROR: {file['name']} has an ID ({marker_id}) that is reserved for camera control. Please change the ID of this project.")
             else:
                 print(f"ERROR: {file['name']} has an ID ({marker_id}) that is out of range for this dictionary. The highest id in this dictionary is {dict_length - 1}. Please change the ID of this project.")
-
         for marker_id in project_marker_ids:
             marker_id = int(marker_id)
-            NewMarker = m.ProjectMarker(marker_id, timer_)
-            NewMarker.attach_observer(observer)
+            new_project_marker = m.ProjectMarker(marker_id, timer_)
+            new_project_marker.attach_observer(observer)
             for file in json_files:                                     # If a marker id matches the associated marker id of a project file, associate the project file with the marker
                 if int(file['marker_id']) == marker_id:
-                    NewMarker.associate_marker_with_project(file)
+                    new_project_marker.associate_marker_with_project(file)
                     break
-            marker_list.append(NewMarker)              # Make a project marker for each marker id associated with a project file
+            marker_list.append(new_project_marker)              # Make a project marker for each marker id associated with a project file
 
-        # Finally, let's make the geometry marker set
-        for i in range(controller_set_num, dict_length):
+        # Finally, let's make the rest of the markers generic markers
+        for i in range(0, dict_length):
             if i not in project_marker_ids:
-                marker_list.append(m.GeometryMarker(i, timer_))
+                marker_list.append(m.GenericMarker(i, timer_))
                 marker_list[i].attach_observer(observer)
-                marker_list[i].name = "Geometry {i}"
+        
+        marker_list[0].type = "camera"
 
         marker_list.sort(key=lambda marker: marker.id) # Sort the markers by their id
 

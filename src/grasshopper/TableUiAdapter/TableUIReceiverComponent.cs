@@ -18,14 +18,13 @@ namespace TableUiAdapter
 {
     public class TableUIReceiverComponent : GH_Component
     {
-        List<Marker> controllerMarkers = new List<Marker>();
-        List<Marker> geometryMarkers = new List<Marker>();
-        Marker cameraMarker = new Marker();
+        List<int> ids = new List<int>();
+        List<Plane> planes = new List<Plane>();
+        Mesh topo = new Mesh();
 
         public bool isListening = false;
         public bool run = true;
         bool cameraTracking = false;
-        public int messageCounter = 0;
 
         public double scale = 1.0;
 
@@ -49,6 +48,10 @@ namespace TableUiAdapter
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Scale", "S", "Adjust the scale of changes the markers affect", GH_ParamAccess.item, 1.0);
+            pManager.AddMeshParameter("Topography", "T", "(Optional) The topography of the base model", GH_ParamAccess.item);
+
+            pManager[0].Optional = true;
+            pManager[1].Optional = true;
         }
 
         /// <summary>
@@ -56,9 +59,8 @@ namespace TableUiAdapter
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Geometry Markers", "Geometry", "The markers that will be assigned to geometries", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Controller Markers", "Controllers", "The markers that correspond to the controllers", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Camera Marker", "Camera", "The marker that controls the camera", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Marker IDs", "IDs", "The IDs of all currently detected markers", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Marker Planes", "Planes", "The planes that represent the location of the markers", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -83,49 +85,75 @@ namespace TableUiAdapter
             {
                 _repository.UdpSend("STOP");        // "STOP" message ends the detection program and it's threads
                 isListening = false;                // Setting isListening to false ends the listening thread
-                controllerMarkers.Clear();
-                geometryMarkers.Clear();
-                messageCounter = 0;
+                planes.Clear();
+                ids.Clear();
             }
 
             // TODO: Build out components that use these to do something
-            DA.SetDataList(0, geometryMarkers);
-            DA.SetDataList(1, controllerMarkers);
-            DA.SetData(2, cameraMarker);
+            DA.SetDataList("Marker IDs", ids);
+            DA.SetDataList("Transform Planes", planes);
         }
 
         private async Task ListenThread()
         {
             while (isListening)
             {
-                string incomingJson = await _repository.Receive(_cancellationToken);      // Keep listening for incoming messages until we get one or the cancellation token is triggered
-                List<Marker> incomingMarkers = Parser.Parse(incomingJson);                                     // Get the important values from the JSON
+                string incomingJson = await _repository.Receive(_cancellationToken);        // Keep listening for incoming messages until we get one or the cancellation token is triggered
+                List<Marker> incomingMarkers = Parser.Parse(incomingJson);                  // Get the important values from the JSON
 
-                List<Marker> newControllerMarkers = new List<Marker>(); 
-                List<Marker> newGeometryMarkers = new List<Marker>();
-                List<int> newGeometryIds = new List<int>();
+                ids.Clear();
+                planes.Clear();
 
                 foreach (Marker marker in incomingMarkers)
                 {
+                    ids.Add(marker.id);
+
                     switch (marker.type)
                     {
                         case "camera":
-                            cameraMarker = marker;
+                            if (cameraTracking)
+                            {
+                                var doc = Rhino.RhinoDoc.ActiveDoc;
+                                var view = doc.Views.ActiveView;
+                                var camera = view.ActiveViewport.CameraLocation;
+
+                                double z = 5.5;
+                                Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
+                                if (topo != null)
+                                {
+                                    Point3d closestPoint = topo.ClosestPoint(markerPoint);
+                                    z = closestPoint.Z + 5.5;
+                                }
+
+                                Point3d cameraLocation = new Point3d(marker.location[0], marker.location[1], z);
+                                view.ActiveViewport.SetCameraLocation(cameraLocation, false);
+
+                                Point3d cameraTarget = new Point3d(marker.location[0] - 1, marker.location[1], z);
+                                Transform rotation = Transform.Rotation(marker.rotation, cameraLocation);
+                                cameraTarget.Transform(rotation);
+
+                                Vector3d cameraDirection = cameraTarget - cameraLocation;
+
+                                view.ActiveViewport.SetCameraDirection(cameraDirection, false);
+
+                                view.ActiveViewport.SetCameraTarget(cameraTarget, false);
+                                view.Redraw();
+                            }
                             break;
-                        case "controller":
-                            newControllerMarkers.Add(marker);
-                            break;
-                        case "geometry":
+                        case "marker":
                             marker.location[0] = (int)(marker.location[0] * scale);
                             marker.location[1] = (int)(marker.location[1] * scale);
-                            newGeometryMarkers.Add(marker);
-                            newGeometryIds.Add(marker.id);
+                            if (topo != null)
+                            {
+                                Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
+                                Point3d topoPoint = topo.ClosestPoint(markerPoint);
+                                marker.location[2] = (int)topoPoint.Z;
+                            }
+                            Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], marker.location[2]), new Vector3d(marker.rotation, 0, 0));
+                            planes.Add(plane);
                             break;
                     }
                 }
-
-                controllerMarkers = newControllerMarkers;
-                geometryMarkers = newGeometryMarkers;
 
                 // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)
                 Rhino.RhinoApp.InvokeOnUiThread((Action)(() =>
@@ -197,16 +225,7 @@ namespace TableUiAdapter
                         {
                             ((TableUIReceiverComponent)Owner).run = false;              // Set run to false to trigger StopDetectionProgram in SolveInstance
                             ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
-                            var doc = Rhino.RhinoDoc.ActiveDoc;
-                            var view = doc.Views.ActiveView;
-                            var camera = view.ActiveViewport.CameraLocation;
-                            Point3d cameraLocation = new Point3d(100, 100, 0);
-                            view.ActiveViewport.SetCameraLocation(cameraLocation, false);
-                            Point3d cameraTarget = new Point3d(0, 0, 0);
-                            view.ActiveViewport.SetCameraTarget(cameraTarget, false);
-                            view.Redraw();
-/*                          MessageBox.Show("The detection program is already running.");
-*/                        }
+                        }
                         return GH_ObjectResponse.Handled;
                     }
                     else if (StopButtonBounds.Contains(System.Drawing.Point.Round(e.CanvasLocation)))
@@ -223,6 +242,16 @@ namespace TableUiAdapter
                         else if (((TableUIReceiverComponent)Owner).cameraTracking)
                         {
                             ((TableUIReceiverComponent)Owner).cameraTracking = false;   // Stop the camera tracking
+                            
+                            var doc = Rhino.RhinoDoc.ActiveDoc;
+                            var view = doc.Views.ActiveView;
+                            var camera = view.ActiveViewport.CameraLocation;
+                            Point3d cameraLocation = new Point3d(100, 100, 0);
+                            view.ActiveViewport.SetCameraLocation(cameraLocation, false);
+                            Point3d cameraTarget = new Point3d(0, 0, 0);
+                            view.ActiveViewport.SetCameraTarget(cameraTarget, false);
+                            view.Redraw();
+
                             ((TableUIReceiverComponent)Owner).ExpireSolution(true);     // Expire the solution to trigger the component to run
                         }
                         return GH_ObjectResponse.Handled;

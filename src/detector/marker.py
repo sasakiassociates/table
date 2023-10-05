@@ -174,33 +174,9 @@ class ProjectMarker(Marker):
         else:
             print("Failed to open project")
     
-class ControllerMarker(Marker):
+class GenericMarker(Marker):
     def __init__(self, marker_id, timer_):
         super().__init__(marker_id, timer_)
-        self.type = "controller"
-        self.controller_name = ""
-    
-    def set_controller_type(self, controller_type):
-        self.type = controller_type
-
-    # Calculate the distance to the marker using the pinhole camera model
-    # marker_size is in centimeters
-    # focal_length is in millimeters
-    def calculate_depth(marker_corners, marker_size, focal_length):
-        # Calculate the marker's center in the image (assuming the marker is planar)
-        marker_center = np.mean(marker_corners, axis=0)
-
-        # Calculate the distance to the marker using the pinhole camera model
-        distance_to_marker = (marker_size * focal_length) / (2 * (marker_center[0] - focal_length))
-
-        return distance_to_marker
-    
-class GeometryMarker(Marker):
-    def __init__(self, marker_id, timer_):
-        super().__init__(marker_id, timer_)
-        self.geometry_name = ""
-        self.type = "geometry"
-        self.name = ""
 
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")
