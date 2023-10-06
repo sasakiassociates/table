@@ -17,7 +17,7 @@ namespace TableUiCompanions
         Dictionary<int, Plane> idPlanePairs = new Dictionary<int, Plane>();
 
         // Outputs
-        List<double> variableValue = new List<double>();
+        List<double> variableValues = new List<double>();
 
         /// <summary>
         /// Initializes a new instance of the VariableComponent class.
@@ -64,7 +64,7 @@ namespace TableUiCompanions
             desiredIds.Clear();
 
             if (!DA.GetDataList(0, planes)) return;
-            if (DA.GetDataList(1, ids)) return;
+            if (!DA.GetDataList(1, ids)) return;
             DA.GetData(2, ref min);
             DA.GetData(3, ref max);
             DA.GetDataList(4, desiredIds);
@@ -76,6 +76,7 @@ namespace TableUiCompanions
                 return;
             }
             
+            idPlanePairs.Clear();
             // Build a dictionary of planes and their corresponding IDs
             for (int i = 0; i < planes.Count; i++)
             {
@@ -84,6 +85,7 @@ namespace TableUiCompanions
                 idPlanePairs.Add(id, plane);
             }
 
+            variableValues.Clear();
             foreach (int id in desiredIds)
             {
                 // if the incoming IDs contain the desired ID, set the variable value to the corresponding value from the plane
@@ -93,12 +95,12 @@ namespace TableUiCompanions
                     // Get the rotation relative to the world XY plane
                     double angle = Vector3d.VectorAngle(plane.XAxis, Vector3d.XAxis, Plane.WorldXY);
                     // Map the angle to the range of the variable
-                    double mappedValue = Map(0, Math.PI, min, max, (int)angle);
-                    variableValue.Add(mappedValue);
+                    double mappedValue = Map(0, 2*Math.PI, min, max, angle);
+                    variableValues.Add(mappedValue);
                 }
             }
 
-            DA.SetDataList(0, variableValue);
+            DA.SetDataList(0, variableValues);
         }
 
         private static double Map(double sourceMin, double sourceMax, double targetMin, double targetMax, double value)

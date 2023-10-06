@@ -93,6 +93,17 @@ StyleCopReport.xml
 *.scc
 *.env
 
+# VSCode files
+.vscode/
+
+# Python virtual environment
+venv/
+
+# OpenCV files
+.cv2/
+
+# Other Caching
+*.v2
 
 # ReSharper is a .NET coding add-in
 _ReSharper*/
@@ -125,3 +136,12 @@ src/sender/key/firebase_table-key.json
 *.vsidx
 *.3dm
 *.3dmbak
+*.3ds
+*.3dsmax
+*.gh/
+
+# Pycache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
