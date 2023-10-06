@@ -99,11 +99,13 @@ namespace TableUiAdapter
         {
             while (isListening)
             {
+                
+
                 string incomingJson = await _repository.Receive(_cancellationToken);        // Keep listening for incoming messages until we get one or the cancellation token is triggered
                 List<Marker> incomingMarkers = Parser.Parse(incomingJson);                  // Get the important values from the JSON
-
-                ids.Clear();
-                planes.Clear();
+                
+                ids = new List<int>();
+                planes = new List<Plane>();
 
                 foreach (Marker marker in incomingMarkers)
                 {

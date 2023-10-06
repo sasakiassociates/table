@@ -44,6 +44,9 @@ class MarkerFactory:
         
         marker_list[0].type = "camera"
 
+        for marker in marker_list:
+            print(f"Marker ID: {marker.id} | Marker Type: {marker.type}")
+
         marker_list.sort(key=lambda marker: marker.id) # Sort the markers by their id
 
         return marker_list
