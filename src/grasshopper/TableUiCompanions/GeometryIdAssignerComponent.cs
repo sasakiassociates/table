@@ -1,0 +1,91 @@
+﻿using System;
+using System.Collections.Generic;
+
+using Grasshopper.Kernel;
+using Rhino.Geometry;
+
+namespace TableUiCompanions
+{
+    public class GeometryIdAssignerComponent : GH_Component
+    {
+        List<GeometryBase> geometries = new List<GeometryBase>();
+        List<int> ids = new List<int>();
+
+        /// <summary>
+        /// Initializes a new instance of the GeometryIdAssignerComponent class.
+        /// </summary>
+        public GeometryIdAssignerComponent()
+          : base("GeometryIdAssignerComponent", "ID Assigner",
+              "Intakes geometries (breps or meshes) and a list of IDs. Assigns each geometry a marker ID",
+              "Strategist", "TableUI")
+        {
+        }
+
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
+        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        {
+            pManager.AddGeometryParameter("Geometries", "G", "The geometries to be assigned IDs", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("IDs", "ID", "The IDs of the markers to assign the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
+        }
+
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
+        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        {
+            pManager.AddGeometryParameter("Tagged Geometries", "G", "The geometries with IDs assigned", GH_ParamAccess.list);
+        }
+
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            geometries.Clear();
+            ids.Clear();
+
+            if (!DA.GetDataList(0, geometries)) return;
+            if (!DA.GetDataList(1, ids)) return;
+
+            if (geometries.Count != ids.Count)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of geometries and IDs must be the same");
+                return;
+            }
+
+            for (int i = 0; i < geometries.Count; i++)
+            {
+                GeometryBase geometry = geometries[i];
+                int id = ids[i];
+
+                geometry.UserDictionary.Set("TableUI ID", id);
+            }
+
+            DA.SetDataList(0, geometries);
+        }
+
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// </summary>
+        protected override System.Drawing.Bitmap Icon
+        {
+            get
+            {
+                //You can add image files to your project resources and access them like this:
+                // return Resources.IconForThisComponent;
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
+        public override Guid ComponentGuid
+        {
+            get { return new Guid("00F5A114-07D6-49C5-AD98-B3BB41D8CF11"); }
+        }
+    }
+}

@@ -26,6 +26,7 @@ namespace TableUiAdapter
         public bool run = true;
         bool cameraTracking = false;
 
+        private int cameraHeight = 5;
         public double scale = 1.0;
 
         private Repository _repository;
@@ -147,7 +148,7 @@ namespace TableUiAdapter
                             {
                                 Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
                                 Point3d topoPoint = topo.ClosestPoint(markerPoint);
-                                marker.location[2] = (int)topoPoint.Z;
+                                marker.location[2] = (int)topoPoint.Z + cameraHeight;
                             }
                             Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], marker.location[2]), Vector3d.ZAxis);
                             plane.Rotate(marker.rotation, Vector3d.ZAxis);

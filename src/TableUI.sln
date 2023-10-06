@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiReceiver", "receiver
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "C#Detector", "detector\DetectorTest\C#Detector.csproj", "{9B1A08FA-34BD-422B-B00C-8CF412E63984}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TableUiCompanions", "grasshopper\TableUiCompanions\TableUiCompanions.csproj", "{16F1D5D5-3642-409B-AF01-B8D73D7EA3E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{9B1A08FA-34BD-422B-B00C-8CF412E63984}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B1A08FA-34BD-422B-B00C-8CF412E63984}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B1A08FA-34BD-422B-B00C-8CF412E63984}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16F1D5D5-3642-409B-AF01-B8D73D7EA3E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16F1D5D5-3642-409B-AF01-B8D73D7EA3E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16F1D5D5-3642-409B-AF01-B8D73D7EA3E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16F1D5D5-3642-409B-AF01-B8D73D7EA3E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
