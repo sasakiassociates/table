@@ -145,3 +145,4 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.v2
