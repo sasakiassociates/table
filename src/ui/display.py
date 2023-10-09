@@ -16,7 +16,7 @@ class Display():
         window_height = self.root.winfo_screenheight()
 
         self.root.geometry(f"{window_width}x{window_height}+0+0")
-        self.root.attributes('-fullscreen', True)
+        self.root.attributes('-fullscreen', False)
         self.root.configure(background=c.SasakiColors.blue_4)
 
         self.button_padding = (10, 10)
