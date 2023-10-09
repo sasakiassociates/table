@@ -30,6 +30,8 @@ class Camera():
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
 
+        self.background_color = (0, 0, 0)
+
         if not self.cap.isOpened():
             print("Cannot open camera")
             exit()
@@ -45,11 +47,22 @@ class Camera():
 
                 frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
+                # Flip image
+                frame_gray = cv.flip(frame_gray, 1)
+
+                frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
+
+                # background = np.zeros((frame_color.shape[0], frame_color.shape[1], 3), dtype=np.uint8)
+                # frame_color = cv.addWeighted(frame_color, 0.2, background, 0.8, 0.0)
+
+                # cv.rectangle(frame_color, (0, 0), (frame_color.shape[1], frame_color.shape[0]), self.background_color, -1)
+
                 # Loop through the markers and update them
                 #self.markerLoop(ids, corners)
                 if ids is not None:
                     for marker_id, marker_corners in zip(ids, corners):
                         marker = self.my_markers[int(marker_id)]
+
                         if isinstance(marker, m.ProjectMarker):
                             if marker.running == False:
                                 marker.open_project()
@@ -57,8 +70,17 @@ class Camera():
                             if marker.is_visible == False:
                                 marker.found()
                                 marker.track(marker_corners)
+                                marker.flip_center(frame_color.shape[1])
                             else:
                                 marker.track(marker_corners)
+                                marker.flip_center(frame_color.shape[1])
+                            
+                            x = marker.center[0]
+                            y = marker.center[1]
+                            radius = 20
+                            color = (193, 76, 255)
+                            cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color, 3)
+                            cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv.LINE_AA)
                     for marker in self.my_markers:
                         if marker.is_visible == True and marker.id not in ids:
                             marker.lost_tracking()
@@ -73,7 +95,7 @@ class Camera():
                     self.repository.strategy.send()
                     self.repository.new_data = False
 
-                return frame_marked
+                return frame_color
         except Exception as e:
             sys.stderr.write(str(e))
             traceback.print_exc()

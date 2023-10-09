@@ -22,6 +22,8 @@ parser.add_argument("--camera", type=int, default=0,
                     help="The camera index to use")
 parser.add_argument("--aruco_dict", type=str, default=ARUCO_DEFAULT_DICT, 
                     help="The name of the ArUco dictionary to use")
+parser.add_argument("--video_full", type=bool, default=False, 
+                    help="Whether or not to display the video in fullscreen")
 
 # --------------------------------------- Debug arguments ------------------------------------ #
 # To enable DEBUG mode, use the command `$env:DEBUG="True"` in PowerShell or `set DEBUG=True`  #
@@ -37,6 +39,11 @@ def camera_loop(camera, _display):
     while not _display.terminate:
         frame = camera.videoCapture()
         _display.update_video_image(frame)
+
+def camera_loop_fullscreen(camera, _display):
+    while not _display.terminate:
+        frame = camera.videoCapture()
+        _display.update_video_image_fullscreen(frame)
 
 def debug_loop(camera, _display):
     while not _display.terminate:
@@ -56,7 +63,11 @@ if (__name__ == '__main__'):
     
     camera = camera.Camera(0, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
     
-    _display.build()
+    if args.video_full == True:
+        _display.build_video_fullscreen()
+    else:
+        print("Building video")
+        _display.build()
     
     if DEBUG:
         print("Running in debug mode")
@@ -72,7 +83,10 @@ if (__name__ == '__main__'):
 
     else:
 
-        camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
+        if args.video_full:
+            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display))
+        else:
+            camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
         camera_thread.daemon = True
         camera_thread.start()
 

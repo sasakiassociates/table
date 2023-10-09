@@ -12,10 +12,10 @@ class Display():
         self.root = tk.Tk()
         self.root.title("Magpie Table")
 
-        window_width = self.root.winfo_screenwidth()
-        window_height = self.root.winfo_screenheight()
+        self.window_width = self.root.winfo_screenwidth()
+        self.window_height = self.root.winfo_screenheight()
 
-        self.root.geometry(f"{window_width}x{window_height}+0+0")
+        self.root.geometry(f"{self.window_width}x{self.window_height}+0+0")
         self.root.attributes('-fullscreen', False)
         self.root.configure(background=c.SasakiColors.blue_4)
 
@@ -25,12 +25,29 @@ class Display():
 
         self.debug_data = None
         self.new_debug_data = False
-    
+
     def launch_gui(self):
         self.root.mainloop()
 
     def update_video_image(self, frame):
         image = Image.fromarray(frame)
+        tkimg = ImageTk.PhotoImage(image=image)
+
+        self.video_label.configure(image=tkimg)
+        self.video_label.image = tkimg
+
+        self.root.update()
+
+    def update_video_image_fullscreen(self, frame):
+        image = Image.fromarray(frame)
+        aspect_ratio = image.size[0] / image.size[1]
+        window_aspect_ratio = self.window_width / self.window_height
+
+        if aspect_ratio > window_aspect_ratio:
+            image = image.resize((self.window_width, int(self.window_width / aspect_ratio)))
+        else:
+            image = image.resize((int(self.window_height * aspect_ratio), self.window_height))
+
         tkimg = ImageTk.PhotoImage(image=image)
 
         self.video_label.configure(image=tkimg)
@@ -117,11 +134,13 @@ class Display():
         
         tk.Button(menuFrame, text="Print markers", command=self.end).grid(row=0, column=0, sticky=tk.EW, padx=self.button_padding[0], pady=self.button_padding[1])
         tk.Button(menuFrame, text="Start new project", command=self.open_new_project_window).grid(row=0, column=1, sticky=tk.EW, padx=self.button_padding[0], pady=self.button_padding[1])
-        
+
         mainFrame.pack(expand=True)
 
+        self.root.bind('<Escape>', self.on_key_press)
+
         self.root.update()
-    
+
     def open_new_project_window(self):
         newWindow = tk.Toplevel(self.root)
         newWindow.title("New Project")
@@ -137,6 +156,33 @@ class Display():
         self.terminate = True
         self.root.quit()
         self.root.destroy()
+
+    def build_video_fullscreen(self):
+        self.root.attributes('-fullscreen', True)
+
+        # Create a videoFrame that takes up the whole screen
+        videoFrame = tk.Frame(self.root, bg="black", width=self.window_width, height=self.window_height)
+        videoFrame.grid(row=0, column=0, sticky=tk.NSEW)
+        videoFrame.winfo_width = self.window_width
+        videoFrame.winfo_height = self.window_height
+
+        self.video_label = tk.Label(videoFrame, text="Loading video feed...", bg="black", width=self.window_width, height=self.window_height)
+        self.video_label.winfo_width = self.window_width
+        self.video_label.winfo_height = self.window_height
+        self.video_label.pack(expand=True, fill=tk.BOTH)
+
+        # Bind the Escape key to exit fullscreen
+        self.root.bind('<Escape>', self.on_key_press)
+
+        # Update the window size to fullscreen dimensions
+        self.root.geometry(f"{self.window_width}x{self.window_height}")
+
+        self.root.update()
+
+    def on_key_press(self, event):
+        if event.keysym == 'Escape':
+            self.terminate = True
+            self.root.quit()
 
 # Unit tests for this object that'll run when this file is run directly
 if (__name__ == '__main__'):

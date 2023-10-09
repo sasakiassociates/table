@@ -33,6 +33,9 @@ class Marker(ABC):
         self.timer.report_found(self)
         self.notify_observers()
 
+    def flip_center(self, width):
+        self.center = (width - self.center[0], self.center[1])
+
     def track(self, corners_):
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
