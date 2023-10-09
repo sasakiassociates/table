@@ -52,6 +52,9 @@ nunit-*.xml
 [Rr]eleasePS/
 dlldata.c
 
+# Build Files
+/build/
+
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
 
@@ -146,3 +149,4 @@ __pycache__/
 *.pyo
 *.pyd
 *.v2
+*.bin
