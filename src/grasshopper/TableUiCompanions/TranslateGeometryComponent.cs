@@ -79,6 +79,8 @@ namespace TableUiCompanions
                         Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Geometry " + i + " does not have a TableUI ID assigned to it");
                         return;
                     }
+
+                    ReportProgress("Translating geometry " + i, (double)i / geometries.Count);
                 }
 
                 // If any of the geometry IDs match the IDs of the incoming markers, translate the geometry to the corresponding plane
@@ -94,7 +96,7 @@ namespace TableUiCompanions
                     }
                 }
 
-                Parent.Message = "Done";
+                ReportProgress("Done", 1);
                 Done();
             }
 

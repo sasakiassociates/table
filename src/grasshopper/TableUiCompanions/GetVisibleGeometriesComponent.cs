@@ -22,7 +22,7 @@ namespace TableUiCompanions
         public GetVisibleGeometriesComponent()
           : base("Get Visible Geometries", "Nickname",
               "Description",
-              "Category", "Subcategory")
+              "Strategist", "TableUI")
         {
         }
 

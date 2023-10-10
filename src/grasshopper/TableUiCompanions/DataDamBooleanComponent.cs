@@ -25,7 +25,7 @@ namespace TableUiCompanions
         public DataDamBooleanComponent()
           : base("DataDamBooleanComponent", "Nickname",
               "Description",
-              "Category", "Subcategory")
+              "Strategist", "TableUI")
         {
         }
 
@@ -66,6 +66,7 @@ namespace TableUiCompanions
             }
             
             DA.SetDataList("Output", output);
+
         }
 
         protected override void ExpireDownStreamObjects()

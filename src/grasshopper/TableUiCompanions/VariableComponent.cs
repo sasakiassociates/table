@@ -176,6 +176,7 @@ namespace TableUiCompanions
             return mappedValue;
         }
 
+
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
