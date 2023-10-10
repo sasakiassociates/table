@@ -66,7 +66,6 @@ if (__name__ == '__main__'):
     if args.video_full == True:
         _display.build_video_fullscreen()
     else:
-        print("Building video")
         _display.build()
     
     if DEBUG:

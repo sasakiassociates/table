@@ -45,15 +45,15 @@ class Camera():
                 # Detect the markers
                 corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
 
-                frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
+                # frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
                 # Flip image
                 frame_gray = cv.flip(frame_gray, 1)
 
                 frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
 
-                # background = np.zeros((frame_color.shape[0], frame_color.shape[1], 3), dtype=np.uint8)
-                # frame_color = cv.addWeighted(frame_color, 0.2, background, 0.8, 0.0)
+                background = np.zeros((frame_color.shape[0], frame_color.shape[1], 3), dtype=np.uint8)
+                frame_color = cv.addWeighted(frame_color, 0.2, background, 0.8, 0.0)
 
                 # cv.rectangle(frame_color, (0, 0), (frame_color.shape[1], frame_color.shape[0]), self.background_color, -1)
 

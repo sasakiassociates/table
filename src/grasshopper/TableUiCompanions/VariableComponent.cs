@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Windows.Forms;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -12,9 +12,14 @@ namespace TableUiCompanions
         List<Plane> planes = new List<Plane>();
         List<int> ids = new List<int>();
         int min = 0;
-        int max = 360;
+        int max = 180;
         List<int> desiredIds = new List<int>();
         Dictionary<int, Plane> idPlanePairs = new Dictionary<int, Plane>();
+
+        // Modes
+        bool xLocation = false;
+        bool yLocation = false;
+        bool rotation = true;
 
         // Outputs
         List<double> variableValues = new List<double>();
@@ -23,7 +28,7 @@ namespace TableUiCompanions
         /// Initializes a new instance of the VariableComponent class.
         /// </summary>
         public VariableComponent()
-          : base("VariableComponent", "Variable",
+          : base("Variable Retriever", "Variable",
               "Intakes incoming planes, incoming IDs, minimum value (optional), maximum value (optional), and desired IDs (optional). Buttons at the bottom allows users to switch between rotation and location as the input",
               "Strategist", "TableUI")
         {
@@ -92,17 +97,69 @@ namespace TableUiCompanions
                 if (ids.Contains(id))
                 {
                     Plane plane = idPlanePairs[id];
-                    // Get the rotation relative to the world XY plane
-                    double angleRads = Vector3d.VectorAngle(plane.XAxis, Vector3d.XAxis, Plane.WorldXY);
-                    // Convert to degrees
-                    int angleDegrees = (int)Rhino.RhinoMath.ToDegrees(angleRads);
-                    // Map the angle to the range of the variable
-                    double mappedValue = Map(0, 360, min, max, angleDegrees);
-                    variableValues.Add(mappedValue);
+                    if (rotation) {
+                        // Get the rotation relative to the world XY plane
+                        double angleRads = Vector3d.VectorAngle(plane.XAxis, Vector3d.XAxis, Plane.WorldXY);
+                        // Convert to degrees
+                        int angleDegrees = (int)Rhino.RhinoMath.ToDegrees(angleRads);
+                        // Smooth the angle around the 360 degree mark
+                        if (angleDegrees > 180)
+                        {
+                            angleDegrees = 360 - angleDegrees;
+                        }
+                        // Map the angle to the range of the variable
+                        double mappedValue = Map(0, 180, min, max, angleDegrees);
+                        variableValues.Add(mappedValue);
+                    }
+                    else if (xLocation)
+                    {
+                        double mappedValue = Map(-1080, 0, min, max, (int)plane.OriginX);
+                        variableValues.Add(mappedValue);
+                    }
+                    else if (yLocation)
+                    {
+                        double mappedValue = Map(-720, 0, min, max, (int)plane.OriginY);
+                        variableValues.Add(mappedValue);
+                    }
                 }
             }
 
             DA.SetDataList(0, variableValues);
+        }
+
+        public override void AppendAdditionalMenuItems(ToolStripDropDown menu)
+        {
+            base.AppendAdditionalMenuItems(menu);
+
+            Menu_AppendItem(menu, "X Location", XLocationClicked, true, false);
+            Menu_AppendItem(menu, "Y Location", YLocationClicked, true, false);
+            Menu_AppendItem(menu, "Rotation", RotationClicked, true, false);
+
+            Menu_AppendSeparator(menu);
+        }
+
+        private void RotationClicked(object sender, EventArgs e)
+        {
+            rotation = true;
+            xLocation = false;
+            yLocation = false;
+            ExpireSolution(true);
+        }
+
+        private void XLocationClicked(object sender, EventArgs e)
+        {
+            rotation = false;
+            xLocation = true;
+            yLocation = false;
+            ExpireSolution(true);
+        }
+
+        private void YLocationClicked(object sender, EventArgs e)
+        {
+            rotation = false;
+            xLocation = false;
+            yLocation = true;
+            ExpireSolution(true);
         }
 
         private static double Map(int sourceMin, int sourceMax, double targetMin, double targetMax, int value)

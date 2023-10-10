@@ -88,7 +88,6 @@ class Marker(ABC):
         angle_degree = np.degrees(angle_rads)
 
         # Subtract 45 degrees and wrap it to the -180 to 180 degree range
-        adjusted_angle_degree = (angle_degree - 45 + 180) % 360 - 180
         adjusted_angle_radians = (angle_rads - pi/4 + pi) % (2 * pi) - pi
 
         return adjusted_angle_radians

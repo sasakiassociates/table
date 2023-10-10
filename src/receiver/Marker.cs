@@ -43,20 +43,14 @@ namespace TableUiReceiver
 
             for (int i = 0; i < incomingLocation.Length; i++)
             {
-                if (Math.Abs(location[i] - incomingLocation[i]) >= 1)
-                {
-                    _location[i] = incomingLocation[i];
-                }
+                _location[i] = incomingLocation[i];
             }
             return _location;
         }
 
         private float SmoothRotation(float incomingRotation)
         {
-            if (Math.Abs(_rotation - incomingRotation) >= Math.PI/64)
-            {
-                _rotation = incomingRotation;
-            }
+            _rotation = incomingRotation;
 
             return _rotation;
         }
