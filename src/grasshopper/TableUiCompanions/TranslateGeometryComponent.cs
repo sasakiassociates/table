@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 
 using GrasshopperAsyncComponent;
+using System.Windows.Forms;
 
 namespace TableUiCompanions
 {
@@ -30,7 +31,7 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Dictionary Geometries", "G", "The geometries+IDs to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Dictionary Geometries", "G", "The geometries+IDs to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Marker IDs", "ID", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Marker Planes", "P", "The planes to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
         }
@@ -47,12 +48,12 @@ namespace TableUiCompanions
         {
             // Inputs
             Dictionary<int, object> idGeometryPairs = new Dictionary<int, object>();
-            List<int> ids = new List<int>();
-            List<Plane> planes = new List<Plane>();
+            List<int> detectedIds = new List<int>();
+            List<Plane> detectedPlanes = new List<Plane>();
 
             // Internal
             Dictionary<int, Plane> idPlanePairs = new Dictionary<int, Plane>();
-            Dictionary<object, Plane> geometryPlanePairs = new Dictionary<object, Plane>();
+            Dictionary<object, Plane> detectedGeometryPlanePairs = new Dictionary<object, Plane>();
             List<object> detectedGeometries = new List<object>();
 
             // Outputs
@@ -62,31 +63,55 @@ namespace TableUiCompanions
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                // Build a dictionary of planes and their corresponding IDs
-                for (int i = 0; i < ids.Count; i++)
+                // Clear the lists
+                idPlanePairs.Clear();
+                detectedGeometryPlanePairs.Clear();
+                detectedGeometries.Clear();
+                translatedGeometries.Clear();
+
+                // Check if there are any geometries to translate
+                if (idGeometryPairs.Count == 0)
                 {
-                    idPlanePairs.Add(ids[i], planes[i]);
+                    ReportProgress("No geometries to translate", 0);
+                    Done();
+                    return;
                 }
 
-                // Compare the keys of the geometries dictionary to the IDs of the incoming markers
+                if (detectedIds.Count == 0)
+                {
+                    ReportProgress("No markers detected", 0);
+                    Done();
+                    return;
+                }
+
+                // Build a dictionary of planes and their corresponding IDs
+                for (int i = 0; i < detectedIds.Count; i++)
+                {
+                    idPlanePairs.Add(detectedIds[i], detectedPlanes[i]);
+                }
+
+                // Compare the IDs of the geometries to the IDs of the incoming markers
                 foreach (int id in idGeometryPairs.Keys)
                 {
-                    if (ids.Contains(id))
+                    if (detectedIds.Contains(id))
                     {
                         detectedGeometries.Add(idGeometryPairs[id]);
                         // Build a dictionary of the geometries and their corresponding planes
-                        geometryPlanePairs.Add(idGeometryPairs[id], idPlanePairs[id]);
+                        detectedGeometryPlanePairs.Add(idGeometryPairs[id], idPlanePairs[id]);
                     }
                 }
 
-                foreach (object geometry in detectedGeometries)
+                // Run through the detected dictionary
+                foreach (var kvp in detectedGeometryPlanePairs)
                 {
+                    var geometry = kvp.Key;
+                    var plane = kvp.Value;
+
                     if (geometry is GeometryBase)
                     {
-                        // Translate the geometry to the corresponding plane
-                        GeometryBase g = (GeometryBase)geometry;
+                           GeometryBase g = (GeometryBase)geometry;
 
-                        g.Transform(Transform.PlaneToPlane(Plane.WorldXY, geometryPlanePairs[geometry]));
+                        g.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
                         translatedGeometries.Add(g);
                     }
                     else
@@ -98,19 +123,22 @@ namespace TableUiCompanions
 
                             foreach (GeometryBase g in geometries)
                             {
-                                g.Transform(Transform.PlaneToPlane(Plane.WorldXY, geometryPlanePairs[geometry]));
+                                g.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
                                 translatedGeometries.Add(g);
                             }
                         }
                         catch
                         {
                             // It's not a Magpie Building, so it's not a list of GeometryBase objects
+                            ReportProgress("Geometry is not a GeometryBase object", 0);
+                            Done();
                         }
                     }
                 }
 
+
                 // If any of the geometry IDs match the IDs of the incoming markers, translate the geometry to the corresponding plane
-                foreach (int id in idGeometryPairs.Keys)
+                /*foreach (int id in idGeometryPairs.Keys)
                 {
                     if (idPlanePairs.ContainsKey(id))
                     {
@@ -120,7 +148,7 @@ namespace TableUiCompanions
                         geometry.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
                         translatedGeometries.Add(geometry);
                     }
-                }
+                }*/
 
                 ReportProgress("Done", 1);
                 Done();
@@ -128,9 +156,9 @@ namespace TableUiCompanions
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                DA.GetDataList("Geometries", geometries);
-                DA.GetDataList("Detected Marker IDs", ids);
-                DA.GetDataList("Translation Planes", planes);
+                DA.GetData(0, ref idGeometryPairs);
+                DA.GetDataList(1, detectedIds);
+                DA.GetDataList(2, detectedPlanes);
             }
 
             public override void SetData(IGH_DataAccess DA)

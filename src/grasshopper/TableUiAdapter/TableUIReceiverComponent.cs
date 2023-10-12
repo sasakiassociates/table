@@ -21,6 +21,7 @@ namespace TableUiAdapter
         List<int> ids = new List<int>();
         List<Plane> planes = new List<Plane>();
         Mesh topo = new Mesh();
+        PolylineCurve bounds = new PolylineCurve();
 
         public bool isListening = false;
         public bool run = true;
@@ -36,7 +37,7 @@ namespace TableUiAdapter
         /// Initializes a new instance of the TableUIReceiver class.
         /// </summary>
         public TableUIReceiverComponent()
-          : base("TableUIReceiver", "TableUI Receive",
+          : base("TableUI Receiver", "TableUI Receiver",
               "A component to receive incoming data from the TableUI tangible interface system.",
               "Strategist", "TableUI")
         {
@@ -50,9 +51,11 @@ namespace TableUiAdapter
         {
             pManager.AddNumberParameter("Scale", "S", "Adjust the scale of changes the markers affect", GH_ParamAccess.item, 1.0);
             pManager.AddMeshParameter("Topography", "T", "(Optional) The topography of the base model", GH_ParamAccess.item);
+            pManager.AddCurveParameter("Closed Bounds", "B", "(Optional) The closed bounds of where the geometries are going. Scales the movement", GH_ParamAccess.item);
 
             pManager[0].Optional = true;
             pManager[1].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -71,6 +74,8 @@ namespace TableUiAdapter
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             DA.GetData(0, ref scale);
+            DA.GetData(1, ref topo);
+            DA.GetData(2, ref bounds);
 
             if (run && !isListening)                
             {
@@ -93,6 +98,11 @@ namespace TableUiAdapter
             // TODO: Build out components that use these to do something
             DA.SetDataList("Marker IDs", ids);
             DA.SetDataList("Marker Planes", planes);
+        }
+
+        private double Map(double a1, double a2, double b1, double b2, double s)
+        {
+            return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
         }
 
         private async Task ListenThread()
@@ -146,6 +156,17 @@ namespace TableUiAdapter
                         case "marker":
                             marker.location[0] = (int)(marker.location[0] * scale);
                             marker.location[1] = (int)(marker.location[1] * scale);
+
+                            if (bounds != null)
+                            {
+                                BoundingBox limits = bounds.GetBoundingBox(false);
+                                // scale the location to the bounds
+                                double x = Map(limits.Min.X, limits.Max.X, 0, 1920, marker.location[0]);
+                                double y = Map(limits.Min.Y, limits.Max.Y, 0, 1080, marker.location[1]);
+                                marker.location[0] = (int)x;
+                                marker.location[1] = (int)y;
+                            }
+
                             if (topo != null)
                             {
                                 Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);

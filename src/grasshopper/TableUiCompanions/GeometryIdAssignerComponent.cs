@@ -16,7 +16,7 @@ namespace TableUiCompanions
         /// Initializes a new instance of the GeometryIdAssignerComponent class.
         /// </summary>
         public GeometryIdAssignerComponent()
-          : base("GeometryIdAssignerComponent", "ID Assigner",
+          : base("Geometry Id Assigner", "ID Assigner",
               "Intakes geometries (breps or meshes) and a list of IDs. Assigns each geometry a marker ID",
               "Strategist", "TableUI")
         {
@@ -36,7 +36,7 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Assigned Geometries", "G", "A dictionary of geometries with IDs assigned", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Assigned Geometries", "G", "A dictionary of geometries with IDs assigned", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -47,6 +47,7 @@ namespace TableUiCompanions
         {
             geometries.Clear();
             ids.Clear();
+            idToGeometry.Clear();
 
             if (!DA.GetDataList(0, geometries)) return;
             if (!DA.GetDataList(1, ids)) return;
@@ -57,12 +58,34 @@ namespace TableUiCompanions
                 return;
             }
 
-            for (int i = 0; i < geometries.Count; i++)
+            if (ids.Count == 0)
             {
-                idToGeometry.Add(ids[i], geometries[i]);
+                for (int i = 0; i < geometries.Count; i++)
+                {
+                    idToGeometry.Add((i + 1), geometries[i]);
+                }
             }
+            else
+            {
+                // Otherwise, use the custom list of ids to assign
+                // First, both lists need to be of the same length
+                if (geometries.Count != ids.Count)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The number of geometries and IDs must be the same");
+                    return;
+                }
+                else
+                {
+                    foreach (var geometry in geometries)
+                    {
+                        // Add the corresponding ID
+                        idToGeometry.Add(ids[geometries.IndexOf(geometry)], geometry);
+                    }
+                }
+            }
+            
 
-            DA.SetDataList(0, idToGeometry);
+            DA.SetData(0, idToGeometry);
         }
 
         /// <summary>

@@ -55,8 +55,10 @@ class Marker(ABC):
         self.observers.append(observer_)
     
     def notify_observers(self):
-        for observer in self.observers:
-            observer.update(self.build_json())
+        if self.timer.check_if_send():
+            for observer in self.observers:
+                print(f"Sending data: {self.build_json()}")
+                observer.update(self.build_json())
 
     def get_id(self):
         return self.id

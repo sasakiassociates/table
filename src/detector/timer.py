@@ -8,6 +8,8 @@ class Timer(threading.Thread):
         self.running = False
         self.lock = threading.Lock()
         self.lost_markers = []
+        self.time_last_sent = None
+        self.send_interval = 16  # The time interval (in milliseconds) between sending data so it isn't sent too often  
 
     def run(self):
         self.running = True
@@ -19,6 +21,17 @@ class Timer(threading.Thread):
                     if self.time_since_start - marker.time_last_seen > marker.lost_threshold:
                         marker.lost()                       # If the marker has been lost for more than its lost_threshold, report it as lost
                         self.lost_markers.remove(marker)    # Remove the marker from the list of lost markers
+
+    def check_if_send(self):
+        if self.time_last_sent is None:
+            self.time_last_sent = self.time_since_start
+            return True
+        else:
+            if self.time_since_start - self.time_last_sent > self.send_interval:
+                self.time_last_sent = self.time_since_start
+                return True
+            else:
+                return False
 
     def stop(self):
         self.running = False
