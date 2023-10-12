@@ -35,7 +35,7 @@ namespace TableUiCompanions
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Input", "I", "The input to be dammed", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Dam", "D", "The dam to be opened or closed", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Dam", "D", "To dam or not to dam? A boolean input if true will dam the output", GH_ParamAccess.item);
         }
 
         /// <summary>

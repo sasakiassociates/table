@@ -29,7 +29,13 @@ namespace TableUiReceiver
             receiveIpEndPoint = new IPEndPoint(IPAddress.Any, listenPort);
             // Send to localhost, the same machine (Can be changed to send to another machine)
             sendEndPoint = new IPEndPoint(destination, sendPort);
-            _udpClient = new UdpClient(receiveIpEndPoint);
+            try
+            {
+                _udpClient = new UdpClient(receiveIpEndPoint);
+            } catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         public void UdpSend(string message)

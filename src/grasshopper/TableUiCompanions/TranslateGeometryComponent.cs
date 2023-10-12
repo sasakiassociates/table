@@ -30,9 +30,9 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Geometries", "G", "The geometries to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Detected Marker IDs", "ID", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Translation Planes", "P", "The planes to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Dictionary Geometries", "G", "The geometries+IDs to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Marker IDs", "ID", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Marker Planes", "P", "The planes to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -46,13 +46,14 @@ namespace TableUiCompanions
         private class TranslationWorker : WorkerInstance
         {
             // Inputs
-            List<GeometryBase> geometries = new List<GeometryBase>();
+            Dictionary<int, object> idGeometryPairs = new Dictionary<int, object>();
             List<int> ids = new List<int>();
             List<Plane> planes = new List<Plane>();
 
             // Internal
             Dictionary<int, Plane> idPlanePairs = new Dictionary<int, Plane>();
-            Dictionary<int, GeometryBase> idGeometryPairs = new Dictionary<int, GeometryBase>();
+            Dictionary<object, Plane> geometryPlanePairs = new Dictionary<object, Plane>();
+            List<object> detectedGeometries = new List<object>();
 
             // Outputs
             List<GeometryBase> translatedGeometries = new List<GeometryBase>();
@@ -67,20 +68,45 @@ namespace TableUiCompanions
                     idPlanePairs.Add(ids[i], planes[i]);
                 }
 
-                // Go through each geometry and get its ID
-                for (int i = 0; i < geometries.Count; i++)
+                // Compare the keys of the geometries dictionary to the IDs of the incoming markers
+                foreach (int id in idGeometryPairs.Keys)
                 {
-                    GeometryBase geometry = geometries[i];
-                    int id = geometry.UserDictionary.ContainsKey("TableUI ID") ? (int)geometry.UserDictionary["TableUI ID"] : -1;
-                    idGeometryPairs.Add(id, geometry);
-
-                    if (id == -1)
+                    if (ids.Contains(id))
                     {
-                        Parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Geometry " + i + " does not have a TableUI ID assigned to it");
-                        return;
+                        detectedGeometries.Add(idGeometryPairs[id]);
+                        // Build a dictionary of the geometries and their corresponding planes
+                        geometryPlanePairs.Add(idGeometryPairs[id], idPlanePairs[id]);
                     }
+                }
 
-                    ReportProgress("Translating geometry " + i, (double)i / geometries.Count);
+                foreach (object geometry in detectedGeometries)
+                {
+                    if (geometry is GeometryBase)
+                    {
+                        // Translate the geometry to the corresponding plane
+                        GeometryBase g = (GeometryBase)geometry;
+
+                        g.Transform(Transform.PlaneToPlane(Plane.WorldXY, geometryPlanePairs[geometry]));
+                        translatedGeometries.Add(g);
+                    }
+                    else
+                    {
+                        // It might be a Magpie Building (which is a List of GeometryBase objects)
+                        try
+                        {
+                            List<GeometryBase> geometries = (List<GeometryBase>)geometry;
+
+                            foreach (GeometryBase g in geometries)
+                            {
+                                g.Transform(Transform.PlaneToPlane(Plane.WorldXY, geometryPlanePairs[geometry]));
+                                translatedGeometries.Add(g);
+                            }
+                        }
+                        catch
+                        {
+                            // It's not a Magpie Building, so it's not a list of GeometryBase objects
+                        }
+                    }
                 }
 
                 // If any of the geometry IDs match the IDs of the incoming markers, translate the geometry to the corresponding plane

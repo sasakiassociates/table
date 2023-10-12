@@ -8,8 +8,9 @@ namespace TableUiCompanions
 {
     public class GeometryIdAssignerComponent : GH_Component
     {
-        List<GeometryBase> geometries = new List<GeometryBase>();
+        List<object> geometries = new List<object>();
         List<int> ids = new List<int>();
+        Dictionary<int, object> idToGeometry = new Dictionary<int, object>();
 
         /// <summary>
         /// Initializes a new instance of the GeometryIdAssignerComponent class.
@@ -26,7 +27,7 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Geometries", "G", "The geometries to be assigned IDs", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Geometries", "G", "The geometries to be assigned IDs", GH_ParamAccess.list);
             pManager.AddIntegerParameter("IDs", "ID", "The IDs of the markers to assign the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
         }
 
@@ -35,7 +36,7 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Tagged Geometries", "G", "The geometries with IDs assigned", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Assigned Geometries", "G", "A dictionary of geometries with IDs assigned", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -58,13 +59,10 @@ namespace TableUiCompanions
 
             for (int i = 0; i < geometries.Count; i++)
             {
-                GeometryBase geometry = geometries[i];
-                int id = ids[i];
-
-                geometry.UserDictionary.Set("TableUI ID", id);
+                idToGeometry.Add(ids[i], geometries[i]);
             }
 
-            DA.SetDataList(0, geometries);
+            DA.SetDataList(0, idToGeometry);
         }
 
         /// <summary>
