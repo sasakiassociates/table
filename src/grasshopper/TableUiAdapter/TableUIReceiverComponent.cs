@@ -21,7 +21,7 @@ namespace TableUiAdapter
         List<int> ids = new List<int>();
         List<Plane> planes = new List<Plane>();
         Mesh topo = new Mesh();
-        PolylineCurve bounds = new PolylineCurve();
+        Curve bounds;
 
         public bool isListening = false;
         public bool run = true;
@@ -31,7 +31,7 @@ namespace TableUiAdapter
         public double scale = 1.0;
 
         private Repository _repository;
-        private CancellationToken _cancellationToken = new CancellationToken();
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         /// <summary>
         /// Initializes a new instance of the TableUIReceiver class.
@@ -42,6 +42,15 @@ namespace TableUiAdapter
               "Strategist", "TableUI")
         {
             Attributes = new TableUIReceiverAttributes(this);
+            // Add an event handler for application/script exit
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+            {
+                // Signal the cancellation token when the script is closing
+                if (_cancellationTokenSource != null)
+                {
+                    _cancellationTokenSource.Cancel();
+                }
+            };
         }
 
         /// <summary>
@@ -51,11 +60,9 @@ namespace TableUiAdapter
         {
             pManager.AddNumberParameter("Scale", "S", "Adjust the scale of changes the markers affect", GH_ParamAccess.item, 1.0);
             pManager.AddMeshParameter("Topography", "T", "(Optional) The topography of the base model", GH_ParamAccess.item);
-            pManager.AddCurveParameter("Closed Bounds", "B", "(Optional) The closed bounds of where the geometries are going. Scales the movement", GH_ParamAccess.item);
 
             pManager[0].Optional = true;
             pManager[1].Optional = true;
-            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -75,7 +82,6 @@ namespace TableUiAdapter
         {
             DA.GetData(0, ref scale);
             DA.GetData(1, ref topo);
-            DA.GetData(2, ref bounds);
 
             if (run && !isListening)                
             {
@@ -84,12 +90,13 @@ namespace TableUiAdapter
                     _repository = new Repository();
                 }
 
-                _ = Task.Run(() => ListenThread()); // Launch the listening thread
+                _ = Task.Run(() => ListenThread(_cancellationTokenSource.Token)); // Launch the listening thread
                 isListening = true;
             }
             else if (!run && isListening)
             {
-                _repository.UdpSend("STOP");        // "STOP" message ends the detection program and it's threads
+                _repository.Disconnect();
+                _repository = null;
                 isListening = false;                // Setting isListening to false ends the listening thread
                 planes.Clear();
                 ids.Clear();
@@ -100,18 +107,18 @@ namespace TableUiAdapter
             DA.SetDataList("Marker Planes", planes);
         }
 
-        private double Map(double a1, double a2, double b1, double b2, double s)
+        private async Task ListenThread(CancellationToken cancellationToken)
         {
-            return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
-        }
-
-        private async Task ListenThread()
-        {
-            while (isListening)
+            while (!cancellationToken.IsCancellationRequested)  // Keep listening until the cancellation token is triggered
             {
-                
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    _repository.Disconnect();
+                    _repository = null;
+                    break;
+                }
 
-                string incomingJson = await _repository.Receive(_cancellationToken);        // Keep listening for incoming messages until we get one or the cancellation token is triggered
+                string incomingJson = await _repository.Receive(cancellationToken);        // Keep listening for incoming messages until we get one or the cancellation token is triggered
                 List<Marker> incomingMarkers = Parser.Parse(incomingJson);                  // Get the important values from the JSON
                 
                 ids = new List<int>();
@@ -156,16 +163,6 @@ namespace TableUiAdapter
                         case "marker":
                             marker.location[0] = (int)(marker.location[0] * scale);
                             marker.location[1] = (int)(marker.location[1] * scale);
-
-                            if (bounds != null)
-                            {
-                                BoundingBox limits = bounds.GetBoundingBox(false);
-                                // scale the location to the bounds
-                                double x = Map(limits.Min.X, limits.Max.X, 0, 1920, marker.location[0]);
-                                double y = Map(limits.Min.Y, limits.Max.Y, 0, 1080, marker.location[1]);
-                                marker.location[0] = (int)x;
-                                marker.location[1] = (int)y;
-                            }
 
                             if (topo != null)
                             {
@@ -291,6 +288,9 @@ namespace TableUiAdapter
         {
             base.RemovedFromDocument(document);
             isListening = false;
+            run = false;
+            _repository.Disconnect();
+            _repository = null;
         }
 
         /// <summary>

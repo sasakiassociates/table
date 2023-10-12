@@ -18,7 +18,7 @@ class Marker(ABC):
         
         self.center = (0,0)
         self.prev_center = (0,0)
-        self.center_threshold = 3
+        self.center_threshold = 10
 
         self.timer = timer_         # A reference to the timer object so we can report when a marker is lost
         self.time_last_seen = None
@@ -55,10 +55,8 @@ class Marker(ABC):
         self.observers.append(observer_)
     
     def notify_observers(self):
-        if self.timer.check_if_send():
-            for observer in self.observers:
-                print(f"Sending data: {self.build_json()}")
-                observer.update(self.build_json())
+        for observer in self.observers:
+            observer.update(self.build_json())
 
     def get_id(self):
         return self.id
@@ -73,13 +71,11 @@ class Marker(ABC):
         return marker_data
     
     def calculate_center(self, corners_):
-        self.prev_center = self.center
         np_center = np.mean(corners_[0], axis=0)
         center = (int(np_center[0]), int(np_center[1]))
         return center
     
     def calculate_rotation(self, corners_):
-        self.prev_rotation = self.rotation
         corners = corners_.reshape(-1,2)
 
         centroid = np.mean(corners, axis=0)
@@ -101,6 +97,9 @@ class Marker(ABC):
 
         # check if it's a more significant change than the threshold
         if abs(rotation - self.prev_rotation) >= self.rotation_threshold or abs(center[0] - self.prev_center[0]) >= self.center_threshold or abs(center[1] - self.prev_center[1]) >= self.center_threshold:
+            self.prev_rotation = rotation
+            self.prev_center = center
+            
             self.significant_change = True
             return rotation, center                         # if it is, return the new values
         else:

@@ -9,7 +9,7 @@ class Timer(threading.Thread):
         self.lock = threading.Lock()
         self.lost_markers = []
         self.time_last_sent = None
-        self.send_interval = 16  # The time interval (in milliseconds) between sending data so it isn't sent too often  
+        self.send_interval = 100  # The time interval (in milliseconds) between sending data so it isn't sent too often  
 
     def run(self):
         self.running = True
