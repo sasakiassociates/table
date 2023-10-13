@@ -150,3 +150,5 @@ __pycache__/
 *.pyd
 *.v2
 *.bin
+*.bin
+*.v2
