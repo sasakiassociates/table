@@ -31,7 +31,7 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Geometries", "G", "The geometries to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.item);
+            pManager.AddGeometryParameter("Geometries", "G", "The geometries to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Marker IDs", "ID", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Marker Planes", "P", "The planes to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
         }
@@ -47,7 +47,7 @@ namespace TableUiCompanions
         private class TranslationWorker : WorkerInstance
         {
             // Inputs
-            Dictionary<int, object> idGeoPairs;
+            List<GeometryWithId> assignedGeometries = new List<GeometryWithId>();
             List<int> ids = new List<int>();
             List<Plane> planes = new List<Plane>();
 
@@ -55,7 +55,7 @@ namespace TableUiCompanions
             Dictionary<int, Plane> idPlanePairs = new Dictionary<int, Plane>();
 
             // Outputs
-            List<GeometryBase> translatedGeometries = new List<GeometryBase>();
+            List<IGH_GeometricGoo> translatedGeometries = new List<IGH_GeometricGoo>();
 
             public TranslationWorker(GH_Component parent) : base(parent) { }
 
@@ -68,23 +68,26 @@ namespace TableUiCompanions
                 }
 
                 // If any of the geometry IDs match the IDs of the incoming markers, translate the geometry to the corresponding plane
-                foreach (int id in idGeoPairs.Keys)
+                foreach (GeometryWithId geoWithId in assignedGeometries)
                 {
+                    int id = geoWithId.Id;
+                    
                     if (idPlanePairs.ContainsKey(id))
                     {
-                        GeometryBase geometry = null;
-                        if (idGeoPairs[id] is GH_Brep)
-                        {
-                            geometry = ((GH_Brep)idGeoPairs[id]).Value;
-                        }
-                        else
-                        {
-                            geometry = (GeometryBase)idGeoPairs[id];
-                        }
                         Plane plane = idPlanePairs[id];
+                        Console.WriteLine(geoWithId.Geometry);
 
-                        geometry.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
-                        translatedGeometries.Add(geometry);
+                        // Now, the hard part. We need to translate the geometry to the plane while not knowing what the geometry is
+                        // We can't use the Translate method because it only works on Brep and Mesh
+
+                        foreach (GeometryBase geoBase in geoWithId.Geometry)
+                        {
+                            plane.Origin = geoBase.GetBoundingBox(false).Center;
+                            geoBase.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
+                            translatedGeometries.Add((IGH_GeometricGoo)geoBase);
+                        }
+
+
                     }
                 }
 
@@ -94,7 +97,7 @@ namespace TableUiCompanions
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
-                DA.GetData("Geometries", ref idGeoPairs);
+                DA.GetDataList("Geometries", assignedGeometries);
                 DA.GetDataList("Marker IDs", ids);
                 DA.GetDataList("Marker Planes", planes);
             }

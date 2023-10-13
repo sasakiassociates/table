@@ -124,6 +124,8 @@ namespace TableUiAdapter
                 ids = new List<int>();
                 planes = new List<Plane>();
 
+                if (incomingMarkers == null) break;                                         // If there are no markers, stop listening
+
                 foreach (Marker marker in incomingMarkers)
                 {
                     ids.Add(marker.id);

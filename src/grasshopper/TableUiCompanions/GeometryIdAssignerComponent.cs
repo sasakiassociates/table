@@ -36,6 +36,7 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Magpie Buildings", "MB", "The Magpie Buildings with IDs assigned", GH_ParamAccess.list);
             pManager.AddGenericParameter("Assigned Geometries", "G", "A dictionary of geometries with IDs assigned", GH_ParamAccess.item);
         }
 
@@ -84,8 +85,8 @@ namespace TableUiCompanions
                 }
             }
             
-
             DA.SetData(0, idToGeometry);
+            DA.SetDataList(1, geometries);
         }
 
         /// <summary>
