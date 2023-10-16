@@ -33,7 +33,8 @@ pdf.set_auto_page_break(auto=True, margin=15)
 pdf.add_page()
 
 for i in range(0, marker_num):
-    marker = aruco.generateImageMarker(dictionary, i, 100, None, 1)
+    quantity = int(marker_num)
+    marker = aruco.generateImageMarker(dictionary, i, quantity, None, 1)
     path = destination_folder + f"{marker_num}/" + "marker" + str(i) + ".png"
     cv.imwrite(path, marker)
     png = Image.open(path)
