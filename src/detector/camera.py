@@ -36,6 +36,9 @@ class Camera():
             print("Cannot open camera")
             exit()
             
+    """
+    Loop through the markers and update them
+    """
     def videoCapture(self):
         try:
             ret, frame = self.cap.read()
@@ -52,8 +55,8 @@ class Camera():
 
                 frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
 
-                background = np.zeros((frame_color.shape[0], frame_color.shape[1], 3), dtype=np.uint8)
-                frame_color = cv.addWeighted(frame_color, 0.2, background, 0.8, 0.0)
+                # background = np.zeros((frame_color.shape[0], frame_color.shape[1], 3), dtype=np.uint8)
+                # frame_color = cv.addWeighted(frame_color, 0.2, background, 0.8, 0.0)
 
                 # cv.rectangle(frame_color, (0, 0), (frame_color.shape[1], frame_color.shape[0]), self.background_color, -1)
 

@@ -61,7 +61,9 @@ if (__name__ == '__main__'):
     params = aruco.DetectorParameters()
     _repository = repository.Repository("udp")                  # New repository object that opens a UDP connection on a new thread
     
-    camera = camera.Camera(0, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
+    camera_num = args.camera
+
+    camera = camera.Camera(camera_num, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
     
     if args.video_full == True:
         _display.build_video_fullscreen()

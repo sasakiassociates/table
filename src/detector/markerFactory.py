@@ -10,9 +10,6 @@ class MarkerFactory:
     def make_markers(dict_length, observer, timer_):
         marker_list = []
 
-        project_set_num = int(dict_length * 0.1)                        # 10% of the markers will be project markers
-        controller_set_num = int(dict_length * 0.1)                     # 10% of the markers will be controller markers
-        
         # First, let's make the project marker set (making sure they are not the same as the controller marker ids)
         # json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
         json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
@@ -51,6 +48,9 @@ class MarkerFactory:
 
         return marker_list
     
+    """
+    Returns the number of project files in the projects folder
+    """
     def get_num_project_files():
         folder_path = os.path.join(os.getcwd(), "..\\projects")
 
@@ -63,6 +63,9 @@ class MarkerFactory:
         num_files = len(files)
         return num_files
     
+    """
+    Returns a list of the json files in the projects folder sorted by their creation date (oldest to newest)
+    """
     # NOTE currently we sort the projects by creation date and don't require a specific naming convention
     def get_json_files_sorted_by_creation_date(folder_path):
         file_extension = '*.json'
