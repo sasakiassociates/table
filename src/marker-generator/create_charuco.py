@@ -7,7 +7,7 @@ from cv2 import aruco
 
 def generate_charuco(aruco_dictionary):
     dictionary = aruco.getPredefinedDictionary(aruco_dictionary)
-    board = aruco.CharucoBoard((5, 7), 1, 0.8, dictionary)
+    board = aruco.CharucoBoard((5, 7), 1, 0.5, dictionary)
     image = board.generateImage((2000, 2000))
     cv2.imwrite("charuco.png", image)
 

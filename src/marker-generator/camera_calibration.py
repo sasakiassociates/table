@@ -19,8 +19,9 @@ class Calibrator():
 
         self.dictionary = aruco.getPredefinedDictionary(aruco.DICT_6X6_1000)
         self.params = aruco.DetectorParameters()
-        self.board = aruco.CharucoBoard((5, 7), 1, 0.8, self.dictionary)
+        self.board = aruco.CharucoBoard((5, 7), 1, 0.5, self.dictionary)
         self.detector = aruco.CharucoDetector(self.board)
+        self.markerDetector = aruco.ArucoDetector(self.dictionary, self.params)
 
     """
     Captures images from the camera and saves them to the specified directory.
@@ -72,6 +73,39 @@ class Calibrator():
         self.cam_name = cap.getBackendName()
         self.filename_body = f"{self.image_directory}\\cal_image_{self.cam_name}_{self.cam_width}_{self.cam_height}_"
 
+    def live_board_detection(self):
+        cap = cv2.VideoCapture(0)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to capture image")
+                break
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            corners, ids, rejected = self.markerDetector.detectMarkers(gray)
+            # aruco.drawDetectedMarkers(gray, corners, ids)
+
+            charucoCorners = None
+            charucoIds = None
+            
+            self.detector.detectBoard(gray, charucoCorners, charucoIds, corners, ids)
+
+            print(charucoCorners)
+
+            if charucoCorners is not None and charucoIds is not None:
+                aruco.drawDetectedCornersCharuco(gray, charucoCorners, charucoIds)
+
+                for corner in charucoCorners:
+                    cv2.ellipse(gray, (int(corner[0][0]), int(corner[0][1])), (5, 5), 0, 0, 360, (0, 0, 255), 2)
+
+                # Append object points and image points for this image
+                objp = np.zeros((len(charucoIds), 3), np.float32)
+                objp[:, :2] = self.board.chessboardCorners
+
+            cv2.imshow('gray', gray)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+
     """
     Calibrates the camera using the images from the calibration_images folder.
     Images are generated via the capture_calibration_images function.
@@ -81,9 +115,6 @@ class Calibrator():
             print("No calibration images found. Please capture calibration images first.")
             return
 
-        images = os.listdir(self.image_directory)
-        n_images = len(images)
-
         # Use glob to filter only PNG files in the directory
         png_files = glob.glob(os.path.join(self.image_directory, '*.png'))
 
@@ -91,8 +122,16 @@ class Calibrator():
         allCharucoIds = []
 
         for file in png_files:
+            print(image)
             image = cv2.imread(file)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            corners, ids, _ = self.markerDetector.detectMarkers(gray)
+
+            self.detector.detectBoard(gray, currentCharucoCorners, currentCharucoIds, corners, ids)
+
+            aruco.drawDetectedCornersCharuco(gray, currentCharucoCorners, currentCharucoIds)
+
 
             detector = aruco.ArucoDetector(self.dictionary, self.params)
             currentCharucoCorners, currentCharucoIds, _ = detector.detectMarkers(gray)
@@ -100,11 +139,18 @@ class Calibrator():
             allCharucoCorners.append(currentCharucoCorners)
             allCharucoIds.append(currentCharucoIds)
 
-        calibration, camera_matrix, dist_coeffs, rvecs, tvecs = aruco.calibrateCameraCharuco(currentCharucoCorners, currentCharucoIds, self.board, self.image_size, None, None)
+        camera_matrix = None
+        dist_coeffs = None
+        rvecs = None
+        tvecs = None
+        aruco.calibrateCameraCharuco(currentCharucoCorners, currentCharucoIds, self.board, self.image_size, camera_matrix, dist_coeffs, rvecs, tvecs)
 
+        if camera_matrix is not None and dist_coeffs is not None:
+            calibration = np.array([camera_matrix, dist_coeffs])
         np.savez(self.matrix_directory + '/calibration.npz', calibration=calibration, camera_matrix=camera_matrix, dist_coeffs=dist_coeffs, rvecs=rvecs, tvecs=tvecs)
     
 if __name__ == '__main__':
     _calibrator = Calibrator()
     # _calibrator.capture_calibration_images(1, 20, 1)
-    _calibrator.calibrate_camera_with_charuco(0.8)
+    # _calibrator.calibrate_camera_with_charuco(0.8)
+    _calibrator.live_board_detection()
