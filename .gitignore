@@ -155,3 +155,5 @@ __pycache__/
 
 # Marker images
 *.png
+src/marker-generator/calibration_matrices/image_distortion.npy
+src/marker-generator/calibration_matrices/image_matrix.npy

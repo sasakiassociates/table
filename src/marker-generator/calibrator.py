@@ -2,6 +2,7 @@ import cv2
 from cv2 import aruco
 import os
 import glob
+import numpy as np
 
 BOARD_SIZE = (5, 7)
 SQUARE_LENGTH = 0.025
@@ -21,6 +22,9 @@ class Calibrator():
 
         self.image_directory = f"{os.getcwd()}\\calibration_images"
         self.matrix_directory = f"{os.getcwd()}\\calibration_matrices"
+
+        self.matrix = None
+        self.distortion = None
         
     def video_capture_test(self):
         cap = cv2.VideoCapture(1)
@@ -62,21 +66,47 @@ class Calibrator():
         for image_file in image_files:
             image = cv2.imread(image_file)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            corners, ids, rejected = self.markerDetector.detectMarkers(gray)
-            if ids is not None:
-                charuco_corners, charuco_ids, marker_corners, marker_ids = self.charucoDetector.detectBoard(gray)
+            current_object_points = self.board.getObjPoints()
+            current_image_points = []
+            # corners, ids, rejected = self.markerDetector.detectMarkers(gray)
+            charuco_corners, charuco_ids, marker_corners, marker_ids = self.charucoDetector.detectBoard(gray)
+            if charuco_corners is not None and charuco_ids is not None and len(charuco_corners) > 4:
+                
                 aruco.drawDetectedCornersCharuco(gray, charuco_corners, charuco_ids)
+                
                 allCharucoCorners.append(charuco_corners)
                 allCharucoIds.append(charuco_ids)
+
+                current_object_points, current_image_points = self.board.matchImagePoints(charuco_corners, charuco_ids)
+
+                allObjectPoints.append(current_object_points)
+                allImagePoints.append(current_image_points)
+                print(allObjectPoints)
+                print(allImagePoints)
+            else:
+                print("Not enough charuco corners found in image")
             while True:
                 cv2.imshow('image', gray)
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     break
         
-        
+        retval, self.matrix, self.distortion, rvecs, tvecs = cv2.calibrateCamera(allObjectPoints, allImagePoints, (width, height), None, None)
 
-        aruco.calibrateCameraCharuco(allCharucoCorners, allCharucoIds, self.board, (width, height), self.matrix, self.distortion)
+        # aruco.calibrateCameraCharuco(allCharucoCorners, allCharucoIds, self.board, (width, height), self.matrix, self.distortion)
+
+        print("Camera Matrix:")
+        print(self.matrix)
+        print("Distortion Coefficients:")
+        print(self.distortion)
+
+        if not os.path.exists(self.matrix_directory):
+            os.makedirs(self.matrix_directory)
+
+        cam_name = image_files[0].split('_')[2]
+
+        np.save(f"{self.matrix_directory}\\{cam_name}_matrix.npy", self.matrix)
+        np.save(f"{self.matrix_directory}\\{cam_name}_distortion.npy", self.distortion)
 
     def take_calibration_images(self, camera_num, n_images, interval):
         if not os.path.exists(self.image_directory):
@@ -104,7 +134,7 @@ class Calibrator():
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             corners, ids, rejected = marker_detector.detectMarkers(gray)
 
-            if ids is not None:
+            if ids is not None and len(ids) > 4:
                 cv2.imshow('frame', frame)
                 cv2.waitKey(interval * 1000)
                 cv2.imwrite(self.filename_body + str(i) + '.png', frame)
@@ -117,5 +147,5 @@ class Calibrator():
 if __name__ == "__main__":
     calibrator = Calibrator()
     # calibrator.video_capture_test()
+    calibrator.take_calibration_images(1, 20, 1)
     calibrator.calibrate_from_images()
-    # calibrator.take_calibration_images(1, 20, 1)
