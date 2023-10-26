@@ -10,11 +10,12 @@ from ui import display
 
 FIREBASE_DEFAULT_URL = "https://magpietable-default-rtdb.firebaseio.com/"
 ARUCO_DEFAULT_DICT = "6X6_100"
+DEFAULT_MODE = "udp"
 
 parser = argparse.ArgumentParser(description="Detect ArUco markers and send data to Firebase")
 
 # ------------------------------------ Optional arguments ------------------------------------ #
-parser.add_argument("--mode", type=str, default="udp", choices=["firebase", "udp"], 
+parser.add_argument("--mode", type=str, default=DEFAULT_MODE, choices=["firebase", "udp", "both"], 
                     help="The mode to run the program in")
 parser.add_argument("--url", type=str, default=FIREBASE_DEFAULT_URL, 
                     help="The path to the Firebase realtime database found in the Realtime Database tab of the Firebase project page")
@@ -33,6 +34,7 @@ DEBUG = True if os.environ.get("DEBUG") == "True" else False
 
 args = parser.parse_args()
 
+mode = args.mode
 aruco_dict_name = args.aruco_dict
 
 def camera_loop(camera, _display):
@@ -67,7 +69,7 @@ if (__name__ == '__main__'):
     _display = display.Display()
 
     params = aruco.DetectorParameters()
-    _repository = repository.Repository("udp")                  # New repository object that opens a UDP connection on a new thread
+    _repository = repository.Repository(mode)                  # New repository object that opens a UDP connection on a new thread
     
     camera_num = args.camera
 

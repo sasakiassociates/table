@@ -27,6 +27,11 @@ class RepoStrategyFactory():
             return UDPRepo(repository_)
         elif strategy_name == 'firebase':
             return FirebaseRepo(repository_)
+        elif strategy_name == 'both':
+            composite_repo = CompositeRepo(repository_)
+            composite_repo.add_strategy(UDPRepo(repository_))
+            composite_repo.add_strategy(FirebaseRepo(repository_))
+            return composite_repo
         else:
             raise Exception('Invalid strategy name')
         
@@ -60,10 +65,6 @@ class UDPRepo(RepoStrategy):
             _socket.close()
             self.terminate = True
 
-    def send_specified_data(self, data):
-        self.data = data
-        self.send()
-
     def send(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -77,26 +78,26 @@ class UDPRepo(RepoStrategy):
 class FirebaseRepo(RepoStrategy):
     def __init__(self, repository_):
         super().__init__(repository_)
-        self.credentials = credentials.Certificate("./key/firebase_table-key.json")
+        self.credentials = credentials.Certificate("./sender/key/firebase_table-key.json")
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
 
-    def setup(self):
-        self.send_data_thread = threading.Thread(target=self.send_data_thread)
-        self.send_data_thread.daemon = True
-        self.send_data_thread.start()
+    # def setup(self):
+    #     self.send_data_thread = threading.Thread(target=self.send_data_thread)
+    #     self.send_data_thread.daemon = True
+    #     self.send_data_thread.start()
         
-    def send_data_thread(self):
-        while not self.terminate:
-            if self.new_data:
-                self.send()
-                self.new_data = False
+    # def send_data_thread(self):
+    #     while not self.terminate:
+    #         if self.new_data:
+    #             self.send()
+    #             self.new_data = False
 
     def send(self):
         try:
             ref = db.reference('/')
-            ref.set([self.data])
+            ref.set([self.repository.data])
         except Exception as e:
             print("Error sending data:", e)
 
@@ -105,3 +106,19 @@ class FirebaseRepo(RepoStrategy):
         if self.send_data_thread:
             self.send_data_thread.join()
         firebase_admin.delete_app(self.firebase_admin)
+
+class CompositeRepo(RepoStrategy):
+    def __init__(self, repository_):
+        super().__init__(repository_)
+        self.strategies = []
+    
+    def add_strategy(self, strategy):
+        self.strategies.append(strategy)
+    
+    def send(self):
+        for strategy in self.strategies:
+            strategy.send()
+    
+    def end(self):
+        for strategy in self.strategies:
+            strategy.end()
