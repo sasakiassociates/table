@@ -9,7 +9,7 @@ from sender import repository
 from ui import display
 
 FIREBASE_DEFAULT_URL = "https://magpietable-default-rtdb.firebaseio.com/"
-ARUCO_DEFAULT_DICT = "DICT_6X6_100"
+ARUCO_DEFAULT_DICT = "6X6_100"
 
 parser = argparse.ArgumentParser(description="Detect ArUco markers and send data to Firebase")
 
@@ -38,12 +38,21 @@ aruco_dict_name = args.aruco_dict
 def camera_loop(camera, _display):
     while not _display.terminate:
         frame = camera.videoCapture()
-        _display.update_video_image(frame)
+        if frame is not None:
+            _display.update_video_image(frame)
+        else:
+            print("Frame is None")
+            break
+        # _display.update_video_image(frame)
 
-def camera_loop_fullscreen(camera, _display):
+def camera_loop_fullscreen(camera, _display, color_background, color_markers, radius, filled):
     while not _display.terminate:
-        frame = camera.videoCapture()
-        _display.update_video_image_fullscreen(frame)
+        frame = camera.videoCapture(color_background, color_markers, radius, filled)
+        if frame is not None:
+            _display.update_video_image_fullscreen(frame)
+        else:
+            print("Frame is None")
+            break
 
 def debug_loop(camera, _display):
     while not _display.terminate:
@@ -57,7 +66,6 @@ if (__name__ == '__main__'):
     
     _display = display.Display()
 
-    aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_100)
     params = aruco.DetectorParameters()
     _repository = repository.Repository("udp")                  # New repository object that opens a UDP connection on a new thread
     
@@ -69,6 +77,8 @@ if (__name__ == '__main__'):
         _display.build_video_fullscreen()
     else:
         _display.build()
+
+    camera.setup()
     
     if DEBUG:
         print("Running in debug mode")
@@ -85,7 +95,7 @@ if (__name__ == '__main__'):
     else:
 
         if args.video_full:
-            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display))
+            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display, (255,255,255), (0,0,0), 30, False))
         else:
             camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
         camera_thread.daemon = True
