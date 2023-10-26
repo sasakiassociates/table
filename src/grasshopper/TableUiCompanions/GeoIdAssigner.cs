@@ -56,6 +56,16 @@ namespace TableUiCompanions
             if (!DA.GetDataList(0, geometries)) return;
             DA.GetDataList(1, ids);
 
+            // Check if the geometries are valid
+            foreach (IGH_GeometricGoo geo in geometries)
+            {
+                if (geo == null)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One or more geometries are invalid");
+                    return;
+                }
+            }
+
             if (ids.Count == 0)
             {
                 for (int i = 0; i < geometries.Count; i++)

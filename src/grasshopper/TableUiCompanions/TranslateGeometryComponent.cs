@@ -75,19 +75,14 @@ namespace TableUiCompanions
                     if (idPlanePairs.ContainsKey(id))
                     {
                         Plane plane = idPlanePairs[id];
-                        Console.WriteLine(geoWithId.Geometry);
+                        BoundingBox bbox = geoWithId.Boundingbox;
 
-                        // Now, the hard part. We need to translate the geometry to the plane while not knowing what the geometry is
+                        // We need to translate the geometry to the plane while not knowing what the geometry is
                         // We can't use the Translate method because it only works on Brep and Mesh
-
-                        foreach (GeometryBase geoBase in geoWithId.Geometry)
-                        {
-                            plane.Origin = geoBase.GetBoundingBox(false).Center;
-                            geoBase.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
-                            translatedGeometries.Add((IGH_GeometricGoo)geoBase);
-                        }
-
-
+                        // TODO this transform needs to be fixed
+                        plane.Origin = bbox.Center;
+                        geoWithId.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane));
+                        translatedGeometries.Add((IGH_GeometricGoo)geoWithId);
                     }
                 }
 
