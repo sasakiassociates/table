@@ -15,11 +15,11 @@ class Repository():
     def check_for_terminate(self):
         return self.strategy.terminate
         
-    def update(self, marker_json):
+    def update(self, uuid, marker_json):
         if marker_json['location'] == [0, 0, 0]:
-            self.data.pop(str(marker_json['id']), None)
+            self.data.pop(str(uuid), None)
         else:
-            self.data[str(marker_json['id'])] = marker_json
+            self.data[str(uuid)] = marker_json
             # self.data.setdefault(str(marker_json['id']), marker_json).update()
         self.new_data = True
         

@@ -122,6 +122,7 @@ class Camera():
                             y = marker.center[1]
                             cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
                             cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
+                            
                     for marker in self.my_markers:
                         if marker.is_visible == True and marker.id not in ids:
                             marker.lost_tracking()

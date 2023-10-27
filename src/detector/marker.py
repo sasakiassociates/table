@@ -2,12 +2,14 @@ import json
 import subprocess
 from abc import ABC, abstractmethod
 from math import pi
+import uuid
 
 import numpy as np
 
 @abstractmethod
 class Marker(ABC):
     def __init__(self, marker_id, timer_):
+        self.uuid = uuid.uuid4()
         self.id = marker_id
         self.observers = []
         self.is_visible = False
@@ -56,7 +58,7 @@ class Marker(ABC):
     
     def notify_observers(self):
         for observer in self.observers:
-            observer.update(self.build_json())
+            observer.update(self.uuid, self.build_json())
 
     def get_id(self):
         return self.id
@@ -180,6 +182,18 @@ class ProjectMarker(Marker):
 class GenericMarker(Marker):
     def __init__(self, marker_id, timer_):
         super().__init__(marker_id, timer_)
+
+
+# These markers work a little differently than others since they are not independent.
+# The observer for these is the "Zone" class. When this marker is detected, the Zone will see if the other markers are detected.
+# If all the necessary markers are there, it'll send it through the Repository.
+class ZoneMarker(Marker):
+    def __init__(self, marker_id, timer_):
+        super().__init__(marker_id, timer_)
+        self.zone = None
+
+    def associate_zone(self, zone_):
+        self.zone = zone_
 
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")
