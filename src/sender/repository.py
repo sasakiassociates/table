@@ -14,13 +14,13 @@ class Repository():
 
     def check_for_terminate(self):
         return self.strategy.terminate
+    
+    def lost_subject(self, uuid):
+        self.data.pop(str(uuid), None)
+        self.new_data = True
         
     def update(self, uuid, marker_json):
-        if marker_json['location'] == [0, 0, 0]:
-            self.data.pop(str(uuid), None)
-        else:
-            self.data[str(uuid)] = marker_json
-            # self.data.setdefault(str(marker_json['id']), marker_json).update()
+        self.data[str(uuid)] = marker_json
         self.new_data = True
         
 if (__name__ == '__main__'):

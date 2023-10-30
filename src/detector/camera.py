@@ -6,7 +6,7 @@ import numpy as np
 from cv2 import aruco
 
 from . import markerFactory as factory
-from . import marker as m
+from . import detectables as m
 from . import arucoReference as ar
 from . import timer as t
 
@@ -32,7 +32,7 @@ class Camera():
         dictionary_length = len(aruco_dict.bytesList)
         self.timer = t.Timer()
         self.timer.start()
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
+        self.my_markers, self.my_zones = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -127,6 +127,10 @@ class Camera():
                         if marker.is_visible == True and marker.id not in ids:
                             marker.lost_tracking()
                             marker.is_visible = False
+
+                    for zone in self.my_zones:
+                        if zone.is_visible:
+                            cv.rectangle(frame_color, (zone.bounding_box[0], zone.bounding_box[1]), (zone.bounding_box[2], zone.bounding_box[3]), zone.display_color, 3)
                 else:
                     for marker in self.my_markers:
                         if marker.is_visible == True:

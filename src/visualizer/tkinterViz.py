@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import math
-from detector import marker as m
+from detector import detectables as m
 import tkinter as tk
 
 class TkViz():
