@@ -32,7 +32,7 @@ class Camera():
         dictionary_length = len(aruco_dict.bytesList)
         self.timer = t.Timer()
         self.timer.start()
-        self.my_markers = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
+        self.my_markers, self.bounding_zone = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -131,6 +131,11 @@ class Camera():
                         if marker.is_visible == True:
                             marker.lost_tracking()
                             marker.is_visible = False
+
+                # Check the zones to see if any are fully visible
+                if self.bounding_zone.check_if_all_visible():
+                    self.bounding_zone.notify_observers()
+                    self.repository.new_data = True
                             
                 if self.repository.new_data:
                     self.repository.strategy.send()

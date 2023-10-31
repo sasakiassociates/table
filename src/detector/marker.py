@@ -181,6 +181,7 @@ class GenericMarker(Marker):
     def __init__(self, marker_id, timer_):
         super().__init__(marker_id, timer_)
 
+
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")
     

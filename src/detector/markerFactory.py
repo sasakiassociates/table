@@ -1,5 +1,6 @@
 import json
 from . import marker as m
+from . import zone as z
 # import marker as m
 
 import os
@@ -14,18 +15,24 @@ class MarkerFactory:
         # json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
         json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
 
-        project_marker_ids = []
+        assigned_marker_ids = []
+
+        # create the camera marker
+        camera_marker = m.GenericMarker(0, timer_)
+        camera_marker.attach_observer(observer)
+        marker_list.append(camera_marker)
+        assigned_marker_ids.append(0)
 
         if len(json_files) > 0:
             for file in json_files:
                 marker_id = int(file['marker_id'])
                 if marker_id > 1 & marker_id < dict_length:
-                    project_marker_ids.append(marker_id)           # Build a list of all the marker ids associated with a project file
+                    assigned_marker_ids.append(marker_id)           # Build a list of all the marker ids associated with a project file
                 elif marker_id == 0:
                     print(f"ERROR: {file['name']} has an ID ({marker_id}) that is reserved for camera control. Please change the ID of this project.")
                 else:
                     print(f"ERROR: {file['name']} has an ID ({marker_id}) that is out of range for this dictionary. The highest id in this dictionary is {dict_length - 1}. Please change the ID of this project.")
-            for marker_id in project_marker_ids:
+            for marker_id in assigned_marker_ids:
                 marker_id = int(marker_id)
                 new_project_marker = m.ProjectMarker(marker_id, timer_)
                 new_project_marker.attach_observer(observer)
@@ -35,22 +42,47 @@ class MarkerFactory:
                         break
                 marker_list.append(new_project_marker)              # Make a project marker for each marker id associated with a project file
 
+        # Next, let's make the bounding zone
+        bounding_zone = z.Zone('bounds')
+        for marker_id in range(1, 4):
+            if marker_id not in assigned_marker_ids:
+                marker = m.GenericMarker(marker_id, timer_)
+                bounding_zone.add_marker(marker)
+                assigned_marker_ids.append(marker_id)
+            else:
+                print(f"ERROR: Marker ID {marker_id} is already assigned to project {marker_list[marker_id].project_name}. Please change the ID of this project.")
+        bounding_zone.attach_observer(observer)
+
+        # Make the zones
+        # for i in range(0, num_of_zones):
+        #     # Make zone with 3 markers
+        #     zone = z.Zone(i)
+        #     for j in range(0, 3):
+        #         marker_id = i * 3 + j + 1
+        #         marker = m.GenericMarker(marker_id, timer_)
+        #         zone.add_marker(marker)
+        #         assigned_marker_ids.append(marker_id)
+        #     zone_list.append(zone)
+        
+
         # Finally, let's make the rest of the markers generic markers
         for i in range(0, dict_length):
-            if i not in project_marker_ids:
-                marker_list.append(m.GenericMarker(i, timer_))
-                marker_list[i].attach_observer(observer)
-        
+            if i not in assigned_marker_ids:
+                marker = m.GenericMarker(i, timer_)
+                marker.attach_observer(observer)
+                marker_list.append(marker)
+                assigned_marker_ids.append(i)
+
         marker_list[0].type = "camera"
 
-        print(f"Created {len(marker_list)} markers")
+        print(f"Created {len(assigned_marker_ids)} markers")
 
         # for marker in marker_list:
         #     print(f"Marker ID: {marker.id} | Marker Type: {marker.type}")
 
         marker_list.sort(key=lambda marker: marker.id) # Sort the markers by their id
 
-        return marker_list
+        return marker_list, bounding_zone
     
     """
     Returns the number of project files in the projects folder
