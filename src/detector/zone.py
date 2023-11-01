@@ -5,6 +5,7 @@ class Zone():
         self.markers = []
         self.name = name
         self.observers = []
+        self.type = "zone"
 
     def add_marker(self, marker_):
         self.markers.append(marker_)
@@ -18,6 +19,23 @@ class Zone():
                 return marker
         return None
     
+    def get_points(self):
+        points = []
+        for marker in self.markers:
+            points.append(marker.center)
+        return points
+    
+    def get_bounds(self):
+        points = []
+        for marker in self.markers:
+            points.append(marker.center)
+        min_x = min(points, key=lambda point: point[0])[0]
+        min_y = min(points, key=lambda point: point[1])[1]
+        max_x = max(points, key=lambda point: point[0])[0]
+        max_y = max(points, key=lambda point: point[1])[1]
+
+        return min_x, min_y, max_x, max_y
+    
     def check_if_all_visible(self):
         for marker in self.markers:
             if marker.is_visible == False:
@@ -29,13 +47,13 @@ class Zone():
 
     def notify_observers(self):
         for observer in self.observers:
-            observer.update(self.build_json())
+            observer.update(self.name, self.build_json(), self.type)
 
     def build_json(self):
         zone_data = {
-            "name": self.name,
-            "markers": []
+            "bounds": self.get_bounds(),
+            "markers": {}
         }
         for marker in self.markers:
-            zone_data["markers"].append(marker.build_json())
+            zone_data["markers"][marker.id] = marker.build_json()
         return zone_data

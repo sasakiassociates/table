@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
-        "./src/sender"
+        "./src/sender",
+        "./src/.env/lib/site-packages"
     ]
 }

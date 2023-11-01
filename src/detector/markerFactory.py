@@ -6,6 +6,8 @@ from . import zone as z
 import os
 import glob
 
+BOUNDING_ZONE_IDS = (42, 43, 44)
+
 class MarkerFactory:
     @staticmethod
     def make_markers(dict_length, observer, timer_):
@@ -16,12 +18,6 @@ class MarkerFactory:
         json_files = MarkerFactory.load_json_files("..\\projects")  # Find all files in the project folder
 
         assigned_marker_ids = []
-
-        # create the camera marker
-        camera_marker = m.GenericMarker(0, timer_)
-        camera_marker.attach_observer(observer)
-        marker_list.append(camera_marker)
-        assigned_marker_ids.append(0)
 
         if len(json_files) > 0:
             for file in json_files:
@@ -44,11 +40,13 @@ class MarkerFactory:
 
         # Next, let's make the bounding zone
         bounding_zone = z.Zone('bounds')
-        for marker_id in range(1, 4):
+        for marker_id in BOUNDING_ZONE_IDS:
             if marker_id not in assigned_marker_ids:
                 marker = m.GenericMarker(marker_id, timer_)
                 bounding_zone.add_marker(marker)
                 assigned_marker_ids.append(marker_id)
+                marker_list.append(marker)
+                print(f"Created marker {marker_id} for bounding zone")
             else:
                 print(f"ERROR: Marker ID {marker_id} is already assigned to project {marker_list[marker_id].project_name}. Please change the ID of this project.")
         bounding_zone.attach_observer(observer)
@@ -74,6 +72,9 @@ class MarkerFactory:
                 assigned_marker_ids.append(i)
 
         marker_list[0].type = "camera"
+
+        # Organize the list in order of marker id
+        marker_list.sort(key=lambda marker: marker.id)
 
         print(f"Created {len(assigned_marker_ids)} markers")
 

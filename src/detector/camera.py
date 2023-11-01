@@ -136,6 +136,10 @@ class Camera():
                 if self.bounding_zone.check_if_all_visible():
                     self.bounding_zone.notify_observers()
                     self.repository.new_data = True
+                    # Display the bounding zone
+                    min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
+
+                    cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
                             
                 if self.repository.new_data:
                     self.repository.strategy.send()

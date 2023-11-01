@@ -56,17 +56,18 @@ class Marker(ABC):
     
     def notify_observers(self):
         for observer in self.observers:
-            observer.update(self.build_json())
+            if self.is_visible:
+                observer.update(self.id, self.build_json(), self.type)
+            else:
+                observer.remove_from_sent_data(self.id)
 
     def get_id(self):
         return self.id
     
     def build_json(self):
         marker_data = {
-            "id": self.id,
             "location": [-self.center[0], -self.center[1], 0],
             "rotation": self.rotation,
-            "type": self.type,
         }
         return marker_data
     

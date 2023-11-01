@@ -14,14 +14,24 @@ class Repository():
 
     def check_for_terminate(self):
         return self.strategy.terminate
-        
-    def update(self, marker_json):
-        if marker_json['location'] == [0, 0, 0]:
-            self.data.pop(str(marker_json['id']), None)
-        else:
-            self.data[str(marker_json['id'])] = marker_json
-            # self.data.setdefault(str(marker_json['id']), marker_json).update()
+    
+    def remove_from_sent_data(self, id_):
+        self.data.pop(str(id_), None)
         self.new_data = True
+
+    def update(self, id_, json, object_type):
+        if object_type not in self.data:
+            self.data[object_type] = {}
+        self.data[str(object_type)][str(id_)] = json
+        self.new_data = True
+        
+    # def update(self, marker_json):
+    #     if marker_json['location'] == [0, 0, 0]:
+    #         self.data.pop(str(marker_json['id']), None)
+    #     else:
+    #         self.data[str(marker_json['id'])] = marker_json
+    #         # self.data.setdefault(str(marker_json['id']), marker_json).update()
+    #     self.new_data = True
         
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")
