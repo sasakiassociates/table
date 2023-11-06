@@ -18,12 +18,25 @@ namespace TableUiReceiver
 
             try
             {
-                Dictionary<string, Marker> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Marker>>(json);
+                Dictionary<string, Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, Marker>>>(json);
 
                 foreach (var deserialJson in deserialJsonList)
                 {
-                    Marker marker = deserialJson.Value;
-                    result.Add(marker);
+                    if (deserialJson.Key == "marker")
+                    {
+                        foreach (var marker in deserialJson.Value)
+                        {
+                            Marker incomingMarker = marker.Value;
+                            incomingMarker.id = int.Parse(marker.Key);
+                            incomingMarker.type = deserialJson.Key;
+                            result.Add(incomingMarker);
+                        }
+                    }
+                    else if (deserialJson.Key == "zone")
+                    {
+                        // Ignore it
+                        continue;
+                    }
                 }
             }
             catch (JsonException e)

@@ -7,7 +7,7 @@ class Timer(threading.Thread):
         self.time_since_start = 0  # The current elapsed time interval
         self.running = False
         self.lock = threading.Lock()
-        self.lost_markers = []
+        self.lost_objects = []
         self.time_last_sent = None
         self.send_interval = 100  # The time interval (in milliseconds) between sending data so it isn't sent too often  
 
@@ -17,10 +17,10 @@ class Timer(threading.Thread):
             time.sleep(0.001)  # Sleep for 1 millisecond
             with self.lock:
                 self.time_since_start += 1                  # Increment the time since start
-                for marker in self.lost_markers:            # Loop through the lost markers
-                    if self.time_since_start - marker.time_last_seen > marker.lost_threshold:
-                        marker.lost()                       # If the marker has been lost for more than its lost_threshold, report it as lost
-                        self.lost_markers.remove(marker)    # Remove the marker from the list of lost markers
+                for orphan in self.lost_objects:            # Loop through the lost items (orphans)
+                    if self.time_since_start - orphan.time_last_seen > orphan.lost_threshold:
+                        orphan.lost()                       # If the orphan has been lost for more than its lost_threshold, report it as lost
+                        self.lost_objects.remove(orphan)    # Remove the orphan from the list of lost orphan
 
     def check_if_send(self):
         if self.time_last_sent is None:
@@ -36,16 +36,16 @@ class Timer(threading.Thread):
     def stop(self):
         self.running = False
 
-    def report_lost(self, marker):
+    def report_lost(self, orphan):
         with self.lock:                                     # Lock the thread so we don't have multiple threads trying to access the same data
-            marker.time_last_seen = self.time_since_start   # Set the marker's time since seen to the current time
-            self.lost_markers.append(marker)                # Add the marker to the list of lost markers to keep track of
+            orphan.time_last_seen = self.time_since_start   # Set the orphan's time since seen to the current time
+            self.lost_objects.append(orphan)                # Add the orphan to the list of lost orphans to keep track of
     
-    def report_found(self, marker):
+    def report_found(self, orphan):
         with self.lock:
-            marker.time_last_seen = None
-            if marker in self.lost_markers:
-                self.lost_markers.remove(marker)
+            orphan.time_last_seen = None
+            if orphan in self.lost_objects:
+                self.lost_objects.remove(orphan)
 
 if __name__ == "__main__":
     # Create a Timer thread

@@ -22,7 +22,7 @@ class Marker(ABC):
 
         self.timer = timer_         # A reference to the timer object so we can report when a marker is lost
         self.time_last_seen = None
-        self.lost_threshold = 500     # sets the time (in milliseconds) before a marker is considered lost
+        self.lost_threshold = 1000     # sets the time (in milliseconds) before a marker is considered lost
 
         self.type = "marker"
 
@@ -31,7 +31,7 @@ class Marker(ABC):
     def found(self):
         self.is_visible = True
         self.timer.report_found(self)
-        self.notify_observers()
+        # self.notify_observers()
 
     def flip_center(self, width):
         self.center = (width - self.center[0], self.center[1])
@@ -59,7 +59,7 @@ class Marker(ABC):
             if self.is_visible:
                 observer.update(self.id, self.build_json(), self.type)
             else:
-                observer.remove_from_sent_data(self.id)
+                observer.remove_from_sent_data(self.type, self.id)
 
     def get_id(self):
         return self.id

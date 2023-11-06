@@ -27,7 +27,6 @@ namespace TableUiReceiver
             set { _rotation = SmoothRotation(value);}
         }
         public string type { get; set; }
-        public string name { get; set; }
 
         // Internal variables for smoothing so the setter doesn't call itself recursively
         private int[] _location;

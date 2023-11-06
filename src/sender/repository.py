@@ -10,18 +10,22 @@ class Repository():
 
     def close_threads(self):
         if self.strategy.terminate == False:
-            self.strategy.teminate = True
+            self.strategy.terminate = True
 
     def check_for_terminate(self):
         return self.strategy.terminate
     
-    def remove_from_sent_data(self, id_):
-        self.data.pop(str(id_), None)
+    def remove_from_sent_data(self, object_type, id_):
+        if object_type in self.data and str(id_) in self.data[object_type]:
+            del self.data[str(object_type)][str(id_)]
+            if self.data[str(object_type)] == {}:
+                del self.data[str(object_type)]
+        # self.data[object_type].pop(str(id_), None)
         self.new_data = True
 
     def update(self, id_, json, object_type):
         if object_type not in self.data:
-            self.data[object_type] = {}
+            self.data[str(object_type)] = {}
         self.data[str(object_type)][str(id_)] = json
         self.new_data = True
         

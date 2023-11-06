@@ -6,7 +6,7 @@ from . import zone as z
 import os
 import glob
 
-BOUNDING_ZONE_IDS = (42, 43, 44)
+BOUNDING_ZONE_IDS = (5, 10, 11)
 
 class MarkerFactory:
     @staticmethod
@@ -39,7 +39,7 @@ class MarkerFactory:
                 marker_list.append(new_project_marker)              # Make a project marker for each marker id associated with a project file
 
         # Next, let's make the bounding zone
-        bounding_zone = z.Zone('bounds')
+        bounding_zone = z.Zone('model_space', timer_)
         for marker_id in BOUNDING_ZONE_IDS:
             if marker_id not in assigned_marker_ids:
                 marker = m.GenericMarker(marker_id, timer_)

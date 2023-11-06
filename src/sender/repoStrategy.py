@@ -69,7 +69,7 @@ class UDPRepo(RepoStrategy):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             message = str(self.repository.data)
-            print(message)
+            # print(message)
             message_bytes = message.encode('utf-8')
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
             _socket.close()
@@ -98,7 +98,7 @@ class FirebaseRepo(RepoStrategy):
     def send(self):
         try:
             ref = db.reference('/')
-            ref.set([self.repository.data])
+            ref.set(self.repository.data)
         except Exception as e:
             print("Error sending data:", e)
 

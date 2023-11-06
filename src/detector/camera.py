@@ -134,8 +134,6 @@ class Camera():
 
                 # Check the zones to see if any are fully visible
                 if self.bounding_zone.check_if_all_visible():
-                    self.bounding_zone.notify_observers()
-                    self.repository.new_data = True
                     # Display the bounding zone
                     min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
 

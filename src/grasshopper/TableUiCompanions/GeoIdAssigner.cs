@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Diagnostics;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
@@ -11,6 +11,8 @@ namespace TableUiCompanions
     {
         List<IGH_GeometricGoo> geometries = new List<IGH_GeometricGoo>();           // IGH_GeometricGoo allows us to work with custom Magpie Geometry as well as all Rhino Geometries
         List<int> ids = new List<int>();
+        Plane originPlane = new Plane();
+        int rotation = 0;
 
         List<GeometryWithId> assignedGeometries = new List<GeometryWithId>();
 
@@ -19,7 +21,7 @@ namespace TableUiCompanions
         /// </summary>
         public GeoIdAssigner()
           : base("GeoIdAssigner", "Nickname",
-              "Description",
+              "Makes a new object that holds a geometry and an ID, also moves the geometry to the origin to be available to move.",
               "Strategist", "TableUI")
         {
         }
@@ -31,8 +33,10 @@ namespace TableUiCompanions
         {
             pManager.AddGeometryParameter("Geometries", "G", "The geometries to be assigned IDs", GH_ParamAccess.list);
             pManager.AddIntegerParameter("IDs", "ID", "The IDs of the markers to assign the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Origin Plane", "Origin", "The plane that all geometries will be transformed in resepct to", GH_ParamAccess.item);
 
             pManager[1].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -55,23 +59,14 @@ namespace TableUiCompanions
 
             if (!DA.GetDataList(0, geometries)) return;
             DA.GetDataList(1, ids);
-
-            // Check if the geometries are valid
-            foreach (IGH_GeometricGoo geo in geometries)
-            {
-                if (geo == null)
-                {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One or more geometries are invalid");
-                    return;
-                }
-            }
+            DA.GetData(2, ref originPlane);
 
             if (ids.Count == 0)
             {
                 for (int i = 0; i < geometries.Count; i++)
                 {
                     int id = i + 1;
-                    IGH_GeometricGoo geo = geometries[i];
+                    IGH_GeometricGoo geo = geometries[i].DuplicateGeometry();
 
                     GeometryWithId assignedGeo = new GeometryWithId(geo, id);
                     assignedGeometries.Add(assignedGeo);

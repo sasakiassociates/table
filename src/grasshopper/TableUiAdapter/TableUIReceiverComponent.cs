@@ -166,13 +166,17 @@ namespace TableUiAdapter
                             marker.location[0] = (int)(marker.location[0] * scale);
                             marker.location[1] = (int)(marker.location[1] * scale);
 
-                            if (topo != null)
+/*                            if (topo != null)
                             {
                                 Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
                                 Point3d topoPoint = topo.ClosestPoint(markerPoint);
                                 marker.location[2] = (int)topoPoint.Z + cameraHeight;
                             }
-                            Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], marker.location[2]), Vector3d.ZAxis);
+                            else
+                            {
+                                marker.location[2] = 0;
+                            }*/
+                            Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], 0), Vector3d.ZAxis);
                             plane.Rotate(marker.rotation, Vector3d.ZAxis);
                             planes.Add(plane);
                             break;
