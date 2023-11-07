@@ -14,7 +14,8 @@ namespace TableUiCompanions
         Plane originPlane = new Plane();
         int rotation = 0;
 
-        List<GeometryWithId> assignedGeometries = new List<GeometryWithId>();
+        Dictionary<int, IGH_GeometricGoo> assignedGeometries = new Dictionary<int, IGH_GeometricGoo>();
+        //List<GeometryWithId> assignedGeometries = new List<GeometryWithId>();
 
         /// <summary>
         /// Initializes a new instance of the GeoIdAssigner class.
@@ -44,7 +45,8 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Assigned Geometries", "AG", "The geometries with IDs assigned", GH_ParamAccess.list);
+            //pManager.AddGeometryParameter("Assigned Geometries", "AG", "The geometries with IDs assigned", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Assigned Geometries", "AG", "The geometries with IDs assigned", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -68,8 +70,10 @@ namespace TableUiCompanions
                     int id = i + 1;
                     IGH_GeometricGoo geo = geometries[i].DuplicateGeometry();
 
-                    GeometryWithId assignedGeo = new GeometryWithId(geo, id);
-                    assignedGeometries.Add(assignedGeo);
+                    assignedGeometries.Add(id, geo);
+
+                    //GeometryWithId assignedGeo = new GeometryWithId(geo, id);
+                    //assignedGeometries.Add(assignedGeo);
                 }
             }
             else
@@ -84,8 +88,10 @@ namespace TableUiCompanions
                     int index = ids.IndexOf(id);
                     IGH_GeometricGoo geo = geometries[index];
 
-                    GeometryWithId assignedGeo = new GeometryWithId(geo, id);
-                    assignedGeometries.Add(assignedGeo);
+                    assignedGeometries.Add(id, geo);
+
+                    //GeometryWithId assignedGeo = new GeometryWithId(geo, id);
+                    //assignedGeometries.Add(assignedGeo);
                 }
             }
 
