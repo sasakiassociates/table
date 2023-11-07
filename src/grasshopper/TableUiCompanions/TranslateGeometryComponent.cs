@@ -56,6 +56,7 @@ namespace TableUiCompanions
             List<Plane> planes = new List<Plane>();
 
             // Internal
+            Dictionary<int, IGH_GeometricGoo> assignedGeometries = new Dictionary<int, IGH_GeometricGoo>();
             Dictionary<int, Plane> idPlanePairs = new Dictionary<int, Plane>();
 
             // Outputs
@@ -65,6 +66,25 @@ namespace TableUiCompanions
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
+                if (geometries.Count == 0 || ids.Count == 0 || detectedIds.Count == 0 || planes.Count == 0)
+                {
+                    ReportProgress("No geometries or IDs detected", 0);
+                    return;
+                }
+                else if (geometries.Count != ids.Count)
+                {
+                    ReportProgress("Number of geometries and IDs do not match", 0);
+                    return;
+                }
+                else if (detectedIds.Count != planes.Count)
+                {
+                    ReportProgress("Number of detected IDs and planes do not match", 0);
+                    return;
+                }
+                for (int i = 0; i < ids.Count; i++)
+                {
+                    assignedGeometries.Add(ids[i], geometries[i]);
+                }
                 // Build a dictionary of planes and their corresponding IDs
                 for (int i = 0; i < detectedIds.Count; i++)
                 {
@@ -80,9 +100,9 @@ namespace TableUiCompanions
                     {
                         Plane plane = idPlanePairs[id];         // Get the plane corresponding to the id
 
-                        if (geometries[i] != null)
+                        if (assignedGeometries.ContainsKey(id)) // If the id matches an id in the dictionary
                         {
-                            geometry = geometries[i].Transform(Transform.PlaneToPlane(Plane.WorldXY, plane)).DuplicateGeometry(); // Translate the geometry to the plane
+                            geometry = assignedGeometries[id].Transform(Transform.PlaneToPlane(Plane.WorldXY, plane)).DuplicateGeometry(); // Translate the geometry to the plane
                         }
                         else
                         {
