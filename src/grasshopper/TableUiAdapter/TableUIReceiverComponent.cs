@@ -295,8 +295,11 @@ namespace TableUiAdapter
             base.RemovedFromDocument(document);
             isListening = false;
             run = false;
-            _repository.Disconnect();
-            _repository = null;
+            if (_repository != null)
+            {
+                _repository.Disconnect();
+                _repository = null;
+            }
         }
 
         /// <summary>
