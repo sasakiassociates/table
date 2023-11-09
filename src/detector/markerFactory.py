@@ -6,7 +6,7 @@ from . import zone as z
 import os
 import glob
 
-BOUNDING_ZONE_IDS = (5, 10, 11)
+BOUNDING_ZONE_IDS = ()
 
 class MarkerFactory:
     @staticmethod
@@ -39,17 +39,21 @@ class MarkerFactory:
                 marker_list.append(new_project_marker)              # Make a project marker for each marker id associated with a project file
 
         # Next, let's make the bounding zone
-        bounding_zone = z.Zone('model_space', timer_)
-        for marker_id in BOUNDING_ZONE_IDS:
-            if marker_id not in assigned_marker_ids:
-                marker = m.GenericMarker(marker_id, timer_)
-                bounding_zone.add_marker(marker)
-                assigned_marker_ids.append(marker_id)
-                marker_list.append(marker)
-                print(f"Created marker {marker_id} for bounding zone")
-            else:
-                print(f"ERROR: Marker ID {marker_id} is already assigned to project {marker_list[marker_id].project_name}. Please change the ID of this project.")
-        bounding_zone.attach_observer(observer)
+        if BOUNDING_ZONE_IDS == ():
+            print("No zone defined, skipping zone creation")
+            bounding_zone = None
+        else:
+            bounding_zone = z.Zone('model_space', timer_)
+            for marker_id in BOUNDING_ZONE_IDS:
+                if marker_id not in assigned_marker_ids:
+                    marker = m.GenericMarker(marker_id, timer_)
+                    bounding_zone.add_marker(marker)
+                    assigned_marker_ids.append(marker_id)
+                    marker_list.append(marker)
+                    print(f"Created marker {marker_id} for bounding zone")
+                else:
+                    print(f"ERROR: Marker ID {marker_id} is already assigned to project {marker_list[marker_id].project_name}. Please change the ID of this project.")
+            bounding_zone.attach_observer(observer)
 
         # Make the zones
         # for i in range(0, num_of_zones):

@@ -133,11 +133,12 @@ class Camera():
                             marker.is_visible = False
 
                 # Check the zones to see if any are fully visible
-                if self.bounding_zone.check_if_all_visible():
-                    # Display the bounding zone
-                    min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
+                if self.bounding_zone is not None:
+                    if self.bounding_zone.check_if_all_visible():
+                        # Display the bounding zone
+                        min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
 
-                    cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
+                        cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
                             
                 if self.repository.new_data:
                     self.repository.strategy.send()

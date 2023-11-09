@@ -208,7 +208,14 @@ namespace GrasshopperAsyncComponent
       if (Workers.Count > 0)
       {
         Interlocked.Decrement(ref State);
-        Workers[State].SetData(DA);
+        if (State >= 0 && State < Workers.Count)
+        {
+            Workers[State].SetData(DA);
+        }
+        else
+        {
+            // Handle the case where State is out of range, e.g., by displaying an error message or taking appropriate action.
+        }
       }
 
       if (State != 0)

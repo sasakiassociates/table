@@ -36,6 +36,13 @@ namespace TableUiCompanions
             pManager.AddIntegerParameter("IDs", "IDs", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Detected IDs", "ID", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Detected Marker Planes", "P", "The planes to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
+            pManager.AddNumberParameter("X Scale", "X", "The scale of the X axis", GH_ParamAccess.item, 1);
+            pManager.AddNumberParameter("Y Scale", "Y", "The scale of the Y axis", GH_ParamAccess.item, 1);
+            pManager.AddPlaneParameter("Origin", "O", "The new origin of the translated geometry", GH_ParamAccess.item, Plane.WorldXY);
+
+            pManager[4].Optional = true;
+            pManager[5].Optional = true;
+            pManager[6].Optional = true;
         }
 
         /// <summary>
@@ -54,6 +61,9 @@ namespace TableUiCompanions
             List<int> ids = new List<int>();
             List<int> detectedIds = new List<int>();
             List<Plane> planes = new List<Plane>();
+            double xScale;
+            double yScale;
+            Plane origin;
 
             // Internal
             Dictionary<int, IGH_GeometricGoo> assignedGeometries = new Dictionary<int, IGH_GeometricGoo>();
@@ -88,7 +98,14 @@ namespace TableUiCompanions
                 // Build a dictionary of planes and their corresponding IDs
                 for (int i = 0; i < detectedIds.Count; i++)
                 {
-                    idPlanePairs.Add(detectedIds[i], planes[i]);
+                    Plane plane = planes[i];
+                    plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, origin));
+                    Vector3d distanceVector = plane.Origin - origin.Origin;
+                    // Multiply the scale of the vector by the distance scaling
+                    distanceVector *= xScale;
+                    // Translate the plane by the distance vector
+                    plane.Translate(distanceVector);
+                    idPlanePairs.Add(detectedIds[i], plane);
                 }
                 
                 for (int i = 0 ; i < detectedIds.Count ; i++) // Go through each of the detected ids
@@ -102,14 +119,14 @@ namespace TableUiCompanions
 
                         if (assignedGeometries.ContainsKey(id)) // If the id matches an id in the dictionary
                         {
-                            geometry = assignedGeometries[id].Transform(Transform.PlaneToPlane(Plane.WorldXY, plane)).DuplicateGeometry(); // Translate the geometry to the plane
+                            geometry = assignedGeometries[id].DuplicateGeometry();
+                            geometry = geometry.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane)); // Translate the geometry to the plane
                         }
                         else
                         {
                             break;
                         }
 
-                        geometry.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane)); // Translate the geometry to the plane
                         translatedGeometries.Add(geometry); // Add the translated geometry to the list of translated geometries
                     }
                 }
@@ -124,6 +141,9 @@ namespace TableUiCompanions
                 DA.GetDataList("IDs", ids);
                 DA.GetDataList("Detected IDs", detectedIds);
                 DA.GetDataList("Detected Marker Planes", planes);
+                DA.GetData("X Scale", ref xScale);
+                DA.GetData("Y Scale", ref yScale);
+                DA.GetData("Origin", ref origin);
             }
 
             public override void SetData(IGH_DataAccess DA)
