@@ -31,9 +31,8 @@ namespace TableUiCompanions
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            //pManager.AddGeometryParameter("Geometries", "G", "The geometries to be translated (named using TableUI's GeometryAssigner Component)", GH_ParamAccess.list);
             pManager.AddGeometryParameter("Geometries", "G", "The geometries to be translated", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("IDs", "IDs", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("IDs", "IDs", "The IDs to assign to geometries", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Detected IDs", "ID", "The IDs of the markers to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Detected Marker Planes", "P", "The planes to translate the geometry to (from TableUI Receiver Component)", GH_ParamAccess.list);
             pManager.AddNumberParameter("X Scale", "X", "The scale of the X axis", GH_ParamAccess.item, 1);
@@ -99,12 +98,14 @@ namespace TableUiCompanions
                 for (int i = 0; i < detectedIds.Count; i++)
                 {
                     Plane plane = planes[i];
+                    // Translate the plane to be relative to the new origin
                     plane.Transform(Transform.PlaneToPlane(Plane.WorldXY, origin));
                     Vector3d distanceVector = plane.Origin - origin.Origin;
                     // Multiply the scale of the vector by the distance scaling
                     distanceVector *= xScale;
                     // Translate the plane by the distance vector
                     plane.Translate(distanceVector);
+                    // Add the plane to the dictionary
                     idPlanePairs.Add(detectedIds[i], plane);
                 }
                 
@@ -119,12 +120,16 @@ namespace TableUiCompanions
 
                         if (assignedGeometries.ContainsKey(id)) // If the id matches an id in the dictionary
                         {
+                            if (assignedGeometries[id] == null) // If the geometry is null
+                            {
+                                continue;
+                            }
                             geometry = assignedGeometries[id].DuplicateGeometry();
                             geometry = geometry.Transform(Transform.PlaneToPlane(Plane.WorldXY, plane)); // Translate the geometry to the plane
                         }
                         else
                         {
-                            break;
+                            continue;
                         }
 
                         translatedGeometries.Add(geometry); // Add the translated geometry to the list of translated geometries
