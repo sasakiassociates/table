@@ -43,7 +43,7 @@ class MarkerFactory:
             print("No zone defined, skipping zone creation")
             bounding_zone = None
         else:
-            bounding_zone = z.Zone('model_space', timer_)
+            bounding_zone = z.Collection('model_space', timer_)
             for marker_id in BOUNDING_ZONE_IDS:
                 if marker_id not in assigned_marker_ids:
                     marker = m.GenericMarker(marker_id, timer_)

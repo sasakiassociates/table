@@ -119,18 +119,43 @@ namespace TableUiAdapter
                 }
 
                 string incomingJson = await _repository.Receive(cancellationToken);        // Keep listening for incoming messages until we get one or the cancellation token is triggered
-                List<Marker> incomingMarkers = Parser.Parse(incomingJson);                  // Get the important values from the JSON
+                List<ParsableObject> incomingObjects = Parser.Parse(incomingJson);                  // Get the important values from the JSON
                 
                 ids = new List<int>();
                 planes = new List<Plane>();
 
-                if (incomingMarkers == null) break;                                         // If there are no markers, stop listening
+                if (incomingObjects == null) break;                                         // If there are no markers, stop listening
 
-                foreach (Marker marker in incomingMarkers)
+                foreach (ParsableObject incomingObject in incomingObjects)
                 {
-                    ids.Add(marker.id);
+                    if (incomingObject is Marker marker)
+                    {
+                        ids.Add(marker.id);
 
-                    switch (marker.type)
+                        if (marker.type == "marker")
+                        {
+                            marker.location[0] = (int)(marker.location[0] * scale);
+                            marker.location[1] = (int)(marker.location[1] * scale);
+
+                            if (topo != null)
+                            {
+                                Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
+                                Point3d topoPoint = topo.ClosestPoint(markerPoint);
+                                marker.location[2] = (int)topoPoint.Z + cameraHeight;
+                            }
+                            else
+                            {
+                                marker.location[2] = 0;
+                            }
+                            Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], marker.location[2]), Vector3d.ZAxis);
+                            plane.Rotate(marker.rotation, Vector3d.ZAxis);
+                            planes.Add(plane);
+                        }
+                    }
+
+                    / 
+
+                    /*switch (marker.type)
                     {
                         case "camera":
                             if (cameraTracking)
@@ -166,7 +191,7 @@ namespace TableUiAdapter
                             marker.location[0] = (int)(marker.location[0] * scale);
                             marker.location[1] = (int)(marker.location[1] * scale);
 
-/*                            if (topo != null)
+*//*                            if (topo != null)
                             {
                                 Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
                                 Point3d topoPoint = topo.ClosestPoint(markerPoint);
@@ -175,12 +200,12 @@ namespace TableUiAdapter
                             else
                             {
                                 marker.location[2] = 0;
-                            }*/
+                            }*//*
                             Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], 0), Vector3d.ZAxis);
                             plane.Rotate(marker.rotation, Vector3d.ZAxis);
                             planes.Add(plane);
                             break;
-                    }
+                    }*/
                 }
 
                 // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)

@@ -1,5 +1,6 @@
 import json
 import subprocess
+import uuid
 from abc import ABC, abstractmethod
 from math import pi
 
@@ -8,13 +9,14 @@ import numpy as np
 @abstractmethod
 class Marker(ABC):
     def __init__(self, marker_id, timer_):
+        self.uuid = uuid.uuid4()
         self.id = marker_id
         self.observers = []
         self.is_visible = False
         
         self.rotation = 0
         self.prev_rotation = 0
-        self.rotation_threshold = pi/40
+        self.rotation_threshold = pi/32
         
         self.center = (0,0)
         self.prev_center = (0,0)
@@ -57,7 +59,7 @@ class Marker(ABC):
     def notify_observers(self):
         for observer in self.observers:
             if self.is_visible:
-                observer.update(self.id, self.build_json(), self.type)
+                observer.update(self.uuid, self.build_json(), self.type)
             else:
                 observer.remove_from_sent_data(self.type, self.id)
 
@@ -66,6 +68,7 @@ class Marker(ABC):
     
     def build_json(self):
         marker_data = {
+            "id": self.id,
             "location": [-self.center[0], -self.center[1], 0],
             "rotation": self.rotation,
         }

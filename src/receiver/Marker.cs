@@ -5,7 +5,7 @@ using System.Text;
 namespace TableUiReceiver
 {
     // TODO Markers need to be persistent elements so they can smooth themselves
-    public class Marker
+    public class Marker : ParsableObject
     {
         // Main constructor for creatring markers to remember
         public Marker(int id)
@@ -16,6 +16,7 @@ namespace TableUiReceiver
         public Marker() { }
 
         public int id { get; set; }
+        public int uuid { get; set; }
         public int[] location
         {
             get { return _location; }

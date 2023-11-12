@@ -7,9 +7,9 @@ namespace TableUiReceiver
 {
     public class Parser
     {
-        public static List<Marker> Parse(string json)
+        public static List<ParsableObject> Parse(string json)
         {
-            List<Marker> result = new List<Marker>();
+            List<ParsableObject> result = new List<ParsableObject>();
 
             if (json == null)
             {
@@ -18,24 +18,26 @@ namespace TableUiReceiver
 
             try
             {
-                Dictionary<string, Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, Marker>>>(json);
+                Dictionary<string, Dictionary<string, ParsableObject>> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, ParsableObject>>>(json);
 
                 foreach (var deserialJson in deserialJsonList)
                 {
-                    if (deserialJson.Key == "marker")
+                    foreach (var item in deserialJson.Value)
                     {
-                        foreach (var marker in deserialJson.Value)
+                        if (item.Value.GetType() == typeof(Marker))
                         {
-                            Marker incomingMarker = marker.Value;
-                            incomingMarker.id = int.Parse(marker.Key);
+                            Marker incomingMarker = (Marker)item.Value;
+                            incomingMarker.uuid = int.Parse(item.Key);
                             incomingMarker.type = deserialJson.Key;
                             result.Add(incomingMarker);
                         }
-                    }
-                    else if (deserialJson.Key == "zone")
-                    {
-                        // Ignore it
-                        continue;
+                        else if (item.Value.GetType() == typeof(Collection))
+                        {
+                            Collection collection = (Collection)item.Value;
+                            collection.uuid = int.Parse(item.Key);
+                            collection.type = deserialJson.Key;
+                            result.Add(collection);
+                        }
                     }
                 }
             }

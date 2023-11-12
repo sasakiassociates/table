@@ -23,10 +23,10 @@ class Repository():
         # self.data[object_type].pop(str(id_), None)
         self.new_data = True
 
-    def update(self, id_, json, object_type):
+    def update(self, uuid, json, object_type):
         if object_type not in self.data:
             self.data[str(object_type)] = {}
-        self.data[str(object_type)][str(id_)] = json
+        self.data[str(object_type)][str(uuid)] = json
         self.new_data = True
         
     # def update(self, marker_json):

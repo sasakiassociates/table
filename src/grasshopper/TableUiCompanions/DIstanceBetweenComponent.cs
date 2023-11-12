@@ -100,9 +100,19 @@ namespace TableUiCompanions
             double maxDistance = 500.0;
             maxDistance = maxDistance * scale;
 
-            // Map the value to the new range
-            value = min + (value - minDistance) * (max - min) / (maxDistance - minDistance);
-
+            if (value < minDistance)
+            {
+                value = min;
+            }
+            else if (value > maxDistance)
+            {
+                value = max;
+            }
+            else
+            {
+                // Map the value to the new range
+                value = min + (value - minDistance) * (max - min) / (maxDistance - minDistance);
+            }
             return value;
         }
 
