@@ -15,12 +15,11 @@ class Repository():
     def check_for_terminate(self):
         return self.strategy.terminate
     
-    def remove_from_sent_data(self, object_type, id_):
-        if object_type in self.data and str(id_) in self.data[object_type]:
-            del self.data[str(object_type)][str(id_)]
+    def remove(self, object_type, uuid):
+        if object_type in self.data and str(uuid) in self.data[object_type]:
+            del self.data[str(object_type)][str(uuid)]
             if self.data[str(object_type)] == {}:
                 del self.data[str(object_type)]
-        # self.data[object_type].pop(str(id_), None)
         self.new_data = True
 
     def update(self, uuid, json, object_type):

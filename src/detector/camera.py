@@ -6,18 +6,18 @@ import numpy as np
 from cv2 import aruco
 
 from . import markerFactory as factory
-from . import marker as m
+from . import detectables as m
 from . import arucoReference as ar
 from . import timer as t
+from . import board as b
 
 import os
 
 class Camera():
-    def __init__(self, camera_num, aruco_dict_name, params, repository_):
+    def __init__(self, camera_num, aruco_dict_name, params, repository_, board):
         self.repository = repository_
 
         aruco_dict_name = f'DICT_{aruco_dict_name}'
-        # aruco_dict_name = f'DICT_6X6_1000'
         aruco_dict_name = aruco_dict_name.upper()
 
         if aruco_dict_name in ar.aruco_dict_mapping.keys():
@@ -29,16 +29,19 @@ class Camera():
             aruco_dict = aruco.getPredefinedDictionary(ar.aruco_dict_mapping['DICT_6X6_100'])
             print("Using default dictionary: DICT_6X6_100")
 
-        dictionary_length = len(aruco_dict.bytesList)
         self.timer = t.Timer()
         self.timer.start()
-        self.my_markers, self.bounding_zone = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
+        self.cam_width = int(self.cap.get(3))
+        self.cam_height = int(self.cap.get(4))
 
+        self.board = board
+        self.board.setup(len(aruco_dict.bytesList), self.repository, self.timer, (self.cam_width, self.cam_height), camera_num, 20)
+        
         self.background_color = (0, 0, 0)
 
         self.matrix = None
@@ -46,28 +49,27 @@ class Camera():
 
         if not self.cap.isOpened():
             print("Cannot open camera")
+            self.repository.close_threads()
+            self.timer.stop()
             exit()
 
     def setup(self):
-        cam_width = int(self.cap.get(3))
-        cam_height = int(self.cap.get(4))
-
         matrix_directory = f"{os.getcwd()}\\marker_setup\\calibration_matrices"
-        matrix_file = f"{matrix_directory}\\{cam_width}x{cam_height}_matrix.npy"
-        distortion_file = f"{matrix_directory}\\{cam_width}x{cam_height}_distortion.npy"
+        matrix_file = f"{matrix_directory}\\{self.cam_width}x{self.cam_height}_matrix.npy"
+        distortion_file = f"{matrix_directory}\\{self.cam_width}x{self.cam_height}_distortion.npy"
 
         if os.path.exists(matrix_file) and os.path.exists(distortion_file):
             self.matrix = np.load(matrix_file)
             self.distortion = np.load(distortion_file)
-            print("Loaded calibration matrices for camera of dimensions: ", cam_width, "x", cam_height)
+            print("Loaded calibration matrices for camera of dimensions: ", self.cam_width, "x", self.cam_height)
         else:
-            print("No calibration matrices found for camera of dimensions: ", cam_width, "x", cam_height)
+            print("No calibration matrices found for camera of dimensions: ", self.cam_width, "x", self.cam_height)
 
             
     """
     Loop through the markers and update them
     """
-    def videoCapture(self, radius=15, filled=True, color_background=None, color_markers=(100, 0, 0)):
+    def videoCapture(self):
         try:
             ret, frame = self.cap.read()
             if ret:
@@ -92,59 +94,13 @@ class Camera():
 
                 frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
 
-                if color_background is not None:
-                    cv.rectangle(frame_color, (0, 0), (frame_color.shape[1], frame_color.shape[0]), color_background, -1)
-                
-                if filled:
-                    fill = -1
-                else:
-                    fill = 3
+                frame_marked = self.board.marker_loop(frame_color, ids, corners)
 
-                # Loop through the markers and update them
-                #self.markerLoop(ids, corners)
-                if ids is not None:
-                    for marker_id, marker_corners in zip(ids, corners):
-                        marker = self.my_markers[int(marker_id)]
-
-                        if isinstance(marker, m.ProjectMarker):
-                            if marker.running == False:
-                                marker.open_project()
-                        else:
-                            if marker.is_visible == False:
-                                marker.found()
-                                marker.track(marker_corners)
-                                marker.flip_center(frame_color.shape[1])
-                            else:
-                                marker.track(marker_corners)
-                                marker.flip_center(frame_color.shape[1])
-                            
-                            x = marker.center[0]
-                            y = marker.center[1]
-                            cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
-                            cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
-                    for marker in self.my_markers:
-                        if marker.is_visible == True and marker.id not in ids:
-                            marker.lost_tracking()
-                            marker.is_visible = False
-                else:
-                    for marker in self.my_markers:
-                        if marker.is_visible == True:
-                            marker.lost_tracking()
-                            marker.is_visible = False
-
-                # Check the zones to see if any are fully visible
-                if self.bounding_zone is not None:
-                    if self.bounding_zone.check_if_all_visible():
-                        # Display the bounding zone
-                        min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
-
-                        cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
-                            
                 if self.repository.new_data:
                     self.repository.strategy.send()
                     self.repository.new_data = False
 
-                return frame_color
+                return frame_marked
         except Exception as e:
             sys.stderr.write(str(e))
             traceback.print_exc()

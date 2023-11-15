@@ -4,7 +4,7 @@ import threading
 
 from cv2 import aruco
 
-from detector import camera
+from detector import camera, board
 from sender import repository
 from ui import display
 
@@ -68,12 +68,16 @@ if (__name__ == '__main__'):
     
     _display = display.Display()
 
-    params = aruco.DetectorParameters()
+    
     _repository = repository.Repository(mode)                  # New repository object that opens a UDP connection on a new thread
+    _board = board.Board()                                     # New board object that contains all the markers
+    _board.set_draw_params(10, -1, (100, 0, 0))                              # Set the draw parameters for the markers
     
     camera_num = args.camera
+    params = aruco.DetectorParameters()
 
-    camera = camera.Camera(camera_num, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
+    camera = camera.Camera(camera_num, aruco_dict_name, params, _repository, _board)  # New camera object that uses the repository object to send data and runs on it's own thread
+    
     
     if args.video_full == True:
         _display.build_video_fullscreen()

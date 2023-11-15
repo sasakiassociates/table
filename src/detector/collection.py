@@ -1,41 +1,36 @@
 import math
 import uuid
 
-from . import marker
+from . import detectables
 
 class Collection():
-    def __init__(self, name, timer_) -> None:
+    def __init__(self, name, timer_, marker_ids) -> None:
         self.uuid = uuid.uuid4()
-        self.markers = []
         self.name = name
+        self.marker_ids = marker_ids
         self.observers = []
         self.type = "collection"
         self.timer = timer_
         self.is_visible = False
-        self.lost_threshold = 5000     # sets the time (in milliseconds) before a marker is considered lost
+        self.lost_threshold = 3000     # sets the time (in milliseconds) before a marker is considered lost
+        self.rigid = False
 
-    def add_marker(self, marker_):
-        self.markers.append(marker_)
+        self.visible_points = {}
 
-    def get_markers(self):
-        return self.markers
+    def update(self, uuid, json, object_type):
+        # store the marker data
+        if object_type == "marker":
+            self.visible_points[uuid] = json["location"]
+            
+        # check if all markers are visible
+        if self.check_if_all_visible():
+            self.is_visible = True
+
+    def remove(self, object_type, uuid):
+        if uuid in self.visible_points:
+            del self.visible_points[uuid]
     
-    def get_marker(self, marker_id):
-        for marker in self.markers:
-            if marker.id == marker_id:
-                return marker
-        return None
-    
-    def get_points(self):
-        points = []
-        for marker in self.markers:
-            points.append(marker.center)
-        return points
-    
-    def get_bounds(self):
-        points = []
-        for marker in self.markers:
-            points.append(marker.center)
+    def get_bounds(self, points):
         min_x = min(points, key=lambda point: point[0])[0]
         min_y = min(points, key=lambda point: point[1])[1]
         max_x = max(points, key=lambda point: point[0])[0]
@@ -43,10 +38,7 @@ class Collection():
 
         return min_x, min_y, max_x, max_y
     
-    def get_center(self):
-        points = []
-        for marker in self.markers:
-            points.append(marker.center)
+    def get_center(self, points):
         min_x = min(points, key=lambda point: point[0])[0]
         min_y = min(points, key=lambda point: point[1])[1]
         max_x = max(points, key=lambda point: point[0])[0]
@@ -69,20 +61,23 @@ class Collection():
         average_rotation = total_rotation / num_pairs
         return average_rotation
     
+    # TODO currently if one of the markers is lost, the zone still shows up with the marker set to (0,0)
+    # need to find a way to remove the zone from the list of zones if one of the markers is lost
     def check_if_all_visible(self):
-        if self.is_visible == True:                 # If it is visible, run through all the markers and check if they are all visible
-            for marker in self.markers:
-                if marker.is_visible == False:      # If they are all not visible, report to the timer that the zone is lost and notifiy the observers
-                    self.timer.report_lost(self)    # Report to the timer that the zone is lost
+        detected_ids = self.visible_points.keys()
+        if self.is_visible == True:                 # If it was already visible, run through all the markers and check if they are all visible
+            for uuid in self.marker_ids:
+                if uuid not in detected_ids:
+                    self.timer.report_lost(self)
                     self.is_visible = False
-                    self.notify_observers()
                     return False
-                else:                               # If they are all visible, return True
+                else:
+                    # if they are all here, report to the timer that the zone is found and notify the observers
                     self.notify_observers()
                     return True
         else:                                       # If the zone is not visible, check if all the markers are visible
-            for marker in self.markers:
-                if marker.is_visible == False:       # If any of them aren't visible, then it's still lost
+            for uuid in self.marker_ids:
+                if uuid not in detected_ids:
                     return False
             # If all the markers are visible, report to the timer that the zone is found and notify the observers
             self.timer.report_found(self)
@@ -99,17 +94,17 @@ class Collection():
         pass
 
     def build_json(self):
+        points = self.visible_points.values()
+
         zone_data = {
             "name": self.name,
-            "bounds": self.get_bounds(),
-            "center": self.get_center(),
-            "rotation": self.calculate_average_rotation(self.get_points()),
+            "bounds": self.get_bounds(points),
+            "center": self.get_center(points),
+            "rotation": self.calculate_average_rotation(points),
             "markers": []
         }
         # Add marker ids to the json
-        for marker in self.markers:
-            zone_data["markers"].append(marker.id)
-        print(zone_data)
+        zone_data["markers"].append(self.marker_ids)
         return zone_data
     
     def report_lost(self):
@@ -119,8 +114,10 @@ class Collection():
         self.timer.report_found(self)
 
     def lost(self):
-        for marker in self.markers:
-            marker.lost()
         for observer in self.observers:
             observer.remove_from_sent_data(self.type, self.name)
         self.notify_observers()
+
+    # TODO find a way to calculate the depth of the collection
+    def calculate_depth(self, marker):
+        pass

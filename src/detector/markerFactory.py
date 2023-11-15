@@ -1,7 +1,6 @@
 import json
-from . import marker as m
-from . import zone as z
-# import marker as m
+from . import detectables as m
+from . import collection as c
 
 import os
 import glob
@@ -10,7 +9,7 @@ BOUNDING_ZONE_IDS = ()
 
 class MarkerFactory:
     @staticmethod
-    def make_markers(dict_length, observer, timer_):
+    def make_markers(dict_length, observers, timer_, num_of_zones=0):
         marker_list = []
 
         # First, let's make the project marker set (making sure they are not the same as the controller marker ids)
@@ -31,7 +30,8 @@ class MarkerFactory:
             for marker_id in assigned_marker_ids:
                 marker_id = int(marker_id)
                 new_project_marker = m.ProjectMarker(marker_id, timer_)
-                new_project_marker.attach_observer(observer)
+                for observer in observers:
+                    new_project_marker.attach_observer(observer)
                 for file in json_files:                                     # If a marker id matches the associated marker id of a project file, associate the project file with the marker
                     if int(file['marker_id']) == marker_id:
                         new_project_marker.associate_marker_with_project(file)
@@ -43,17 +43,21 @@ class MarkerFactory:
             print("No zone defined, skipping zone creation")
             bounding_zone = None
         else:
-            bounding_zone = z.Collection('model_space', timer_)
+            uuids = []
             for marker_id in BOUNDING_ZONE_IDS:
                 if marker_id not in assigned_marker_ids:
-                    marker = m.GenericMarker(marker_id, timer_)
-                    bounding_zone.add_marker(marker)
+                    marker = m.Marker(marker_id, timer_)
                     assigned_marker_ids.append(marker_id)
                     marker_list.append(marker)
+                    uuids.append(marker.uuid)
                     print(f"Created marker {marker_id} for bounding zone")
                 else:
                     print(f"ERROR: Marker ID {marker_id} is already assigned to project {marker_list[marker_id].project_name}. Please change the ID of this project.")
-            bounding_zone.attach_observer(observer)
+            bounding_zone = c.Collection('model_space', timer_, uuids)
+            for marker in marker_list:
+                marker.attach_observer(bounding_zone)
+            for observer in observers:
+                bounding_zone.attach_observer(observer)
 
         # Make the zones
         # for i in range(0, num_of_zones):
@@ -70,8 +74,9 @@ class MarkerFactory:
         # Finally, let's make the rest of the markers generic markers
         for i in range(0, dict_length):
             if i not in assigned_marker_ids:
-                marker = m.GenericMarker(i, timer_)
-                marker.attach_observer(observer)
+                marker = m.Marker(i, timer_)
+                for observer in observers:
+                    marker.attach_observer(observer)
                 marker_list.append(marker)
                 assigned_marker_ids.append(i)
 
