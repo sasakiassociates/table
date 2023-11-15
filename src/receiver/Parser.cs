@@ -18,26 +18,23 @@ namespace TableUiReceiver
 
             try
             {
-                Dictionary<string, Dictionary<string, ParsableObject>> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, ParsableObject>>>(json);
+                Dictionary<string, Dictionary<string, Marker>> deserialJsonList = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, Marker>>>(json);
 
                 foreach (var deserialJson in deserialJsonList)
                 {
-                    foreach (var item in deserialJson.Value)
+                    if (deserialJson.Key == "marker")
                     {
-                        if (item.Value.GetType() == typeof(Marker))
+                        foreach (var marker in deserialJson.Value)
                         {
-                            Marker incomingMarker = (Marker)item.Value;
-                            incomingMarker.uuid = int.Parse(item.Key);
+                            Marker incomingMarker = marker.Value;
                             incomingMarker.type = deserialJson.Key;
                             result.Add(incomingMarker);
                         }
-                        else if (item.Value.GetType() == typeof(Collection))
-                        {
-                            Collection collection = (Collection)item.Value;
-                            collection.uuid = int.Parse(item.Key);
-                            collection.type = deserialJson.Key;
-                            result.Add(collection);
-                        }
+                    }
+                    else if (deserialJson.Key == "zone")
+                    {
+                        // Ignore it
+                        continue;
                     }
                 }
             }
