@@ -160,3 +160,5 @@ src/marker-generator/calibration_matrices/image_matrix.npy
 *.pdf
 *.pyc
 *.pyc
+*.pyc
+*.v2

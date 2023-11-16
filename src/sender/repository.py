@@ -1,6 +1,4 @@
-# import repoStrategy as rs
 from . import repoStrategy as rs
-import threading
 
 class Repository():
     def __init__(self, strategy_name):
@@ -28,14 +26,6 @@ class Repository():
             self.data[str(object_type)] = {}
         self.data[str(object_type)][str(id_)] = json
         self.new_data = True
-        
-    # def update(self, marker_json):
-    #     if marker_json['location'] == [0, 0, 0]:
-    #         self.data.pop(str(marker_json['id']), None)
-    #     else:
-    #         self.data[str(marker_json['id'])] = marker_json
-    #         # self.data.setdefault(str(marker_json['id']), marker_json).update()
-    #     self.new_data = True
         
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")

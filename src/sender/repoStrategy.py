@@ -6,6 +6,20 @@ import socket
 
 from abc import ABC, abstractmethod
 
+class RepoStrategyFactory():
+    def get_strategy(strategy_name, repository_):
+        if strategy_name == 'udp':
+            return UDPRepo(repository_)
+        elif strategy_name == 'firebase':
+            return FirebaseRepo(repository_)
+        elif strategy_name == 'both':
+            composite_repo = CompositeRepo(repository_)
+            composite_repo.add_strategy(UDPRepo(repository_))
+            composite_repo.add_strategy(FirebaseRepo(repository_))
+            return composite_repo
+        else:
+            raise Exception('Invalid strategy name')
+
 @abstractmethod
 class RepoStrategy(ABC):
     @abstractmethod
@@ -21,20 +35,6 @@ class RepoStrategy(ABC):
     def end(self):
         pass
 
-class RepoStrategyFactory():
-    def get_strategy(strategy_name, repository_):
-        if strategy_name == 'udp':
-            return UDPRepo(repository_)
-        elif strategy_name == 'firebase':
-            return FirebaseRepo(repository_)
-        elif strategy_name == 'both':
-            composite_repo = CompositeRepo(repository_)
-            composite_repo.add_strategy(UDPRepo(repository_))
-            composite_repo.add_strategy(FirebaseRepo(repository_))
-            return composite_repo
-        else:
-            raise Exception('Invalid strategy name')
-        
 class UDPRepo(RepoStrategy):
     def __init__(self, repository_) -> None:
         super().__init__(repository_)
@@ -83,17 +83,6 @@ class FirebaseRepo(RepoStrategy):
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
-
-    # def setup(self):
-    #     self.send_data_thread = threading.Thread(target=self.send_data_thread)
-    #     self.send_data_thread.daemon = True
-    #     self.send_data_thread.start()
-        
-    # def send_data_thread(self):
-    #     while not self.terminate:
-    #         if self.new_data:
-    #             self.send()
-    #             self.new_data = False
 
     def send(self):
         try:
