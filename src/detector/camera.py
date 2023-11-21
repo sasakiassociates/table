@@ -12,8 +12,8 @@ from . import board as b
 import os
 
 class Camera():
-    def __init__(self, camera_num, aruco_dict_name, params):
-        self.board = b.Board()
+    def __init__(self, camera_num, aruco_dict_name):
+        self.observers = []
 
         aruco_dict_name = f'DICT_{aruco_dict_name}'
         aruco_dict_name = aruco_dict_name.upper()
@@ -27,9 +27,7 @@ class Camera():
             aruco_dict = aruco.getPredefinedDictionary(ar.aruco_dict_mapping['DICT_6X6_100'])
             print("Using default dictionary: DICT_6X6_100")
 
-        dictionary_length = len(aruco_dict.bytesList)
-        self.timer = t.Timer()
-        self.timer.start()
+        params = aruco.DetectorParameters()
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -44,6 +42,13 @@ class Camera():
         if not self.cap.isOpened():
             print("Cannot open camera")
             exit()
+
+    def attach_observer(self, observer):
+        self.observers.append(observer)
+
+    def notify_observers(self, ids, corners):
+        for observer in self.observers:
+            observer.update(ids, corners)
 
     def setup(self):
         cam_width = int(self.cap.get(3))
@@ -64,7 +69,7 @@ class Camera():
     """
     Loop through the markers and update them
     """
-    def videoCapture(self, radius=15, filled=True, color_background=None, color_markers=(100, 0, 0)):
+    def videoCapture(self):
         print("Video capture")
         try:
             ret, frame = self.cap.read()
@@ -85,21 +90,9 @@ class Camera():
 
                 frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
 
-                if color_background is not None:
-                    cv.rectangle(frame_color, (0, 0), (frame_color.shape[1], frame_color.shape[0]), color_background, -1)
-                
-                if filled:
-                    fill = -1
-                else:
-                    fill = 3
-
                 if ids is not None:
-                    self.board.update(ids, corners)
-                    self.board.draw(frame_color, radius, fill, color_markers)
-                            
-                if self.repository.new_data:
-                    self.repository.strategy.send()
-                    self.repository.new_data = False
+                    for observer in self.observers:
+                        frame = observer.update(frame_color, ids, corners)
 
                 return frame_color
         except Exception as e:

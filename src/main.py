@@ -4,7 +4,7 @@ import threading
 
 from cv2 import aruco
 
-from detector import camera
+from detector import board, camera
 from sender import repository
 from ui import display
 
@@ -37,41 +37,13 @@ args = parser.parse_args()
 mode = args.mode
 aruco_dict_name = args.aruco_dict
 
-def camera_loop(camera, _display):
-    while not _display.terminate:
-        frame = camera.videoCapture()
-        if frame is not None:
-            _display.update_video_image(frame)
-        else:
-            print("Frame is None")
-            break
-        # _display.update_video_image(frame)
-
-def camera_loop_fullscreen(camera, _display, color_background, color_markers, radius, filled):
-    while not _display.terminate:
-        frame = camera.videoCapture(color_background, color_markers, radius, filled)
-        if frame is not None:
-            _display.update_video_image_fullscreen(frame)
-        else:
-            print("Frame is None")
-            break
-
-def debug_loop(camera, _display):
-    while not _display.terminate:
-        if _display.new_debug_data:
-            camera.repository.update(_display.debug_data, _display.debug_id)
-            camera.repository.send_data()
-            _display.new_debug_data = False
-
-
 if (__name__ == '__main__'):
-    # Three threads:
-    # Display
-    # Camera
-    # Repository
-
+    # Make the repository, give it to the board, board observes camera
     repository = repository.Repository(mode)
+    board = board.Board()
+
     camera = camera.Camera(args.camera, aruco_dict_name, repository)
+    camera.attach_observer(board)
     display = display.Display(camera)
 
     # start the GUI on this thread
