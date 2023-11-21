@@ -3,11 +3,14 @@ import subprocess
 from abc import ABC, abstractmethod
 from math import pi
 
+import cv2 as cv
 import numpy as np
+import uuid
 
 @abstractmethod
 class DetectableObject(ABC):
     def __init__(self, marker_id, timer_):
+        self.uuid = uuid.uuid4()
         self.id = marker_id
         self.observers = []
         self.is_visible = False
@@ -34,19 +37,19 @@ class DetectableObject(ABC):
         if self.significant_change:
             self.notify_observers()
 
+    # TODO make it so this only changes the center and rotation if it's a significant change
+    def draw(self, image, radius, fill, color):
+        point = self.flip_center(image.shape[1])
+        cv.circle(image, point, radius, color, fill)
+        cv.putText(image, str(self.id), point, cv.FONT_HERSHEY_SIMPLEX, 1, color, 2, cv.LINE_AA)
+
     def found(self):
         self.is_visible = True
         self.timer.report_found(self)
         # self.notify_observers()
 
     def flip_center(self, width):
-        self.center = (width - self.center[0], self.center[1])
-
-    # def track(self, corners_):
-    #     # check if it's a more significant change than the threshold
-    #     self.rotation, self.center = self.check_for_threshold_change(corners_)
-    #     if self.significant_change:
-    #         self.notify_observers()
+        return (width - self.center[0], self.center[1])
 
     def lost(self):
         self.is_visible = False
@@ -184,7 +187,7 @@ class ProjectMarker(DetectableObject):
         else:
             print("Failed to open project")
     
-class GenericMarker(DetectableObject):
+class Marker(DetectableObject):
     def __init__(self, marker_id, timer_):
         super().__init__(marker_id, timer_)
 

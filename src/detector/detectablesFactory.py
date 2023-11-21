@@ -1,15 +1,15 @@
 from . import timer as t
-from . import marker as m
+from . import detectables as d
 from . import zone as z
 
 class detectablesFactory:
     def __init__(self, observers) -> None:
         self.timer = t.Timer()
         self.timer.start()
-        self.observers = observers
+        self.observers = observers # The observers that want to be updated on Detectables changes
 
     def make_marker(self, id_):
-        marker = m.Marker(id_, self.timer)
+        marker = d.Marker(id_, self.timer)
         marker.attach_observer(self.observers)
         return marker
 

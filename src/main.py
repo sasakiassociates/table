@@ -65,14 +65,17 @@ def debug_loop(camera, _display):
 
 
 if (__name__ == '__main__'):
-    
-    _display = display.Display()
+    # Three threads:
+    # Display
+    # Camera
+    # Repository
 
     params = aruco.DetectorParameters()
-    _repository = repository.Repository(mode)                  # New repository object that opens a UDP connection on a new thread
-    
     camera_num = args.camera
 
+    # Start the three threads
+    _display = display.Display()
+    _repository = repository.Repository(mode)
     camera = camera.Camera(camera_num, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
     
     if args.video_full == True:
@@ -104,7 +107,6 @@ if (__name__ == '__main__'):
         camera_thread.start()
 
         _display.launch_gui()
-
     camera.end()
     
 # To Package:

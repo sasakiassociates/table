@@ -37,6 +37,7 @@ class Display():
         self.video_label.image = tkimg
 
         self.root.update()
+        print("Updated video image")
 
     def update_video_image_fullscreen(self, frame):
         image = Image.fromarray(frame)

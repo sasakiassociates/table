@@ -1,5 +1,5 @@
 import json
-from . import marker as m
+from . import detectables as m
 from . import zone as z
 # import marker as m
 

@@ -1,13 +1,14 @@
 from . import detectablesFactory as df
 
 class Board:
-    def __init__(self) -> None:
+    def __init__(self, observers) -> None:
         self.markers = []
         self.cells = []
-        self.factory = df.detectablesFactory()
+        self.factory = df.detectablesFactory(observers)
 
-    def draw(self, image, camera):
-        pass
+    def draw(self, image, radius, fill, color):
+        for marker in self.markers:
+            marker.draw(image, radius, fill, color)
 
     '''
     Check if each marker already exists in the list of markers. If it does, update it. If it doesn't, make a new marker.

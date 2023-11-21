@@ -5,20 +5,18 @@ import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
-from . import markerFactory as factory
-from . import marker as m
 from . import arucoReference as ar
 from . import timer as t
+from . import board as b
 
 import os
 
 class Camera():
     def __init__(self, camera_num, aruco_dict_name, params, repository_):
         self.repository = repository_
-        self.board = None
+        self.board = b.Board(self.repository)
 
         aruco_dict_name = f'DICT_{aruco_dict_name}'
-        # aruco_dict_name = f'DICT_6X6_1000'
         aruco_dict_name = aruco_dict_name.upper()
 
         if aruco_dict_name in ar.aruco_dict_mapping.keys():
@@ -33,7 +31,6 @@ class Camera():
         dictionary_length = len(aruco_dict.bytesList)
         self.timer = t.Timer()
         self.timer.start()
-        self.my_markers, self.bounding_zone = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -69,6 +66,7 @@ class Camera():
     Loop through the markers and update them
     """
     def videoCapture(self, radius=15, filled=True, color_background=None, color_markers=(100, 0, 0)):
+        print("Video capture")
         try:
             ret, frame = self.cap.read()
             if ret:
@@ -80,13 +78,8 @@ class Camera():
 
                     frame_gray = cv.undistort(frame_gray, self.matrix, self.distortion, None, self.matrix)
 
-                    # x, y, w, h = roi
-                    # frame_gray = frame_gray[y:y+h, x:x+w]
-
                 # Detect the markers
                 corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
-
-                # frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
 
                 # Flip image
                 frame_gray = cv.flip(frame_gray, 1)
@@ -101,48 +94,9 @@ class Camera():
                 else:
                     fill = 3
 
-                # Loop through the markers and update them
-                #self.markerLoop(ids, corners)
                 if ids is not None:
-                    # TODO change this logic
-                    # Call on the board to update
                     self.board.update(ids, corners)
-                #     for marker_id, marker_corners in zip(ids, corners):
-                #         marker = self.my_markers[int(marker_id)]
-
-                #         if isinstance(marker, m.ProjectMarker):
-                #             if marker.running == False:
-                #                 marker.open_project()
-                #         else:
-                #             if marker.is_visible == False:
-                #                 marker.found()
-                #                 marker.track(marker_corners)
-                #                 marker.flip_center(frame_color.shape[1])
-                #             else:
-                #                 marker.track(marker_corners)
-                #                 marker.flip_center(frame_color.shape[1])
-                            
-                #             x = marker.center[0]
-                #             y = marker.center[1]
-                #             cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
-                #             cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
-                #     for marker in self.my_markers:
-                #         if marker.is_visible == True and marker.id not in ids:
-                #             marker.lost_tracking()
-                #             marker.is_visible = False
-                # else:
-                #     for marker in self.my_markers:
-                #         if marker.is_visible == True:
-                #             marker.lost_tracking()
-                #             marker.is_visible = False
-
-                # Check the zones to see if any are fully visible
-                if self.bounding_zone is not None:
-                    if self.bounding_zone.check_if_all_visible():
-                        # Display the bounding zone
-                        min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
-
-                        cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
+                    self.board.draw(frame_color, radius, fill, color_markers)
                             
                 if self.repository.new_data:
                     self.repository.strategy.send()

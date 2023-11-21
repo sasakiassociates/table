@@ -1,5 +1,3 @@
-from . import marker
-
 class Zone():
     def __init__(self, name, timer_) -> None:
         self.markers = []
