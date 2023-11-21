@@ -12,9 +12,8 @@ from . import board as b
 import os
 
 class Camera():
-    def __init__(self, camera_num, aruco_dict_name, params, repository_):
-        self.repository = repository_
-        self.board = b.Board(self.repository)
+    def __init__(self, camera_num, aruco_dict_name, params):
+        self.board = b.Board()
 
         aruco_dict_name = f'DICT_{aruco_dict_name}'
         aruco_dict_name = aruco_dict_name.upper()

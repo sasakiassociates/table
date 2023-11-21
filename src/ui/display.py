@@ -4,13 +4,15 @@ import numpy as np
 
 from PIL import Image, ImageTk
 import os
+import threading
 
 from . import colors as c    # NOTE this is a relative import, needed since this is the file that is run directly from the GUI
 
 class Display():
-    def __init__(self):
+    def __init__(self, camera):
         self.root = tk.Tk()
         self.root.title("Magpie Table")
+        self.camera = camera
 
         self.window_width = self.root.winfo_screenwidth()
         self.window_height = self.root.winfo_screenheight()
@@ -26,7 +28,21 @@ class Display():
         self.debug_data = None
         self.new_debug_data = False
 
+    def camera_loop(self):
+        while not self.terminate:
+            frame = self.camera.videoCapture()
+            if frame is not None:
+                self.update_video_image(frame)
+            else:
+                print("Frame is None")
+                break
+        self.camera.end()
+
     def launch_gui(self):
+        camera_thread = threading.Thread(target=self.camera_loop)
+        camera_thread.daemon = True
+        camera_thread.start()
+
         self.root.mainloop()
 
     def update_video_image(self, frame):

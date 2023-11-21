@@ -70,43 +70,13 @@ if (__name__ == '__main__'):
     # Camera
     # Repository
 
-    params = aruco.DetectorParameters()
-    camera_num = args.camera
+    repository = repository.Repository(mode)
+    camera = camera.Camera(args.camera, aruco_dict_name, repository)
+    display = display.Display(camera)
 
-    # Start the three threads
-    _display = display.Display()
-    _repository = repository.Repository(mode)
-    camera = camera.Camera(camera_num, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
-    
-    if args.video_full == True:
-        _display.build_video_fullscreen()
-    else:
-        _display.build()
+    # start the GUI on this thread
+    display.launch_gui()
 
-    camera.setup()
-    
-    if DEBUG:
-        print("Running in debug mode")
-        # TODO add a window for debug mode that allows you to input markers manually as if they had been detected
-        # window just links up to the repository object and allows you to input data for a marker
-        # window also allows you to input data for a project
-        debug_thread = threading.Thread(target=debug_loop, args=(camera, _display))
-        debug_thread.daemon = True
-        debug_thread.start()
-
-        _display.add_debug_window()
-        _display.launch_gui()
-
-    else:
-
-        if args.video_full:
-            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display, (255,255,255), (0,0,0), 30, False))
-        else:
-            camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
-        camera_thread.daemon = True
-        camera_thread.start()
-
-        _display.launch_gui()
     camera.end()
     
 # To Package:

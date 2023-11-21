@@ -47,7 +47,6 @@ class UDPRepo(RepoStrategy):
         self.terminate = True
 
     def listen_for_data_thread(self):
-        print("Listening for data...")
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         _socket.bind((self.listen_ip, self.listen_port))
         
