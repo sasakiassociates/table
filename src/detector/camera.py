@@ -15,6 +15,7 @@ import os
 class Camera():
     def __init__(self, camera_num, aruco_dict_name, params, repository_):
         self.repository = repository_
+        self.board = None
 
         aruco_dict_name = f'DICT_{aruco_dict_name}'
         # aruco_dict_name = f'DICT_6X6_1000'
@@ -103,34 +104,37 @@ class Camera():
                 # Loop through the markers and update them
                 #self.markerLoop(ids, corners)
                 if ids is not None:
-                    for marker_id, marker_corners in zip(ids, corners):
-                        marker = self.my_markers[int(marker_id)]
+                    # TODO change this logic
+                    # Call on the board to update
+                    self.board.update(ids, corners)
+                #     for marker_id, marker_corners in zip(ids, corners):
+                #         marker = self.my_markers[int(marker_id)]
 
-                        if isinstance(marker, m.ProjectMarker):
-                            if marker.running == False:
-                                marker.open_project()
-                        else:
-                            if marker.is_visible == False:
-                                marker.found()
-                                marker.track(marker_corners)
-                                marker.flip_center(frame_color.shape[1])
-                            else:
-                                marker.track(marker_corners)
-                                marker.flip_center(frame_color.shape[1])
+                #         if isinstance(marker, m.ProjectMarker):
+                #             if marker.running == False:
+                #                 marker.open_project()
+                #         else:
+                #             if marker.is_visible == False:
+                #                 marker.found()
+                #                 marker.track(marker_corners)
+                #                 marker.flip_center(frame_color.shape[1])
+                #             else:
+                #                 marker.track(marker_corners)
+                #                 marker.flip_center(frame_color.shape[1])
                             
-                            x = marker.center[0]
-                            y = marker.center[1]
-                            cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
-                            cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
-                    for marker in self.my_markers:
-                        if marker.is_visible == True and marker.id not in ids:
-                            marker.lost_tracking()
-                            marker.is_visible = False
-                else:
-                    for marker in self.my_markers:
-                        if marker.is_visible == True:
-                            marker.lost_tracking()
-                            marker.is_visible = False
+                #             x = marker.center[0]
+                #             y = marker.center[1]
+                #             cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
+                #             cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
+                #     for marker in self.my_markers:
+                #         if marker.is_visible == True and marker.id not in ids:
+                #             marker.lost_tracking()
+                #             marker.is_visible = False
+                # else:
+                #     for marker in self.my_markers:
+                #         if marker.is_visible == True:
+                #             marker.lost_tracking()
+                #             marker.is_visible = False
 
                 # Check the zones to see if any are fully visible
                 if self.bounding_zone is not None:

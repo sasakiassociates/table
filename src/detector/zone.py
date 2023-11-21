@@ -64,8 +64,8 @@ class Zone():
         self.observers.append(observer_)
 
     def notify_observers(self):
-        # for observer in self.observers:
-        #     observer.update(self.name, self.build_json(), self.type)
+        for observer in self.observers:
+            observer.update(self.name, self.build_json(), self.type)
         pass
 
     def build_json(self):
