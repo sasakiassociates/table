@@ -91,51 +91,8 @@ class Camera():
                     fill = 3
 
                 self.board.update(ids, corners)
-
-                # # Loop through the markers and update them
-                # #self.markerLoop(ids, corners)
-                # if ids is not None:
-                #     for marker_id, marker_corners in zip(ids, corners):
-                #         marker = self.my_markers[int(marker_id)]
-
-                #         if isinstance(marker, m.ProjectMarker):
-                #             if marker.running == False:
-                #                 marker.open_project()
-                #         else:
-                #             if marker.is_visible == False:
-                #                 marker.found()
-                #                 marker.track(marker_corners)
-                #                 marker.flip_center(frame_color.shape[1])
-                #             else:
-                #                 marker.track(marker_corners)
-                #                 marker.flip_center(frame_color.shape[1])
-                            
-                #             x = marker.center[0]
-                #             y = marker.center[1]
-                #             cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
-                #             cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
-                #     for marker in self.my_markers:
-                #         if marker.is_visible == True and marker.id not in ids:
-                #             marker.lost_tracking()
-                #             marker.is_visible = False
-                # else:
-                #     for marker in self.my_markers:
-                #         if marker.is_visible == True:
-                #             marker.lost_tracking()
-                #             marker.is_visible = False
-
-                # # Check the zones to see if any are fully visible
-                # if self.bounding_zone is not None:
-                #     if self.bounding_zone.check_if_all_visible():
-                #         # Display the bounding zone
-                #         min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
-
-                #         cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
-                            
-                # if self.repository.new_data:
-                #     self.repository.strategy.send()
-                #     self.repository.new_data = False
-
+                self.board.draw(frame_color)
+                
                 return frame_color
         except Exception as e:
             sys.stderr.write(str(e))

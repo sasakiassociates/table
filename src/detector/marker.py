@@ -5,6 +5,7 @@ from math import pi
 from uuid import uuid4 as uuid
 
 import numpy as np
+import cv2 as cv
 
 @abstractmethod
 class Marker(ABC):
@@ -13,7 +14,7 @@ class Marker(ABC):
         self.id = marker_id         # The id of the marker as detected by the camera corresponding to the aruco dictionary
         self.observers = []         # A list of observers that will be notified when the marker is updated
         self.is_visible = True
-        self.lost = False
+        self.gone = False
         
         self.rotation = 0
         self.prev_rotation = 0
@@ -37,9 +38,9 @@ class Marker(ABC):
         # self.notify_observers()
 
     def flip_center(self, width):
-        self.center = (width - self.center[0], self.center[1])
+        return width - self.center[0], self.center[1]
 
-    def track(self, corners_):
+    def update(self, corners_):
         # If it was lost, now it is found
         if self.is_visible == False:
             self.found()
@@ -50,7 +51,7 @@ class Marker(ABC):
             self.notify_observers()
 
     def lost(self):
-        self.lost = True
+        self.gone = True
         self.center = (0,0)
         self.rotation = 0
         self.notify_observers()
@@ -114,6 +115,16 @@ class Marker(ABC):
         else:
             self.significant_change = False
             return self.prev_rotation, self.prev_center     # if not, return the old values
+        
+    def draw(self, frame):
+        # Flip center
+        draw_center = self.flip_center(frame.shape[1])
+        # Draw the center
+        cv.circle(frame, draw_center, 5, (0, 0, 255), -1)
+        # Draw the id
+        cv.putText(frame, str(self.id), draw_center, cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
+        # Draw the rotation
+        cv.putText(frame, str(round(self.rotation, 2)), (draw_center[0], draw_center[1] + 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
         
 class ProjectMarker(Marker):
     def __init__(self, marker_id, timer_):

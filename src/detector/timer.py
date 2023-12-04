@@ -40,7 +40,7 @@ class Timer(threading.Thread):
         with self.lock:                                     # Lock the thread so we don't have multiple threads trying to access the same data
             orphan.time_last_seen = self.time_since_start   # Set the orphan's time since seen to the current time
             self.lost_objects.append(orphan)                # Add the orphan to the list of lost orphans to keep track of
-    
+
     def report_found(self, orphan):
         with self.lock:
             orphan.time_last_seen = None
