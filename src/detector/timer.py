@@ -33,7 +33,7 @@ class Timer(threading.Thread):
             else:
                 return False
 
-    def stop(self):
+    def end(self):
         self.running = False
 
     def report_lost(self, orphan):

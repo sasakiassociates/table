@@ -7,6 +7,7 @@ from cv2 import aruco
 from detector import camera
 from sender import repository
 from ui import display
+from detector import board
 
 FIREBASE_DEFAULT_URL = "https://magpietable-default-rtdb.firebaseio.com/"
 ARUCO_DEFAULT_DICT = "6X6_100"
@@ -70,10 +71,11 @@ if (__name__ == '__main__'):
 
     params = aruco.DetectorParameters()
     _repository = repository.Repository(mode)                  # New repository object that opens a UDP connection on a new thread
+    board = board.Board(_repository)                           # New board object that uses the repository object to send data
     
     camera_num = args.camera
 
-    camera = camera.Camera(camera_num, aruco_dict_name, params, _repository)  # New camera object that uses the repository object to send data and runs on it's own thread
+    camera = camera.Camera(camera_num, aruco_dict_name, params, board)  # New camera object that uses the repository object to send data and runs on it's own thread
     
     if args.video_full == True:
         _display.build_video_fullscreen()

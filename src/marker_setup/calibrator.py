@@ -26,8 +26,8 @@ class Calibrator():
         self.matrix = None
         self.distortion = None
         
-    def video_capture_test(self):
-        cap = cv2.VideoCapture(1)
+    def video_capture_test(self, camera_num=0):
+        cap = cv2.VideoCapture(camera_num)
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -150,6 +150,6 @@ class Calibrator():
 
 if __name__ == "__main__":
     calibrator = Calibrator()
-    # calibrator.video_capture_test()
-    # calibrator.take_calibration_images(0, 20, 1)
-    calibrator.calibrate_from_images(camera_num=1)
+    calibrator.video_capture_test(camera_num=0)
+    calibrator.take_calibration_images(1, 20, 1)
+    # calibrator.calibrate_from_images(camera_num=1)

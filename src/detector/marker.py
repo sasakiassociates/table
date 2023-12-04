@@ -2,15 +2,18 @@ import json
 import subprocess
 from abc import ABC, abstractmethod
 from math import pi
+from uuid import uuid4 as uuid
 
 import numpy as np
 
 @abstractmethod
 class Marker(ABC):
     def __init__(self, marker_id, timer_):
-        self.id = marker_id
-        self.observers = []
-        self.is_visible = False
+        self.uuid = uuid()          # A unique identifier for this marker
+        self.id = marker_id         # The id of the marker as detected by the camera corresponding to the aruco dictionary
+        self.observers = []         # A list of observers that will be notified when the marker is updated
+        self.is_visible = True
+        self.lost = False
         
         self.rotation = 0
         self.prev_rotation = 0
@@ -37,18 +40,23 @@ class Marker(ABC):
         self.center = (width - self.center[0], self.center[1])
 
     def track(self, corners_):
+        # If it was lost, now it is found
+        if self.is_visible == False:
+            self.found()
+
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
         if self.significant_change:
             self.notify_observers()
 
     def lost(self):
-        self.is_visible = False
+        self.lost = True
         self.center = (0,0)
         self.rotation = 0
         self.notify_observers()
 
     def lost_tracking(self):
+        self.is_visible = False
         self.timer.report_lost(self)
         
     def attach_observer(self, observer_):

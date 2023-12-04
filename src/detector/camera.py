@@ -5,19 +5,14 @@ import cv2 as cv
 import numpy as np
 from cv2 import aruco
 
-from . import markerFactory as factory
-from . import marker as m
 from . import arucoReference as ar
-from . import timer as t
 
 import os
 
 class Camera():
-    def __init__(self, camera_num, aruco_dict_name, params, repository_):
-        self.repository = repository_
+    def __init__(self, camera_num, aruco_dict_name, params, board):
 
         aruco_dict_name = f'DICT_{aruco_dict_name}'
-        # aruco_dict_name = f'DICT_6X6_1000'
         aruco_dict_name = aruco_dict_name.upper()
 
         if aruco_dict_name in ar.aruco_dict_mapping.keys():
@@ -29,10 +24,6 @@ class Camera():
             aruco_dict = aruco.getPredefinedDictionary(ar.aruco_dict_mapping['DICT_6X6_100'])
             print("Using default dictionary: DICT_6X6_100")
 
-        dictionary_length = len(aruco_dict.bytesList)
-        self.timer = t.Timer()
-        self.timer.start()
-        self.my_markers, self.bounding_zone = factory.MarkerFactory.make_markers(dictionary_length, repository_, self.timer)
         self.detector = aruco.ArucoDetector(aruco_dict, params)
         
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
@@ -43,6 +34,8 @@ class Camera():
 
         self.matrix = None
         self.distortion = None
+
+        self.board = board
 
         if not self.cap.isOpened():
             print("Cannot open camera")
@@ -79,9 +72,6 @@ class Camera():
 
                     frame_gray = cv.undistort(frame_gray, self.matrix, self.distortion, None, self.matrix)
 
-                    # x, y, w, h = roi
-                    # frame_gray = frame_gray[y:y+h, x:x+w]
-
                 # Detect the markers
                 corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
 
@@ -100,49 +90,51 @@ class Camera():
                 else:
                     fill = 3
 
-                # Loop through the markers and update them
-                #self.markerLoop(ids, corners)
-                if ids is not None:
-                    for marker_id, marker_corners in zip(ids, corners):
-                        marker = self.my_markers[int(marker_id)]
+                self.board.update(ids, corners)
 
-                        if isinstance(marker, m.ProjectMarker):
-                            if marker.running == False:
-                                marker.open_project()
-                        else:
-                            if marker.is_visible == False:
-                                marker.found()
-                                marker.track(marker_corners)
-                                marker.flip_center(frame_color.shape[1])
-                            else:
-                                marker.track(marker_corners)
-                                marker.flip_center(frame_color.shape[1])
+                # # Loop through the markers and update them
+                # #self.markerLoop(ids, corners)
+                # if ids is not None:
+                #     for marker_id, marker_corners in zip(ids, corners):
+                #         marker = self.my_markers[int(marker_id)]
+
+                #         if isinstance(marker, m.ProjectMarker):
+                #             if marker.running == False:
+                #                 marker.open_project()
+                #         else:
+                #             if marker.is_visible == False:
+                #                 marker.found()
+                #                 marker.track(marker_corners)
+                #                 marker.flip_center(frame_color.shape[1])
+                #             else:
+                #                 marker.track(marker_corners)
+                #                 marker.flip_center(frame_color.shape[1])
                             
-                            x = marker.center[0]
-                            y = marker.center[1]
-                            cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
-                            cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
-                    for marker in self.my_markers:
-                        if marker.is_visible == True and marker.id not in ids:
-                            marker.lost_tracking()
-                            marker.is_visible = False
-                else:
-                    for marker in self.my_markers:
-                        if marker.is_visible == True:
-                            marker.lost_tracking()
-                            marker.is_visible = False
+                #             x = marker.center[0]
+                #             y = marker.center[1]
+                #             cv.ellipse(frame_color, (int(x), int(y)), (radius, radius), 0, 0, 360, color_markers, fill)
+                #             cv.putText(frame_color, str(marker.id), (int(x+radius*1.25), int(y+radius/2)), cv.FONT_HERSHEY_SIMPLEX, 0.5, color_markers, 1, cv.LINE_AA)
+                #     for marker in self.my_markers:
+                #         if marker.is_visible == True and marker.id not in ids:
+                #             marker.lost_tracking()
+                #             marker.is_visible = False
+                # else:
+                #     for marker in self.my_markers:
+                #         if marker.is_visible == True:
+                #             marker.lost_tracking()
+                #             marker.is_visible = False
 
-                # Check the zones to see if any are fully visible
-                if self.bounding_zone is not None:
-                    if self.bounding_zone.check_if_all_visible():
-                        # Display the bounding zone
-                        min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
+                # # Check the zones to see if any are fully visible
+                # if self.bounding_zone is not None:
+                #     if self.bounding_zone.check_if_all_visible():
+                #         # Display the bounding zone
+                #         min_x, min_y, max_x, max_y = self.bounding_zone.get_bounds()
 
-                        cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
+                #         cv.rectangle(frame_color, (min_x, min_y), (max_x, max_y), (0, 255, 0), 2)
                             
-                if self.repository.new_data:
-                    self.repository.strategy.send()
-                    self.repository.new_data = False
+                # if self.repository.new_data:
+                #     self.repository.strategy.send()
+                #     self.repository.new_data = False
 
                 return frame_color
         except Exception as e:
@@ -152,7 +144,7 @@ class Camera():
     def end(self):
         self.cap.release()
         cv.destroyAllWindows()
-        self.timer.stop()
+        self.board.end()
 
 if (__name__ == '__main__'):
     print("Running unit tests for camera.py")
