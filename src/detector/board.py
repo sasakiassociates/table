@@ -3,6 +3,7 @@ import numpy as np
 
 from . import marker as m
 from . import timer as t
+from . import state as s
 
 class Board():
     def __init__(self, repository) -> None:
@@ -12,25 +13,36 @@ class Board():
         self.timer.start()
         self.repository = repository
         self.state = None
+        self.trigger_state_pairs = s.StateFactory.make_states(self)
 
     def make_marker(self, id_, corners):
         new_marker = m.Marker(id_, self.timer)
         new_marker.attach_observer(self.repository)
         new_marker.update(corners)
 
-        self.markers[id_] = new_marker
+        # If the marker id is not in the dictionary, add it
+        if id_ not in self.markers.keys():
+            self.markers[id_] = []
+        # Add the marker to the list of markers with that id
+        self.markers[id_].append(new_marker)
     
     def destroy_marker(self, uuid):
-        for marker in self.markers.values():
-            if marker.uuid == uuid:
-                del self.markers[marker.id]
-                return
+        for id_, markers in self.markers.items():
+            for marker in markers:
+                if marker.uuid == uuid:
+                    markers.remove(marker)
+                    if len(markers) == 0:
+                        self.markers.pop(id_)
+                    return
 
     def get_marker(self, id_):
-        for marker in self.markers.values():
-            if marker.id == id_:
+        for marker in self.markers[id_]:
+            # If the marker was already updated, skip it
+            if marker.updated:
+                continue
+            # Otherwise, update it and return it
+            else:
                 return marker
-        return None
 
     # Called by the Camera object
     # Runs through the detected ids and checks if they are already on the board
@@ -42,15 +54,27 @@ class Board():
         # We want to go through all the markers on the board and see if they've been detected
         # TODO have to find a way to check which ids/corners go with which marker objects
 
+        # check for multiple markers with the same id
+        # {id:
+        #   {marker,
+        #    marker},
+        #  id:
+        #   {marker}
+        # }
+
         if ids is not None:
+            # Mark each marker as not updated
+            for id_, markers in self.markers.items():
+                for marker in markers:
+                    marker.updated = False
             for marker_id, marker_corners in zip(ids, corners):
                 id_ = int(marker_id)
-                marker = self.get_marker(id_)
-                # 1. Marker exists and has been detected
-                if marker is not None:
+                if id_ in self.markers.keys():
+                    # 1. Marker exists and has been detected
+                    marker = self.get_marker(id_)
                     marker.update(marker_corners)
-                # 2. Marker does not exist and has been detected
                 else:
+                    # 2. Marker does not exist and has been detected
                     self.make_marker(id_, marker_corners)
             # 3. Marker exists and has not been detected
             for marker_id, marker in list(self.markers.items()):
@@ -60,20 +84,25 @@ class Board():
                     elif marker.gone:
                         self.destroy_marker(marker.uuid)
         else:
-            for marker_id, marker in list(self.markers.items()):
-                if marker.is_visible:
-                    marker.lost_tracking()
-                elif marker.gone:
-                    self.destroy_marker(marker.uuid)
+            # 4. Marker does not exist and has not been detected
+            for id_, markers in self.markers.items():
+                for marker in markers:
+                    if marker.is_visible:
+                        marker.lost_tracking()
+                    elif marker.gone:
+                        self.destroy_marker(marker.uuid)
         
         if self.repository.new_data:
             self.repository.strategy.send()
             self.repository.new_data = False
 
+        # print(self.markers)
+
     def draw(self, frame):
         # Draw the markers
-        for marker in self.markers.values():
-            marker.draw(frame)
+        for id_, markers in self.markers.items():
+            for marker in markers:
+                marker.draw(frame)
 
     def end(self):
         self.timer.end()

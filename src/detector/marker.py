@@ -31,6 +31,7 @@ class Marker(ABC):
         self.type = "marker"
 
         self.significant_change = False
+        self.updated = False
 
     def found(self):
         self.is_visible = True
@@ -47,6 +48,7 @@ class Marker(ABC):
 
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
+        self.updated = True
         if self.significant_change:
             self.notify_observers()
 

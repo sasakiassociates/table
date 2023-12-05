@@ -1,5 +1,16 @@
 from abc import ABC, abstractmethod
 
+class StateFactory:
+    @staticmethod
+    def make_states(board) -> None:
+        states = {
+            0: CalibrationState(board),
+            1: PlayingState(board),
+            2: PausedState(board),
+            3: ClosingState(board)
+        }
+        return states
+
 @abstractmethod
 class BoardState(ABC):
     def __init__(self, board) -> None:
@@ -12,7 +23,7 @@ class BoardState(ABC):
     def draw(self, frame):
         pass
 
-    def end(self):
+    def transition(self):
         pass
 
 class CalibrationState(BoardState):
@@ -25,7 +36,7 @@ class CalibrationState(BoardState):
     def draw(self, frame):
         pass
 
-    def end(self):
+    def transition(self):
         pass
 
 class PlayingState(BoardState):
@@ -38,7 +49,7 @@ class PlayingState(BoardState):
     def draw(self, frame):
         pass
 
-    def end(self):
+    def transition(self):
         pass
 
 class PausedState(BoardState):
@@ -51,7 +62,7 @@ class PausedState(BoardState):
     def draw(self, frame):
         pass
 
-    def end(self):
+    def transition(self):
         pass
 
 class ClosingState(BoardState):
@@ -64,5 +75,5 @@ class ClosingState(BoardState):
     def draw(self, frame):
         pass
 
-    def end(self):
+    def transition(self):
         pass
