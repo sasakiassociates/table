@@ -43,8 +43,8 @@ class Marker(ABC):
 
     def update(self, corners_):
         # If it was lost, now it is found
-        if self.is_visible == False:
-            self.found()
+        # if self.is_visible == False:
+        #     self.found()
 
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
@@ -127,6 +127,8 @@ class Marker(ABC):
         cv.putText(frame, str(self.id), draw_center, cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
         # Draw the rotation
         cv.putText(frame, str(round(self.rotation, 2)), (draw_center[0], draw_center[1] + 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
+        # Draw the uuid
+        cv.putText(frame, str(self.uuid), (draw_center[0], draw_center[1] + 60), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
         
 class ProjectMarker(Marker):
     def __init__(self, marker_id, timer_):

@@ -90,16 +90,18 @@ class Board(metaclass=BoardSingletonMeta):
                     # 2. Marker exists and has been detected
                     # If the id does not exist in the self.id_occurrences dictionary, we haven't updated this marker yet
                     # So we update it
-                    if id_ not in self.id_occurrences.keys():
-                        marker = self.make_marker(id_)
-                        marker.update(marker_corners)
-                        self.id_occurrences[id_] = 1
+                    # if id_ not in self.id_occurrences.keys():
+                    #     marker = self.make_marker(id_)
+                    #     marker.update(marker_corners)
+                    #     self.id_occurrences[id_] = 1
                     # If the id does exist in the self.id_occurrences dictionary, that means there are multiple markers in there (or should be)
                     # So if there is another marker in there we update it, otherwise we make a new marker
-                    else:
+                    # else:
+                    # TODO figure out how to handle it when there are multiple markers with the same id and one disappears (currently it moves to where the other one is)
                         marker = self.get_marker(id_)
                         if marker is not None:
-                            marker.update(marker_corners)
+                            if marker.is_visible:
+                                marker.update(marker_corners)
                         else:
                             marker = self.make_marker(id_)
                             marker.update(marker_corners)
@@ -113,10 +115,9 @@ class Board(metaclass=BoardSingletonMeta):
                 elif marker.gone:
                     self.markers_to_delete.append(marker)
                 elif marker.is_visible:
+                    print("Lost tracking of marker: ", marker.id)
                     marker.lost_tracking()
         self.destroy_markers()
-
-        print(self.id_occurrences)
 
         if self.repository.new_data:
             self.repository.strategy.send()
