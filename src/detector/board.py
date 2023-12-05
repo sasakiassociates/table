@@ -27,6 +27,7 @@ class Board(metaclass=BoardSingletonMeta):
         self.state = None
         self.trigger_state_pairs = s.StateFactory.make_states(self)
         self.markers_to_delete = []
+        self.id_occurrences = {}
 
     def make_marker(self, id_):
         new_marker = m.Marker(id_, self.timer)
@@ -46,6 +47,9 @@ class Board(metaclass=BoardSingletonMeta):
             print("Destroying markers")
             for marker in self.markers_to_delete:
                 self.markers[marker.id].remove(marker)
+                self.id_occurrences[marker.id] -= 1
+                if self.id_occurrences[marker.id] == 0:
+                    del self.id_occurrences[marker.id]
                 if len(self.markers[marker.id]) == 0:
                     del self.markers[marker.id]
             self.markers_to_delete = []
@@ -58,9 +62,8 @@ class Board(metaclass=BoardSingletonMeta):
             # If it hasn't been updated, update it and return it
             elif not marker.updated:
                 return marker
-        # If all the markers have been updated, make a new one
-        marker = self.make_marker(id_)
-        return marker
+        # If no markers are found, return None
+        return None
 
     # Called by the Camera object
     # Runs through the detected ids and checks if they are already on the board
@@ -75,7 +78,6 @@ class Board(metaclass=BoardSingletonMeta):
                 marker.updated = False
         
         if ids is not None:
-            processed_ids = set()
 
             for marker_id, marker_corners in zip(ids, corners):
                 id_ = int(marker_id)
@@ -83,28 +85,26 @@ class Board(metaclass=BoardSingletonMeta):
                     # 1. Marker does not exist and has been detected
                     marker = self.make_marker(id_)
                     marker.update(marker_corners)
+                    self.id_occurrences[id_] = 1
                 else:
                     # 2. Marker exists and has been detected
-                    # If the id does not exist in the processed_ids set, add it and update the marker
-                    if id_ not in processed_ids:
-                        marker = self.get_marker(id_)
+                    # If the id does not exist in the self.id_occurrences dictionary, we haven't updated this marker yet
+                    # So we update it
+                    if id_ not in self.id_occurrences.keys():
+                        marker = self.make_marker(id_)
                         marker.update(marker_corners)
-                        processed_ids.add(id_)
-                    # If the id does exist in the processed_ids set, that means there are multiple markers in there (or should be)
+                        self.id_occurrences[id_] = 1
+                    # If the id does exist in the self.id_occurrences dictionary, that means there are multiple markers in there (or should be)
+                    # So if there is another marker in there we update it, otherwise we make a new marker
                     else:
-                        # Go through each of the markers with that id and check if they've been updated
-                        # If they have, skip them, and if they all have, make a new marker
-                        for marker in self.markers[id_]:
-                            if marker.updated:
-                                continue
-                            elif not marker.updated:
-                                marker.update(marker_corners)
-                                break
-                            else:
-                                marker = self.make_marker(id_)
-                                marker.update(marker_corners)
-                                break
-        
+                        marker = self.get_marker(id_)
+                        if marker is not None:
+                            marker.update(marker_corners)
+                        else:
+                            marker = self.make_marker(id_)
+                            marker.update(marker_corners)
+                            self.id_occurrences[id_] += 1
+
         # 3. Marker exists and has not been detected
         for id_, markers in self.markers.items():
             for marker in markers:
@@ -113,9 +113,10 @@ class Board(metaclass=BoardSingletonMeta):
                 elif marker.gone:
                     self.markers_to_delete.append(marker)
                 elif marker.is_visible:
-                    print("Lost tracking")
                     marker.lost_tracking()
         self.destroy_markers()
+
+        print(self.id_occurrences)
 
         if self.repository.new_data:
             self.repository.strategy.send()
