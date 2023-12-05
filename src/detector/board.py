@@ -11,6 +11,7 @@ class Board():
         self.timer = t.Timer()
         self.timer.start()
         self.repository = repository
+        self.state = None
 
     def make_marker(self, id_, corners):
         new_marker = m.Marker(id_, self.timer)
@@ -70,11 +71,15 @@ class Board():
             self.repository.new_data = False
 
     def draw(self, frame):
+        # Draw the markers
         for marker in self.markers.values():
             marker.draw(frame)
 
     def end(self):
         self.timer.end()
+
+    def change_state(self, state):
+        self.state = state
 
     # TODO implement a calibration phase that runs these calculations when it's done
     # TODO implement the perspective transform to get the bounds of the board

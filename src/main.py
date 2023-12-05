@@ -48,9 +48,9 @@ def camera_loop(camera, _display):
             break
         # _display.update_video_image(frame)
 
-def camera_loop_fullscreen(camera, _display, color_background, color_markers, radius, filled):
+def camera_loop_fullscreen(camera, _display):
     while not _display.terminate:
-        frame = camera.videoCapture(color_background, color_markers, radius, filled)
+        frame = camera.videoCapture()
         if frame is not None:
             _display.update_video_image_fullscreen(frame)
         else:
@@ -99,7 +99,7 @@ if (__name__ == '__main__'):
     else:
 
         if args.video_full:
-            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display, (255,255,255), (0,0,0), 30, False))
+            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display))
         else:
             camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
         camera_thread.daemon = True

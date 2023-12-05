@@ -60,7 +60,7 @@ class Camera():
     """
     Loop through the markers and update them
     """
-    def videoCapture(self, radius=15, filled=True, color_background=None, color_markers=(100, 0, 0)):
+    def videoCapture(self):
         try:
             ret, frame = self.cap.read()
             if ret:
@@ -75,20 +75,10 @@ class Camera():
                 # Detect the markers
                 corners, ids, rejectedImgPoints = self.detector.detectMarkers(frame_gray)
 
-                # frame_marked = aruco.drawDetectedMarkers(frame_gray, corners, ids)
-
                 # Flip image
                 frame_gray = cv.flip(frame_gray, 1)
 
                 frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
-
-                if color_background is not None:
-                    cv.rectangle(frame_color, (0, 0), (frame_color.shape[1], frame_color.shape[0]), color_background, -1)
-                
-                if filled:
-                    fill = -1
-                else:
-                    fill = 3
 
                 self.board.update(ids, corners)
                 self.board.draw(frame_color)
