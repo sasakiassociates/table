@@ -27,7 +27,7 @@ class Board(metaclass=BoardSingletonMeta):
         self.state = None
         self.trigger_state_pairs = s.StateFactory.make_states(self)
         self.markers_to_delete = []
-        self.id_occurrences = {}
+        # self.id_occurrences = {}
 
     def make_marker(self, id_):
         new_marker = m.Marker(id_, self.timer)
@@ -39,17 +39,21 @@ class Board(metaclass=BoardSingletonMeta):
         # Add the marker to the list of markers with that id
         self.markers[id_].append(new_marker)
 
+        # if self.id_occurrences.get(id_) is None:
+        #     self.id_occurrences[id_] = 1
+        # else:
+        #     self.id_occurrences[id_] += 1
+
         return new_marker
     
     def destroy_markers(self):
         if len(self.markers_to_delete) > 0:
-            print(self.markers_to_delete)
             print("Destroying markers")
             for marker in self.markers_to_delete:
                 self.markers[marker.id].remove(marker)
-                self.id_occurrences[marker.id] -= 1
-                if self.id_occurrences[marker.id] == 0:
-                    del self.id_occurrences[marker.id]
+                # self.id_occurrences[marker.id] -= 1
+                # if self.id_occurrences[marker.id] == 0:
+                #     del self.id_occurrences[marker.id]
                 if len(self.markers[marker.id]) == 0:
                     del self.markers[marker.id]
             self.markers_to_delete = []
@@ -59,11 +63,22 @@ class Board(metaclass=BoardSingletonMeta):
             # If the marker was already updated, skip it
             if marker.updated:
                 continue
-            # If it hasn't been updated, update it and return it
+            # If it hasn't been updated, make sure it's the closest one to the previous center, and return it
             elif not marker.updated:
+                self.get_closest_marker(id_)
                 return marker
         # If no markers are found, return None
         return None
+    
+    def get_closest_marker(self, id_):
+        marker_distances = {}
+        # Go through each marker and get the distance to marker.prev_center
+        # Return the marker with the smallest distance
+        for marker in self.markers[id_]:
+            distance = np.linalg.norm(np.array(marker.prev_center) - np.array(marker.center))
+            marker_distances[marker] = distance
+        # return the marker with the smallest distance
+        return min(marker_distances, key=marker_distances.get)
 
     # Called by the Camera object
     # Runs through the detected ids and checks if they are already on the board
@@ -72,40 +87,77 @@ class Board(metaclass=BoardSingletonMeta):
     # If not, make a new marker object with a uuid and add it to the board
     # TODO expect there to be multiple markers with the same id
     def update(self, ids, corners):
+        id_occurences = {}
+        updated_id_occurrences = {}
+
         # Mark each marker as not updated
         for id_, markers in self.markers.items():
             for marker in markers:
                 marker.updated = False
+
+        # reorder markers in each id so visible markers are first
+        for id_, markers in self.markers.items():
+            visible_markers = []
+            invisible_markers = []
+            for marker in markers:
+                if marker.is_visible:
+                    visible_markers.append(marker)
+                else:
+                    invisible_markers.append(marker)
+            self.markers[id_] = visible_markers + invisible_markers
         
         if ids is not None:
+
+            # Get the number of occurrences of each id
+            for id_ in ids:
+                id_ = int(id_)
+                if id_ not in id_occurences.keys():
+                    id_occurences[id_] = 1
+                else:
+                    id_occurences[id_] += 1
 
             for marker_id, marker_corners in zip(ids, corners):
                 id_ = int(marker_id)
                 if id_ not in self.markers.keys():
                     # 1. Marker does not exist and has been detected
+                    # Create Key and Marker then increment self.id_occurrences
                     marker = self.make_marker(id_)
                     marker.update(marker_corners)
-                    self.id_occurrences[id_] = 1
+                    updated_id_occurrences[id_] = 1
                 else:
                     # 2. Marker exists and has been detected
-                    # If the id does not exist in the self.id_occurrences dictionary, we haven't updated this marker yet
-                    # So we update it
-                    # if id_ not in self.id_occurrences.keys():
-                    #     marker = self.make_marker(id_)
-                    #     marker.update(marker_corners)
-                    #     self.id_occurrences[id_] = 1
-                    # If the id does exist in the self.id_occurrences dictionary, that means there are multiple markers in there (or should be)
-                    # So if there is another marker in there we update it, otherwise we make a new marker
-                    # else:
-                    # TODO figure out how to handle it when there are multiple markers with the same id and one disappears (currently it moves to where the other one is)
-                        marker = self.get_marker(id_)
-                        if marker is not None:
+                    
+                    # If we're in here, the marker id exists and has at least one detected marker inside it
+                    # Get a marker that has not been updated yet
+                    marker = self.get_marker(id_)
+
+                    # If there is a marker that hasn't been updated yet
+                    # TODO This mostly works but still does the updates in an arbitrary order. We need to somehow make sure "get marker" returns a marker in the closer vicinity of the previous marker
+                    if marker is not None:
+                        # If the number of updated markers is less than the number of detected markers
+                        if updated_id_occurrences.get(id_) is None or updated_id_occurrences[id_] < id_occurences[id_]:
+                            # Check if the marker is visible
                             if marker.is_visible:
                                 marker.update(marker_corners)
-                        else:
-                            marker = self.make_marker(id_)
-                            marker.update(marker_corners)
-                            self.id_occurrences[id_] += 1
+                                if updated_id_occurrences.get(id_) is None:
+                                    updated_id_occurrences[id_] = 1
+                                else:
+                                    updated_id_occurrences[id_] += 1
+                            else:
+                                marker.found()
+                                marker.update(marker_corners)
+                                if updated_id_occurrences.get(id_) is None:
+                                    updated_id_occurrences[id_] = 1
+                                else:
+                                    updated_id_occurrences[id_] += 1
+                        # If the number of updated markers is equal to the number of detected markers, then we've already updated all the markers we need to
+                        elif updated_id_occurrences[id_] == id_occurences[id_]:
+                            continue
+                    else:
+                        # If all markers under this id have already been updated, make a new marker
+                        marker = self.make_marker(id_)
+                        marker.update(marker_corners)
+                        updated_id_occurrences[id_] += 1
 
         # 3. Marker exists and has not been detected
         for id_, markers in self.markers.items():
@@ -115,7 +167,6 @@ class Board(metaclass=BoardSingletonMeta):
                 elif marker.gone:
                     self.markers_to_delete.append(marker)
                 elif marker.is_visible:
-                    print("Lost tracking of marker: ", marker.id)
                     marker.lost_tracking()
         self.destroy_markers()
 

@@ -42,10 +42,6 @@ class Marker(ABC):
         return width - self.center[0], self.center[1]
 
     def update(self, corners_):
-        # If it was lost, now it is found
-        # if self.is_visible == False:
-        #     self.found()
-
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
         self.updated = True
