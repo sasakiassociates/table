@@ -15,27 +15,31 @@ class Repository():
     def check_for_terminate(self):
         return self.strategy.terminate
     
-    def remove_from_sent_data(self, object_type, id_):
-        if object_type in self.data and str(id_) in self.data[object_type]:
-            del self.data[str(object_type)][str(id_)]
-            if self.data[str(object_type)] == {}:
-                del self.data[str(object_type)]
-        # self.data[object_type].pop(str(id_), None)
-        self.new_data = True
+    def remove_from_sent_data(self, id_, uuid):
+        uuid = str(uuid)
+        if id_ in self.data:
+            if uuid in self.data[id_]:
+                del self.data[id_][uuid]
+                if self.data[id_] == {}:
+                    del self.data[id_]
+                self.new_data = True
 
-    def update(self, id_, json, object_type):
-        if object_type not in self.data:
-            self.data[str(object_type)] = {}
-        self.data[str(object_type)][str(id_)] = json
+    def update(self, id_, uuid, json):
+        uuid = str(uuid)
+        if id_ not in self.data:
+            self.data[id_] = {}
+        self.data[id_][uuid] = json
+        
         self.new_data = True
         
-    # def update(self, marker_json):
-    #     if marker_json['location'] == [0, 0, 0]:
-    #         self.data.pop(str(marker_json['id']), None)
-    #     else:
-    #         self.data[str(marker_json['id'])] = marker_json
-    #         # self.data.setdefault(str(marker_json['id']), marker_json).update()
-    #     self.new_data = True
+# {2: 
+#   {
+#   '7602833e-d34f-4f82-a22f-fdc66a3be1f1': 
+#       {'id': 2, 'uuid': '7602833e-d34f-4f82-a22f-fdc66a3be1f1', 'location': [-800, -124, 0], 'rotation': 2.1096158842252324}, 
+#   '7f4f217b-cba2-4687-a428-997274c3cd14': 
+#       {'id': 2, 'uuid': '7f4f217b-cba2-4687-a428-997274c3cd14', 'location': [-791, -166, 0], 'rotation': 2.1269625047849248}
+#   }
+# }
         
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")

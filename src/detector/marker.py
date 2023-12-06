@@ -28,7 +28,7 @@ class Marker(ABC):
         self.time_last_seen = None
         self.lost_threshold = 1000     # sets the time (in milliseconds) before a marker is considered lost
 
-        self.type = "marker"
+        # self.type = "marker"
 
         self.significant_change = False
         self.updated = False
@@ -64,9 +64,9 @@ class Marker(ABC):
     def notify_observers(self):
         for observer in self.observers:
             if self.is_visible:
-                observer.update(self.id, self.build_json(), self.type)
+                observer.update(self.id, self.uuid, self.build_json())
             else:
-                observer.remove_from_sent_data(self.type, self.id)
+                observer.remove_from_sent_data(self.id, self.uuid)
 
     def get_id(self):
         return self.id
