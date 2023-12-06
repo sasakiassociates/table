@@ -22,7 +22,15 @@ namespace TableUiReceiver
 
                 foreach (var deserialJson in deserialJsonList)
                 {
-                    if (deserialJson.Key == "marker")
+                    int id = int.Parse(deserialJson.Key);
+                    foreach (var marker in deserialJson.Value)
+                    {
+                        Marker incomingMarker = marker.Value;
+                        incomingMarker.id = id;
+                        incomingMarker.uuid = marker.Key;
+                        result.Add(incomingMarker);
+                    }
+                    /*if (deserialJson.Key == "marker")
                     {
                         foreach (var marker in deserialJson.Value)
                         {
@@ -36,7 +44,7 @@ namespace TableUiReceiver
                     {
                         // Ignore it
                         continue;
-                    }
+                    }*/
                 }
             }
             catch (JsonException e)

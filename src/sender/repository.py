@@ -32,15 +32,6 @@ class Repository():
         
         self.new_data = True
         
-# {2: 
-#   {
-#   '7602833e-d34f-4f82-a22f-fdc66a3be1f1': 
-#       {'id': 2, 'uuid': '7602833e-d34f-4f82-a22f-fdc66a3be1f1', 'location': [-800, -124, 0], 'rotation': 2.1096158842252324}, 
-#   '7f4f217b-cba2-4687-a428-997274c3cd14': 
-#       {'id': 2, 'uuid': '7f4f217b-cba2-4687-a428-997274c3cd14', 'location': [-791, -166, 0], 'rotation': 2.1269625047849248}
-#   }
-# }
-        
 if (__name__ == '__main__'):
     print("Running unit tests for repository.py")
     repo = Repository('udp')

@@ -129,8 +129,25 @@ namespace TableUiAdapter
                 foreach (Marker marker in incomingMarkers)
                 {
                     ids.Add(marker.id);
+                    marker.location[0] = (int)(marker.location[0] * scale);
+                    marker.location[1] = (int)(marker.location[1] * scale);
 
-                    switch (marker.type)
+                    if (topo != null)
+                    {
+                        Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
+                        Point3d topoPoint = topo.ClosestPoint(markerPoint);
+                        marker.location[2] = (int)topoPoint.Z + cameraHeight;
+                    }
+                    else
+                    {
+                        marker.location[2] = 0;
+                    }
+
+                    Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], 0), Vector3d.ZAxis);
+                    plane.Rotate(marker.rotation, Vector3d.ZAxis);
+                    planes.Add(plane);
+
+                    /*switch (marker.type)
                     {
                         case "camera":
                             if (cameraTracking)
@@ -166,7 +183,7 @@ namespace TableUiAdapter
                             marker.location[0] = (int)(marker.location[0] * scale);
                             marker.location[1] = (int)(marker.location[1] * scale);
 
-/*                            if (topo != null)
+*//*                            if (topo != null)
                             {
                                 Point3d markerPoint = new Point3d(marker.location[0], marker.location[1], 0);
                                 Point3d topoPoint = topo.ClosestPoint(markerPoint);
@@ -175,12 +192,12 @@ namespace TableUiAdapter
                             else
                             {
                                 marker.location[2] = 0;
-                            }*/
+                            }*//*
                             Plane plane = new Plane(new Point3d(marker.location[0], marker.location[1], 0), Vector3d.ZAxis);
                             plane.Rotate(marker.rotation, Vector3d.ZAxis);
                             planes.Add(plane);
                             break;
-                    }
+                    }*/
                 }
 
                 // Expire the solution on the main thread (Grasshopper won't let you interact with the main thread from another thread)

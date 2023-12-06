@@ -15,6 +15,7 @@ namespace TableUiReceiver
         // Overload method for use in JSON deserialization
         public Marker() { }
 
+        public string uuid { get; set; }
         public int id { get; set; }
         public int[] location
         {
@@ -26,7 +27,6 @@ namespace TableUiReceiver
             get { return _rotation; }
             set { _rotation = SmoothRotation(value);}
         }
-        public string type { get; set; }
 
         // Internal variables for smoothing so the setter doesn't call itself recursively
         private int[] _location;
