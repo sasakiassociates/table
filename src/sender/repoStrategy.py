@@ -69,13 +69,14 @@ class UDPRepo(RepoStrategy):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             message = str(self.repository.data)
-            print(message)
+            # print(message)
             message_bytes = message.encode('utf-8')
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
             _socket.close()
         except Exception as e:
             print(e)
     
+# TODO looks like the Firebase repo is not deleting old marker objects
 class FirebaseRepo(RepoStrategy):
     def __init__(self, repository_):
         super().__init__(repository_)
@@ -83,17 +84,6 @@ class FirebaseRepo(RepoStrategy):
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
-
-    # def setup(self):
-    #     self.send_data_thread = threading.Thread(target=self.send_data_thread)
-    #     self.send_data_thread.daemon = True
-    #     self.send_data_thread.start()
-        
-    # def send_data_thread(self):
-    #     while not self.terminate:
-    #         if self.new_data:
-    #             self.send()
-    #             self.new_data = False
 
     def send(self):
         try:

@@ -15,20 +15,16 @@ class Repository():
     def check_for_terminate(self):
         return self.strategy.terminate
     
-    def remove_from_sent_data(self, id_, uuid):
+    def remove_from_sent_data(self, uuid):
         uuid = str(uuid)
-        if id_ in self.data:
-            if uuid in self.data[id_]:
-                del self.data[id_][uuid]
-                if self.data[id_] == {}:
-                    del self.data[id_]
-                self.new_data = True
+        if uuid in self.data:
+            del self.data[uuid]
+            self.new_data = True
 
-    def update(self, id_, uuid, json):
+    def update(self, uuid, json):
         uuid = str(uuid)
-        if id_ not in self.data:
-            self.data[id_] = {}
-        self.data[id_][uuid] = json
+        if "marker" not in self.data: self.data["marker"]    = {}
+        self.data["marker"][uuid] = json
         
         self.new_data = True
         
