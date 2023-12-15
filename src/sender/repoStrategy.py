@@ -80,7 +80,7 @@ class UDPRepo(RepoStrategy):
 class FirebaseRepo(RepoStrategy):
     def __init__(self, repository_):
         super().__init__(repository_)
-        self.credentials = credentials.Certificate("./sender/key/firebase_table-key.json")
+        self.credentials = credentials.Certificate("./key/firebase_table-key.json")
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
@@ -97,6 +97,12 @@ class FirebaseRepo(RepoStrategy):
         if self.send_data_thread:
             self.send_data_thread.join()
         firebase_admin.delete_app(self.firebase_admin)
+
+    def receive(self):
+        ref = db.reference('/')
+        self.repository.data = ref.get()
+        self.repository.new_data = True
+
 
 class CompositeRepo(RepoStrategy):
     def __init__(self, repository_):
