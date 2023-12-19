@@ -50,8 +50,6 @@ class Marker(ABC):
 
     def lost(self):
         self.gone = True
-        self.center = (0,0)
-        self.rotation = 0
         self.notify_observers()
 
     def lost_tracking(self):
@@ -63,10 +61,7 @@ class Marker(ABC):
     
     def notify_observers(self):
         for observer in self.observers:
-            if self.is_visible:
-                observer.update(self.uuid, self.build_json())
-            else:
-                observer.remove_from_sent_data(self.uuid)
+            observer.update(self.uuid, self.build_json(), self.gone)
 
     def get_id(self):
         return self.id

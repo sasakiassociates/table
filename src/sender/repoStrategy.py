@@ -11,10 +11,9 @@ class RepoStrategy(ABC):
     @abstractmethod
     def __init__(self, repository_) -> None:
         self.terminate = False
-        self.repository = repository_
 
     @abstractmethod
-    def send(self):
+    def send(self, message):
         pass
 
     @abstractmethod
@@ -65,10 +64,10 @@ class UDPRepo(RepoStrategy):
             _socket.close()
             self.terminate = True
 
-    def send(self):
+    def send(self, message):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            message = str(self.repository.data)
+            message = str(message)
             # print(message)
             message_bytes = message.encode('utf-8')
             _socket.sendto(message_bytes, (self.send_ip, self.send_port))
@@ -80,29 +79,29 @@ class UDPRepo(RepoStrategy):
 class FirebaseRepo(RepoStrategy):
     def __init__(self, repository_):
         super().__init__(repository_)
-        self.credentials = credentials.Certificate("./key/firebase_table-key.json")
+        self.credentials = credentials.Certificate("./sender/key/firebase_table-key.json")
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
 
-    def send(self):
+    # TODO This should be changed so that each marker sends it's own json directly to firebase and doesn't concatenate them
+    def send(self, message):
         try:
             ref = db.reference('/')
-            ref.set(self.repository.data)
+            ref.set(message)
         except Exception as e:
             print("Error sending data:", e)
+
+    def remove(self, uuid):
+        print("Removing marker with uuid:", uuid)
+        ref = db.reference(f"/marker/{uuid}")
+        ref.delete()
 
     def end(self):
         self.terminate = True
         if self.send_data_thread:
             self.send_data_thread.join()
         firebase_admin.delete_app(self.firebase_admin)
-
-    def receive(self):
-        ref = db.reference('/')
-        self.repository.data = ref.get()
-        self.repository.new_data = True
-
 
 class CompositeRepo(RepoStrategy):
     def __init__(self, repository_):
@@ -112,9 +111,9 @@ class CompositeRepo(RepoStrategy):
     def add_strategy(self, strategy):
         self.strategies.append(strategy)
     
-    def send(self):
+    def send(self, message):
         for strategy in self.strategies:
-            strategy.send()
+            strategy.send(message)
     
     def end(self):
         for strategy in self.strategies:

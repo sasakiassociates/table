@@ -22,12 +22,11 @@ class Board(metaclass=BoardSingletonMeta):
         self.markers = {}       # The markers currently present on the board with their ids as the keys
         self.bounds = None      # Holds the (x, y) coordinates of the calibration markers from setup
         self.timer = t.Timer()
-        self.timer.start()
         self.repository = repository
-        self.state = None
-        self.trigger_state_pairs = s.StateFactory.make_states(self)
         self.markers_to_delete = []
-        # self.id_occurrences = {}
+        self.matrix = None
+        
+        self.timer.start()
 
     def make_marker(self, id_):
         new_marker = m.Marker(id_, self.timer)
@@ -48,7 +47,6 @@ class Board(metaclass=BoardSingletonMeta):
     
     def destroy_markers(self):
         if len(self.markers_to_delete) > 0:
-            print("Destroying markers")
             for marker in self.markers_to_delete:
                 self.markers[marker.id].remove(marker)
                 # self.id_occurrences[marker.id] -= 1
@@ -86,6 +84,8 @@ class Board(metaclass=BoardSingletonMeta):
     # If there has, update the marker
     # If not, make a new marker object with a uuid and add it to the board
     # TODO expect there to be multiple markers with the same id
+    # TODO there's an issue here
+    #       The markers aren't deleted before they run through and update again, this makes it so all markers get deleted but then it cycles through all markers again and makes zombie markers reaappear on the database
     def update(self, ids, corners):
         id_occurences = {}
         updated_id_occurrences = {}
@@ -171,9 +171,7 @@ class Board(metaclass=BoardSingletonMeta):
         self.destroy_markers()
 
         if self.repository.new_data:
-            self.repository.strategy.send()
-            self.repository.new_data = False
-
+            self.repository.push_data()
 
     def draw(self, frame):
         # Draw the markers
@@ -184,12 +182,9 @@ class Board(metaclass=BoardSingletonMeta):
     def end(self):
         self.timer.end()
 
-    def change_state(self, state):
-        self.state = state
-
     # TODO implement a calibration phase that runs these calculations when it's done
     # TODO implement the perspective transform to get the bounds of the board
-    def find_transformation_matrix(pixel_points, cad_points):
+    def find_transformation_matrix(self, pixel_points, cad_points):
         """
         Find the transformation matrix from pixel space to CAD space.
 
@@ -205,12 +200,10 @@ class Board(metaclass=BoardSingletonMeta):
         cad_array = np.float32(cad_points)
 
         # Calculate the transformation matrix
-        matrix = cv.getPerspectiveTransform(pixel_array, cad_array)
-
-        return matrix
+        self.matrix = cv.getPerspectiveTransform(pixel_array, cad_array)
 
     # TODO make this happen in the individual markers
-    def apply_transformation(matrix, point):
+    def apply_transformation(self, point):
         """
         Apply the transformation matrix to a point.
 
@@ -221,7 +214,10 @@ class Board(metaclass=BoardSingletonMeta):
         Returns:
         tuple: Transformed point in CAD space
         """
+        if self.matrix == None:
+            raise Exception("No transformation matrix found")
+
         point_array = np.float32([[point]])
-        transformed_point = cv.perspectiveTransform(point_array, matrix)
+        transformed_point = cv.perspectiveTransform(point_array, self.matrix)
 
         return transformed_point[0][0]
