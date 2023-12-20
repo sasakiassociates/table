@@ -170,9 +170,6 @@ class Board(metaclass=BoardSingletonMeta):
                     marker.lost_tracking()
         self.destroy_markers()
 
-        if self.repository.new_data:
-            self.repository.push_data()
-
     def draw(self, frame):
         # Draw the markers
         for id_, markers in self.markers.items():

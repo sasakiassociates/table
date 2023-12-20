@@ -70,7 +70,7 @@ if (__name__ == '__main__'):
     _display = display.Display()
 
     params = aruco.DetectorParameters()
-    _repository = repository.Repository(mode)                  # New repository object that opens a UDP connection on a new thread
+    _repository = repository.Repository(mode, "test_proj")                  # New repository object that opens a UDP connection on a new thread
     board = board.Board(_repository)                           # New board object that uses the repository object to send data
     
     camera_num = args.camera

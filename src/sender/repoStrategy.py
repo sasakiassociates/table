@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 @abstractmethod
 class RepoStrategy(ABC):
     @abstractmethod
-    def __init__(self, repository_) -> None:
+    def __init__(self, repository_, project_name) -> None:
         self.terminate = False
 
     @abstractmethod
@@ -21,22 +21,22 @@ class RepoStrategy(ABC):
         pass
 
 class RepoStrategyFactory():
-    def get_strategy(strategy_name, repository_):
+    def get_strategy(strategy_name, repository_, project_name):
         if strategy_name == 'udp':
-            return UDPRepo(repository_)
+            return UDPRepo(repository_, project_name)
         elif strategy_name == 'firebase':
-            return FirebaseRepo(repository_)
+            return FirebaseRepo(repository_, project_name)
         elif strategy_name == 'both':
-            composite_repo = CompositeRepo(repository_)
-            composite_repo.add_strategy(UDPRepo(repository_))
-            composite_repo.add_strategy(FirebaseRepo(repository_))
+            composite_repo = CompositeRepo(repository_, project_name)
+            composite_repo.add_strategy(UDPRepo(repository_, project_name))
+            composite_repo.add_strategy(FirebaseRepo(repository_, project_name))
             return composite_repo
         else:
             raise Exception('Invalid strategy name')
         
 class UDPRepo(RepoStrategy):
-    def __init__(self, repository_) -> None:
-        super().__init__(repository_)
+    def __init__(self, repository_, project_name) -> None:
+        super().__init__(repository_, project_name)
         self.listen_ip = '0.0.0.0'
         self.listen_port = 5004
         self.send_ip = '127.0.0.1'
@@ -75,27 +75,29 @@ class UDPRepo(RepoStrategy):
         except Exception as e:
             print(e)
     
-# TODO looks like the Firebase repo is not deleting old marker objects
+# TODO need to wipe the markers that are there on startup
 class FirebaseRepo(RepoStrategy):
-    def __init__(self, repository_):
-        super().__init__(repository_)
+    def __init__(self, repository_, project_name):
+        super().__init__(repository_, project_name)
         self.credentials = credentials.Certificate("./sender/key/firebase_table-key.json")
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
+        self.ref = db.reference(f'/bases/{project_name}/marker')
+
+    def listen_for_data_thread(self):
+        self.ref.listen(self.listener)
 
     # TODO This should be changed so that each marker sends it's own json directly to firebase and doesn't concatenate them
     def send(self, message):
         try:
-            ref = db.reference('/')
-            ref.set(message)
+            self.ref.update(message)
+            # ref.set(message)
         except Exception as e:
             print("Error sending data:", e)
 
     def remove(self, uuid):
-        print("Removing marker with uuid:", uuid)
-        ref = db.reference(f"/marker/{uuid}")
-        ref.delete()
+        self.ref.child(uuid).delete()
 
     def end(self):
         self.terminate = True

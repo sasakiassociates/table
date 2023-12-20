@@ -55,18 +55,6 @@ class MarkerFactory:
                     print(f"ERROR: Marker ID {marker_id} is already assigned to project {marker_list[marker_id].project_name}. Please change the ID of this project.")
             bounding_zone.attach_observer(observer)
 
-        # Make the zones
-        # for i in range(0, num_of_zones):
-        #     # Make zone with 3 markers
-        #     zone = z.Zone(i)
-        #     for j in range(0, 3):
-        #         marker_id = i * 3 + j + 1
-        #         marker = m.GenericMarker(marker_id, timer_)
-        #         zone.add_marker(marker)
-        #         assigned_marker_ids.append(marker_id)
-        #     zone_list.append(zone)
-        
-
         # Finally, let's make the rest of the markers generic markers
         for i in range(0, dict_length):
             if i not in assigned_marker_ids:
