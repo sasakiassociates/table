@@ -4,7 +4,6 @@ import threading
 
 from . import marker as m
 from . import timer as t
-from . import state as s
 
 class BoardSingletonMeta(type):
     _instances = {}
@@ -37,11 +36,6 @@ class Board(metaclass=BoardSingletonMeta):
             self.markers[id_] = []
         # Add the marker to the list of markers with that id
         self.markers[id_].append(new_marker)
-
-        # if self.id_occurrences.get(id_) is None:
-        #     self.id_occurrences[id_] = 1
-        # else:
-        #     self.id_occurrences[id_] += 1
 
         return new_marker
     

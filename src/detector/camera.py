@@ -12,8 +12,7 @@ import os
 class Camera():
     def __init__(self, camera_num, aruco_dict_name, params, board):
 
-        aruco_dict_name = f'DICT_{aruco_dict_name}'
-        aruco_dict_name = aruco_dict_name.upper()
+        aruco_dict_name = f'DICT_{aruco_dict_name}'.upper()
 
         if aruco_dict_name in ar.aruco_dict_mapping.keys():
             aruco_dict = aruco.getPredefinedDictionary(ar.aruco_dict_mapping[str(aruco_dict_name)])
@@ -29,8 +28,6 @@ class Camera():
         self.cap = cv.VideoCapture(camera_num, cv.CAP_DSHOW)
         self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1080)
         self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
-
-        self.background_color = (0, 0, 0)
 
         self.matrix = None
         self.distortion = None

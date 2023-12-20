@@ -9,7 +9,6 @@ class Timer(threading.Thread):
         self.lock = threading.Lock()
         self.lost_objects = []
         self.time_last_sent = None
-        self.send_interval = 100  # The time interval (in milliseconds) between sending data so it isn't sent too often  
 
     def run(self):
         self.running = True
@@ -21,17 +20,6 @@ class Timer(threading.Thread):
                     if self.time_since_start - orphan.time_last_seen > orphan.lost_threshold:
                         orphan.lost()                       # If the orphan has been lost for more than its lost_threshold, report it as lost
                         self.lost_objects.remove(orphan)    # Remove the orphan from the list of lost orphan
-
-    def check_if_send(self):
-        if self.time_last_sent is None:
-            self.time_last_sent = self.time_since_start
-            return True
-        else:
-            if self.time_since_start - self.time_last_sent > self.send_interval:
-                self.time_last_sent = self.time_since_start
-                return True
-            else:
-                return False
 
     def end(self):
         self.running = False

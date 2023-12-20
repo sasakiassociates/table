@@ -63,9 +63,6 @@ class Marker(ABC):
         for observer in self.observers:
             observer.update(self.uuid, self.build_json(), self.gone)
 
-    def get_id(self):
-        return self.id
-    
     def build_json(self):
         marker_data = {
             "id": self.id,
