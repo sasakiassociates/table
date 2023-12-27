@@ -75,7 +75,6 @@ class UDPRepo(RepoStrategy):
         except Exception as e:
             print(e)
     
-# TODO need to wipe the markers that are there on startup
 class FirebaseRepo(RepoStrategy):
     def __init__(self, repository_, project_name):
         super().__init__(repository_, project_name)
@@ -84,11 +83,24 @@ class FirebaseRepo(RepoStrategy):
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
         self.ref = db.reference(f'/bases/{project_name}/marker')
+        self.config_ref = db.reference(f'/bases/{project_name}/config')
+        # Begins the listening thread
+        # self.listener = self.config_ref.listen(self.on_new_data)
+        self.project_name = None
 
-    def listen_for_data_thread(self):
-        self.ref.listen(self.listener)
+        # Clear the markers from the previous run
+        self.ref.delete()
 
-    # TODO This should be changed so that each marker sends it's own json directly to firebase and doesn't concatenate them
+    """
+    The function to be run when there's new information
+    """
+    def on_new_data(self):
+        # change the project we're working under if it has changed
+        if self.project_name != self.config_ref.get()['project_name']:
+            self.project_name = self.config_ref.get()['project_name']
+            self.ref = db.reference(f'/bases/{self.project_name}/marker')
+            print("Project name is:", self.project_name)
+
     def send(self, message):
         try:
             self.ref.update(message)
@@ -101,8 +113,8 @@ class FirebaseRepo(RepoStrategy):
 
     def end(self):
         self.terminate = True
-        if self.send_data_thread:
-            self.send_data_thread.join()
+        # Clear any leftover markers from this run
+        self.ref.delete()
         firebase_admin.delete_app(self.firebase_admin)
 
 class CompositeRepo(RepoStrategy):
