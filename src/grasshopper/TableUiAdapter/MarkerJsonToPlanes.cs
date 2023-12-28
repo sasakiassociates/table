@@ -20,7 +20,7 @@ namespace TableUiAdapter
         public MarkerJsonToPlanes()
           : base("MarkerJsonToPlanes", "Nickname",
               "Description",
-              "Category", "Subcategory")
+              "Strategist", "TableUI")
         {
         }
 
@@ -48,11 +48,22 @@ namespace TableUiAdapter
         {
             DA.GetData(0, ref incomingJson);
 
+            planes.Clear();
+
             if (incomingJson != null)
             {
-                var markers = JsonConvert.DeserializeObject<List<Marker>>(incomingJson);
+                var markers = JsonConvert.DeserializeObject<Dictionary<string, Marker>>(incomingJson);
 
                 foreach (var marker in markers)
+                {
+                    Point3d origin = new Point3d(marker.Value.x, marker.Value.y, 0);
+
+                    Plane plane = new Plane(origin, Vector3d.ZAxis);
+                    plane.Rotate(marker.Value.rotation, Vector3d.ZAxis);
+
+                    planes.Add(plane);
+                }
+                /*foreach (var marker in markers)
                 {
                     Point3d origin = new Point3d(marker.location[0], marker.location[1], marker.location[2]);
 
@@ -60,7 +71,7 @@ namespace TableUiAdapter
                     plane.Rotate(marker.rotation, Vector3d.ZAxis);
 
                     planes.Add(plane);
-                }
+                }*/
 
                 DA.SetDataList(0, planes);
             }

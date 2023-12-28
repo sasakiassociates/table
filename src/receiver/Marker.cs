@@ -17,11 +17,14 @@ namespace TableUiReceiver
 
         public string uuid { get; set; }
         public int id { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
         public int[] location
         {
             get { return _location; }
-            set { _location = SmoothLocation(value);}
+            set { _location = SmoothLocation(value); }
         }
+
         public float rotation
         { 
             get { return _rotation; }
@@ -56,7 +59,7 @@ namespace TableUiReceiver
 
         public void Update(Marker marker)
         {
-            this.location = marker.location;
+            //this.location = [marker.x, marker.y];
             this.rotation = marker.rotation;
         }
     }

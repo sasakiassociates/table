@@ -13,13 +13,17 @@ class Timer(threading.Thread):
     def run(self):
         self.running = True
         while self.running:
-            time.sleep(0.001)  # Sleep for 1 millisecond
             with self.lock:
-                self.time_since_start += 1                  # Increment the time since start
-                for orphan in self.lost_objects:            # Loop through the lost items (orphans)
-                    if self.time_since_start - orphan.time_last_seen > orphan.lost_threshold:
-                        orphan.lost()                       # If the orphan has been lost for more than its lost_threshold, report it as lost
-                        self.lost_objects.remove(orphan)    # Remove the orphan from the list of lost orphan
+                if self.lost_objects == []:
+                    # Don't keep count unless there are lost objects
+                    self.time_since_start = 0
+                else:
+                    time.sleep(0.001)  # Sleep for 1 millisecond
+                    self.time_since_start += 1                  # Increment the time since start
+                    for orphan in self.lost_objects:            # Loop through the lost items (orphans)
+                        if self.time_since_start - orphan.time_last_seen > orphan.lost_threshold:
+                            orphan.lost()                       # If the orphan has been lost for more than its lost_threshold, report it as lost
+                            self.lost_objects.remove(orphan)    # Remove the orphan from the list of lost orphan
 
     def end(self):
         self.running = False
