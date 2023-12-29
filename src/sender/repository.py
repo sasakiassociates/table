@@ -1,58 +1,52 @@
-# import repoStrategy as rs
 from . import repoStrategy as rs
 
-# import repoStrategy as rs
 import threading
 
 class Repository():
     def __init__(self, strategy_name, project_name):
-        self.new_data = False
         self.strategy = rs.RepoStrategyFactory.get_strategy(strategy_name, self, project_name)
         self.project = None # TODO finalize the name (whether it's project, sketch, etc.)
 
-    def close_threads(self):
-        if self.strategy.terminate == False:
-            self.strategy.terminate = True
-    
-    def remove_from_data(self, uuid):
-        self.strategy.remove(uuid)
-
-    # TODO update this to use the new data structure
-    # bases:
-    #   base*:
-    #       metadata:
-    #           name: base*
-    #           type: base
-    #       markers:
-    #           marker*:
-    #               id: marker*
-    #               x: 0
-    #               y: 0
-    #               rotation: 0
-    #       config:
-    #           width: 0
-    #           height: 0
-    #       controls:
-    #           control*:
-    # tables:
-    #   table*:
-    #       current_base:
-    #           base*: 0
-    #       user: Scott
-    #       location: fablab
-    def update(self, uuid, json, gone):
-        uuid = str(uuid)
-        if gone:
-            self.remove_from_data(uuid)
-        else:
-            # add marker category to data
-            # TODO currently this overwrites the marker data
-            json = {uuid: json}
-            self.strategy.send(json)
-
-    def push_data(self):
-        self.strategy.send(self.data)
+        self.message_to_push = {}
         self.new_data = False
+        self.should_push_event = threading.Event()
+        self.terminate = False
+
+        self.project_name = project_name
+
+        self.sending_thread = threading.Thread(target=self.watch_for_push, daemon=True)
+        self.sending_thread.start()
+        #self.listener_thread = threading.Thread(target=self.strategy.receive)
+
+        self.event_type_handler = {
+            "end": self.end,
+        }
+    
+    # Batch the messages to send
+    def update(self, uuid, json):
+        uuid = str(uuid)
+        self.message_to_push[uuid] = json
+        self.new_data = True
+
+    def handle_event(self, event):
+        handler = self.event_type_handler.get(event["type"])
+        if handler:
+            handler()
+
+    def push(self):
+        self.should_push_event.set()
+
+    # Send the message using the strategy
+    def watch_for_push(self):
+        while not self.terminate:
+            self.should_push_event.wait()
+            self.strategy.push(self.message_to_push)
+            self.should_push_event.clear()
+            self.message_to_push = {}
+            self.new_data = False
+        
+    def end(self):
+        self.terminate = True        
         
 if (__name__ == '__main__'):
     print("Running tests for repository.py")

@@ -30,7 +30,13 @@ class Display():
         self.root.mainloop()
 
     def update_video_image(self, frame):
+        if frame is None:
+            print("Frame is None")
+            return
         image = Image.fromarray(frame)
+        if image is None:
+            print("Image is None")
+            return
         tkimg = ImageTk.PhotoImage(image=image)
 
         self.video_label.configure(image=tkimg)

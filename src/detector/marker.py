@@ -3,18 +3,18 @@ import subprocess
 from abc import ABC, abstractmethod
 from math import pi
 from uuid import uuid4 as uuid
+import threading
 
 import numpy as np
 import cv2 as cv
 
 @abstractmethod
 class Marker(ABC):
-    def __init__(self, marker_id, timer_):
+    def __init__(self, marker_id, event_manager):
         self.uuid = uuid()          # A unique identifier for this marker
         self.id = marker_id         # The id of the marker as detected by the camera corresponding to the aruco dictionary
         self.observers = []         # A list of observers that will be notified when the marker is updated
         self.is_visible = True
-        self.gone = False
         
         self.rotation = 0
         self.prev_rotation = 0
@@ -24,44 +24,71 @@ class Marker(ABC):
         self.prev_center = (0,0)
         self.center_threshold = 10
 
-        self.timer = timer_         # A reference to the timer object so we can report when a marker is lost
-        self.time_last_seen = None
-        self.lost_threshold = 500     # sets the time (in milliseconds) before a marker is considered lost
+        self.timer = None
+        self.lost_threshold = 2     # sets the time (in milliseconds) before a marker is considered lost
 
-        # self.type = "marker"
+        self.json = None
 
         self.significant_change = False
         self.updated = False
 
-    def found(self):
-        self.is_visible = True
-        self.timer.report_found(self)
-        # self.notify_observers()
+        self.event_manager = event_manager
+        self.event_type_handler = {
+            "begin_update": self.begin_update_handler,
+            "end_update": self.end_update_handler,
+        }
+
+    def begin_update_handler(self, event):
+        self.updated = False
+
+    def end_update_handler(self, event):
+        if not self.updated and self.is_visible:
+            self.is_visible = False
+            self.start_timer()
+        self.draw(event["frame"])
+
+    def start_timer(self):
+        self.timer = threading.Timer(self.lost_threshold, self.lost)
+        self.timer.start()
+
+    def stop_timer(self):
+        if self.timer:
+            self.timer.cancel()
+            self.timer = None
 
     def flip_center(self, width):
         return width - self.center[0], self.center[1]
 
-    def update(self, corners_):
+    def update(self, corners_, frame):
+        
+        if self.timer:
+            self.is_visible = True
+            self.stop_timer()
+
         # check if it's a more significant change than the threshold
         self.rotation, self.center = self.check_for_threshold_change(corners_)
         self.updated = True
+        self.draw(frame)
         if self.significant_change:
+            self.json = self.build_json()
             self.notify_observers()
 
+    def handle_event(self, event):
+        handler = self.event_type_handler.get(event["type"])
+        if handler:
+            handler(event)
+
     def lost(self):
-        self.gone = True
+        self.json = None
+        self.event_manager.register_event({"type": "marker_lost", "marker": self})
         self.notify_observers()
 
-    def lost_tracking(self):
-        self.is_visible = False
-        self.timer.report_lost(self)
-        
     def attach_observer(self, observer_):
         self.observers.append(observer_)
     
     def notify_observers(self):
         for observer in self.observers:
-            observer.update(self.uuid, self.build_json(), self.gone)
+            observer.update(self.uuid, self.json)
 
     def build_json(self):
         marker_data = {

@@ -13,11 +13,7 @@ class RepoStrategy(ABC):
         self.terminate = False
 
     @abstractmethod
-    def send(self, message):
-        pass
-
-    @abstractmethod
-    def end(self):
+    def push(self, message):
         pass
 
 class RepoStrategyFactory():
@@ -64,7 +60,7 @@ class UDPRepo(RepoStrategy):
             _socket.close()
             self.terminate = True
 
-    def send(self, message):
+    def push(self, message):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             message = str(message)
@@ -74,7 +70,7 @@ class UDPRepo(RepoStrategy):
             _socket.close()
         except Exception as e:
             print(e)
-    
+
 class FirebaseRepo(RepoStrategy):
     def __init__(self, repository_, project_name):
         super().__init__(repository_, project_name)
@@ -82,40 +78,26 @@ class FirebaseRepo(RepoStrategy):
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
         })
-        self.ref = db.reference(f'/bases/{project_name}/marker')
+        self.marker_ref = db.reference(f'/bases/{project_name}/marker')
         self.config_ref = db.reference(f'/bases/{project_name}/config')
         # Begins the listening thread
         # self.listener = self.config_ref.listen(self.on_new_data)
         self.project_name = None
 
         # Clear the markers from the previous run
-        self.ref.delete()
-
-    """
-    The function to be run when there's new information
-    """
-    def on_new_data(self):
-        # change the project we're working under if it has changed
-        if self.project_name != self.config_ref.get()['project_name']:
-            self.project_name = self.config_ref.get()['project_name']
-            self.ref = db.reference(f'/bases/{self.project_name}/marker')
-            print("Project name is:", self.project_name)
-
-    def send(self, message):
-        try:
-            self.ref.update(message)
-            # ref.set(message)
-        except Exception as e:
-            print("Error sending data:", e)
-
-    def remove(self, uuid):
-        self.ref.child(uuid).delete()
+        self.marker_ref.delete()
 
     def end(self):
         self.terminate = True
         # Clear any leftover markers from this run
-        self.ref.delete()
+        self.marker_ref.delete()
         firebase_admin.delete_app(self.firebase_admin)
+
+    def push(self, message):
+        try:
+            self.marker_ref.update(message)
+        except Exception as e:
+            print("Error sending data:", e)
 
 class CompositeRepo(RepoStrategy):
     def __init__(self, repository_):

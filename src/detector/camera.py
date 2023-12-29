@@ -34,6 +34,10 @@ class Camera():
 
         self.board = board
 
+        self.event_type_handler = {
+            "end": self.end,
+        }
+
         if not self.cap.isOpened():
             print("Cannot open camera")
             exit()
@@ -77,18 +81,22 @@ class Camera():
 
                 frame_color = cv.cvtColor(frame_gray, cv.COLOR_GRAY2BGR)
 
-                self.board.update(ids, corners)
-                self.board.draw(frame_color)
+                self.board.update(ids, corners, frame_color)
                 
                 return frame_color
         except Exception as e:
             sys.stderr.write(str(e))
             traceback.print_exc()
 
+    def handle_event(self, event):
+        handler = self.event_type_handler.get(event["type"])
+        if handler:
+            handler()
+
     def end(self):
         self.cap.release()
         cv.destroyAllWindows()
-        self.board.end()
+        # self.board.end()
 
 if (__name__ == '__main__'):
     print("Running unit tests for camera.py")

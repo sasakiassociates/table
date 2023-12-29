@@ -8,6 +8,7 @@ from detector import camera
 from sender import repository
 from ui import display
 from detector import board
+from detector import eventManager
 
 FIREBASE_DEFAULT_URL = "https://magpietable-default-rtdb.firebaseio.com/"
 ARUCO_DEFAULT_DICT = "6X6_100"
@@ -57,25 +58,23 @@ def camera_loop_fullscreen(camera, _display):
             print("Frame is None")
             break
 
-def debug_loop(camera, _display):
-    while not _display.terminate:
-        if _display.new_debug_data:
-            camera.repository.update(_display.debug_data, _display.debug_id)
-            camera.repository.send_data()
-            _display.new_debug_data = False
-
-
 if (__name__ == '__main__'):
     
     _display = display.Display()
 
     params = aruco.DetectorParameters()
+    _event_manager = eventManager.EventManager()
     _repository = repository.Repository(mode, "test_proj")                  # New repository object that opens a UDP connection on a new thread
-    board = board.Board(_repository)                           # New board object that uses the repository object to send data
+    board = board.Board(_repository, _event_manager)                           # New board object that uses the repository object to send data
     
     camera_num = args.camera
 
     camera = camera.Camera(camera_num, aruco_dict_name, params, board)  # New camera object that uses the repository object to send data and runs on it's own thread
+    
+    
+    _event_manager.attach_observer(board)
+    _event_manager.attach_observer(_repository)
+    _event_manager.attach_observer(camera)
     
     if args.video_full == True:
         _display.build_video_fullscreen()
@@ -83,30 +82,17 @@ if (__name__ == '__main__'):
         _display.build()
 
     camera.setup()
-    
-    if DEBUG:
-        print("Running in debug mode")
-        # TODO add a window for debug mode that allows you to input markers manually as if they had been detected
-        # window just links up to the repository object and allows you to input data for a marker
-        # window also allows you to input data for a project
-        debug_thread = threading.Thread(target=debug_loop, args=(camera, _display))
-        debug_thread.daemon = True
-        debug_thread.start()
 
-        _display.add_debug_window()
-        _display.launch_gui()
-
+    if args.video_full:
+        camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display))
     else:
+        camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
+    camera_thread.daemon = True
+    camera_thread.start()
 
-        if args.video_full:
-            camera_thread = threading.Thread(target=camera_loop_fullscreen, args=(camera, _display))
-        else:
-            camera_thread = threading.Thread(target=camera_loop, args=(camera, _display))
-        camera_thread.daemon = True
-        camera_thread.start()
+    _display.launch_gui()
 
-        _display.launch_gui()
-
+    board.end()
     camera.end()
     
 # To Package:
