@@ -96,7 +96,6 @@ class Camera():
     def end(self):
         self.cap.release()
         cv.destroyAllWindows()
-        # self.board.end()
 
 if (__name__ == '__main__'):
     print("Running unit tests for camera.py")

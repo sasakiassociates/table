@@ -9,30 +9,31 @@ from abc import ABC, abstractmethod
 @abstractmethod
 class RepoStrategy(ABC):
     @abstractmethod
-    def __init__(self, repository_, project_name) -> None:
+    def __init__(self, project_name, event_manager) -> None:
         self.terminate = False
+        self.event_manager = event_manager
 
     @abstractmethod
     def push(self, message):
         pass
 
 class RepoStrategyFactory():
-    def get_strategy(strategy_name, repository_, project_name):
+    def get_strategy(strategy_name, project_name, event_manager):
         if strategy_name == 'udp':
-            return UDPRepo(repository_, project_name)
+            return UDPRepo(project_name, event_manager)
         elif strategy_name == 'firebase':
-            return FirebaseRepo(repository_, project_name)
+            return FirebaseRepo(project_name, event_manager)
         elif strategy_name == 'both':
-            composite_repo = CompositeRepo(repository_, project_name)
-            composite_repo.add_strategy(UDPRepo(repository_, project_name))
-            composite_repo.add_strategy(FirebaseRepo(repository_, project_name))
+            composite_repo = CompositeRepo(project_name)
+            composite_repo.add_strategy(UDPRepo(project_name, event_manager))
+            composite_repo.add_strategy(FirebaseRepo(project_name, event_manager))
             return composite_repo
         else:
             raise Exception('Invalid strategy name')
         
 class UDPRepo(RepoStrategy):
-    def __init__(self, repository_, project_name) -> None:
-        super().__init__(repository_, project_name)
+    def __init__(self, project_name, event_manager) -> None:
+        super().__init__(project_name, event_manager)
         self.listen_ip = '0.0.0.0'
         self.listen_port = 5004
         self.send_ip = '127.0.0.1'
@@ -72,8 +73,8 @@ class UDPRepo(RepoStrategy):
             print(e)
 
 class FirebaseRepo(RepoStrategy):
-    def __init__(self, repository_, project_name):
-        super().__init__(repository_, project_name)
+    def __init__(self, project_name, event_manager):
+        super().__init__(project_name, event_manager)
         self.credentials = credentials.Certificate("./sender/key/firebase_table-key.json")
         self.firebase_admin = firebase_admin.initialize_app(self.credentials, {
             'databaseURL': 'https://magpietable-default-rtdb.firebaseio.com/'
@@ -85,7 +86,20 @@ class FirebaseRepo(RepoStrategy):
         self.project_name = None
 
         # Clear the markers from the previous run
-        self.marker_ref.delete()
+        # self.marker_ref.delete()
+
+    # Does this need a reference to the event manager?
+    def on_new_data(self, event):
+        if event.data is None:
+            return
+        # config data includes:
+        # - registration points
+        # - marker update interval
+        # - base marker id
+        self.event_manager.register_event({"type": "config_update", "data": event.data})
+
+    def remove_marker(self, marker_id):
+        self.marker_ref.child(marker_id).delete()
 
     def end(self):
         self.terminate = True
@@ -100,8 +114,8 @@ class FirebaseRepo(RepoStrategy):
             print("Error sending data:", e)
 
 class CompositeRepo(RepoStrategy):
-    def __init__(self, repository_):
-        super().__init__(repository_)
+    def __init__(self, project_name):
+        super().__init__(project_name)
         self.strategies = []
     
     def add_strategy(self, strategy):

@@ -1,3 +1,4 @@
+import queue
 import cv2 as cv
 import numpy as np
 import threading
@@ -23,11 +24,12 @@ class Board(metaclass=BoardSingletonMeta):
         self.event_manager = event_manager
         self.repository = repository
         self.matrix = None
-        self.markers_to_destroy = set()
+        # self.markers_to_destroy = set()
+        self.markers_to_destroy = queue.Queue()
         
     def handle_event(self, event):
         if event["type"] == "marker_lost":
-            self.markers_to_destroy.add(event["marker"])
+            self.markers_to_destroy.put(event["marker"])
 
     def make_marker(self, id_):
         new_marker = m.Marker(id_, self.event_manager)
@@ -65,13 +67,12 @@ class Board(metaclass=BoardSingletonMeta):
 
         self.event_manager.register_event({"type": "end_update", "frame": frame})
 
-        for marker in self.markers_to_destroy:
+        while not self.markers_to_destroy.empty():
+            marker = self.markers_to_destroy.get()
             self.event_manager.detach_observer(marker)
             self.markers.remove(marker)
             del marker
-        self.markers_to_destroy.clear()
 
-        # TODO change this to limit the number of pushes to the database
         if self.repository.new_data:
             self.repository.push()
 

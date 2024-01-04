@@ -1,6 +1,5 @@
 import json
 import subprocess
-from abc import ABC, abstractmethod
 from math import pi
 from uuid import uuid4 as uuid
 import threading
@@ -8,8 +7,7 @@ import threading
 import numpy as np
 import cv2 as cv
 
-@abstractmethod
-class Marker(ABC):
+class Marker():
     def __init__(self, marker_id, event_manager):
         self.uuid = uuid()          # A unique identifier for this marker
         self.id = marker_id         # The id of the marker as detected by the camera corresponding to the aruco dictionary
@@ -25,7 +23,7 @@ class Marker(ABC):
         self.center_threshold = 10
 
         self.timer = None
-        self.lost_threshold = 2     # sets the time (in milliseconds) before a marker is considered lost
+        self.lost_threshold = 1     # sets the time (in seconds) before a marker is considered lost
 
         self.json = None
 
@@ -78,6 +76,8 @@ class Marker(ABC):
         if handler:
             handler(event)
 
+    # TODO it appears we still get some ghosts that are not removed
+    # Might be due to markers appearing and disappearing too quickly before the board can update
     def lost(self):
         self.json = None
         self.event_manager.register_event({"type": "marker_lost", "marker": self})
@@ -217,11 +217,6 @@ class ProjectMarker(Marker):
                 print(f"Failed to open grasshopper: {e}")
         else:
             print("Failed to open project")
-    
-class GenericMarker(Marker):
-    def __init__(self, marker_id, timer_):
-        super().__init__(marker_id, timer_)
-
 
 if (__name__ == '__main__'):
     print("Running unit tests for marker.py")

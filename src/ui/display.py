@@ -197,9 +197,3 @@ if (__name__ == '__main__'):
     display.build()
     display.launch()
     print("Unit tests for display.py passed")
-
-# Frame
-#     - Label (video feed)
-# Frame (Menu)
-#     - Button
-#     - Button
